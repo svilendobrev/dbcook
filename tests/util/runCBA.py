@@ -17,6 +17,7 @@ class Config4ABCcombination( ConfigCombinator):
         return ConfigCombinator.getXlinks( config,X, bool(not config.doC) *['C'] )
 
     _help = ConfigCombinator._help + '''\
+  polymorphic :: link to both exact class instances (A) and subclassed (B for A, if B inhs A)
   Binhs=      :: B inherits which types, e.g. =None   (default:all=None,A)
   doC         :: enable C (3rd type) (default:no)
   Cinhs=      :: C inherits which types, e.g. =A,None (default:all=None,A,B)
