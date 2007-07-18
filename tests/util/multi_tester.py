@@ -29,7 +29,7 @@ class MultiTester( object):
 
         error = ''
         if me.any_echo(): print '=============='
-        print 'do', me.str_params( parameters)
+        print '>'+ me.str_params( parameters)
 
         printer = me.config.generate and me.Printer and me.Printer()
         try:

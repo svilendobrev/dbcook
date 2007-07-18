@@ -1,4 +1,4 @@
-#$Id$
+#yId: samanager.py 6 2007-07-18 18:29:49Z svilen_dobrev $
 # -*- coding: cp1251 -*-
 
 from dbcook import builder
@@ -188,19 +188,11 @@ class SAdb:
                 else: pre()
                 session.save( x)
 
-    def pipequery( me, session, mapper, selectable):
-        return session.query( mapper).select( selectable)
-        #return session.query( mapper).filter( selectable)  #raw
-
-
     ####### querys
     def query_all_tables( sadb, **kargs_ignore):
         print '=== whole database:'
         for k,t in sadb.tables.iteritems():
             print k,':',[r for r in t.select().execute()]
-    def query_table( sadb, klas, **kargs_ignore ):
-        table = sadb.tables[ klas]
-        return table.select().execute()
 
     ####### klasifier querys
 
@@ -211,8 +203,7 @@ class SAdb:
 
     def query_ALL_instances_raw( sadb, session, klas ):
         return session.query( klas) #must be equivalent ??
-        return session.query( sadb.mappers[ klas].polymorphic_all )
-
+        #return session.query( sadb.mappers[ klas].polymorphic_all )
 
     def query_BASE_instances( sadb, session, klas ):
         r = sadb.query_BASE_instances_raw( session, klas )
@@ -224,7 +215,7 @@ class SAdb:
     def query_SUB_instances( sadb, session, klas ):
         m = sadb.mappers[ klas]
         if m.polymorphic_sub_only is None: return ()
-        return sadb.pipequery( session, m.polymorphic_all, m.polymorphic_sub_only )
+        return session.query( m.polymorphic_all ).select( m.polymorphic_sub_only )
 
 
 def setup_logging( log_sa, log2stream =None):

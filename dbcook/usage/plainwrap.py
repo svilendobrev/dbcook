@@ -100,16 +100,14 @@ setup( Builder)
 
 #############################################
 
+#XXX TODO one common example
+
 if __name__ == '__main__':
     import sqlalchemy
-    from samanager import SAdb
-    from dbcook.tests.util.tester import klasify, types_sorted
-
     class Text( Type): pass
     fieldtypemap = {
         Text: dict( type= sqlalchemy.String, ),
     }
-    SAdb.config.getopt()
 
     class A( Base):
         name = Text()
@@ -120,57 +118,40 @@ if __name__ == '__main__':
         color = Text()
         blink = Type4SubStruct( B)
 
+    from samanager import SAdb
+    SAdb.Builder = Builder
+    SAdb.config.getopt()
     sadb = SAdb()
-    try:
-         #database connect
-        sadb.open( recreate=True)
-         #build the mapping
-        sadb.bind( locals(), fieldtypemap, builder=Builder, base_klas= Base )#, debug='mapper')
 
-         #create some instances
-        a = A()
-        a.name = 'ala'
+    sadb.open( recreate=True)
+    sadb.bind( locals(), fieldtypemap, )#, debug='mapper')
 
-        b = B()
-        b.name = 'bala'
-        b.alias = 'ba'
+     #create some instances
+    a = A()
+    a.name = 'ala'
 
-        c = C()
-        c.color = 'red'
-        c.blink = b
+    b = B()
+    b.name = 'bala'
+    b.alias = 'ba'
 
-         #save them
-        populate_namespace = locals()
-        session = sadb.session()
-        sadb.saveall( session, populate_namespace )
-        session.flush()
-        session.close()
+    c = C()
+    c.color = 'red'
+    c.blink = b
 
-         #query types one by one
-        klasitems = klasify( sadb, populate_namespace )   #expected results
-        SET = sadb.mapcontext.SET
-        query = [ SAdb.query_table, SAdb.query_ALL_instances, SAdb.query_BASE_instances, SAdb.query_SUB_instances ]
+     #save them
+    populate_namespace = locals()
+    session = sadb.session()
+    sadb.saveall( session, populate_namespace )
+    session.flush()
+    session.close()
 
-        for klas in types_sorted( sadb):
-            print '==', klas.__name__
-            for qy in query:
-                assert callable( qy)
-                qname = qy.__name__
-                print ' ---', qname
+    for klas in [ A,B,C]:
+        print '==', klas
+        for qy in [ sadb.query_ALL_instances, sadb.query_BASE_instances, sadb.query_SUB_instances ]:
+            print ' --', qy.__name__
+            r = qy( session, klas)
+            for a in r: print a
 
-                r = SET( str(q) for q in qy( sadb, session=session, klas=klas) )       #load all
-
-                rq = getattr( klasitems[ klas], qname, None)
-                if rq is None:
-                    print '  result:', '\n'.join( str(q) for q in r)
-                else:
-                    rq = SET( str(q) for q in rq)
-                    print '  result:', '; '.join( str(q) for q in r)
-                    print '  expect:', '; '.join( str(q) for q in rq), '/size:', len(rq)
-                    assert rq == r
-
-    finally:
-        sadb.destroy()
-#    raise SystemError,1
+    sadb.destroy()
 
 # vim:ts=4:sw=4:expandtab

@@ -102,6 +102,7 @@ Some todo's, long- or short- term:
  - autoload / reverse-engineering
  - single-table inheritance
  - other reflectors/"syntaxes" - e.g. elixir-like 
+ - concrete-polymorphism: polymunion of (type,id) key
 
 have fun
 

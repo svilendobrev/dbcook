@@ -65,7 +65,6 @@ def populate( sam, namespace):
     session = sam.session()
     sam.saveall( session, get_all_objects() )
     session.flush()
-#    session.clear()
 
 
 ######################################
