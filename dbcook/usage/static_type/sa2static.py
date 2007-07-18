@@ -242,18 +242,16 @@ if __name__ == '__main__':
         return locals()
 
 
-    from dbcook.usage.samanager import SAdb
-
     fieldtypemap = {
         Text: dict( type= sqlalchemy.String, ),
     }
 
     def str1( me): return reflector.obj2str( me, Base, builder.column4ID.name)
     Base.__repr__ = Base.__str__ = str1
-    <S-F11>from dbcook.util.attr import setattr_kargs
+    from dbcook.util.attr import setattr_kargs
     Base.__init__ = setattr_kargs
 
-
+    from dbcook.usage.samanager import SAdb
     SAdb.Builder = Builder
     SAdb.config.getopt()
 
