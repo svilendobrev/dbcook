@@ -54,7 +54,7 @@ class Funcs:
 
 ##############  model-definition
 import sys
-from util.attr import get_attrib
+from dbcook.util.attr import get_attrib
 
 DB_inheritance = 'joined' in sys.argv and 'joined_table' or 'concrete_table'
 
@@ -150,7 +150,6 @@ p2 = session.query( Person).get_by_name( 'pesho')
 #print p2
 #    session.clear()
 
-from util.struct import Struct
 class AttrWrapError( AttributeError): pass
 class AttrWrap:
     def __init__( me, o): me.o = o
@@ -171,7 +170,6 @@ class AttrWrap:
             else:
                 g = me.o
             return getattr( g, kk[-1], None)
-            #return get_attrib( me.o, k, None)
 
 # XXX XXX XXX XXX
 # be careful with possible NULLs - anyop(NULL) is NUL except true | NUL, false & NUL; bool(NUL) is False;
@@ -305,9 +303,10 @@ if 0:
     Funcs.max = Maxer( max)
 
 
+from tests.util.struct import Struct
 from dbcook import expression
 expression._debug = 'dbg' in sys.argv
-from dbcook.expression import expr, Translator
+expr = expression.expr
 try:
     for func in allfuncs:
         #print '\n---------'
@@ -354,7 +353,7 @@ try:
 
                 if r: expected.append(p)
         #print expected
-        eval = Translator( AttrWrap( Struct( person=Person, f=None, p2= p2 )))
+        eval = expression.Translator( AttrWrap( Struct( person=Person, f=None, p2= p2 )))
         try:
             sae = e.walk( eval)
         except expected_err:

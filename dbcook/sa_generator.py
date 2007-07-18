@@ -2,6 +2,7 @@
 #store+print SA constructor-args in order to recreate the source
 
 import sqlalchemy
+from dbcook.util.attr import issubclass
 
 def traverse( visitor, obj):
     try: f = visitor.traverse
@@ -176,8 +177,7 @@ class %(name)s( %(base)s):
         try:
             namespace = namespace.itervalues()
         except AttributeError: pass
-        all = [klas for klas in namespace
-            if isinstance( klas, type) and issubclass( klas, Base)]
+        all = [klas for klas in namespace if issubclass( klas, Base)]
         all.sort( key=lambda kl:kl.__name__)
         for klas in all:
             me.pklas( klas, **kargs)

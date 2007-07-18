@@ -1,8 +1,6 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
-### config
-import sqlalchemy
 import sys
 
 class config_components:
@@ -16,8 +14,8 @@ class config_components:
 
 #######################
 
-import util.config
-class Config( util.config.Config):
+from dbcook.util import config
+class Config( config.Config):
     force_lazy = False      #ignore all specifying/defaults
     default_lazy = False    #unspecified relations try to achieve this
     lower_pu   = True       #lowercase polymorphic_union's name - better 'echo' readability

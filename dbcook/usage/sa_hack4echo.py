@@ -1,6 +1,6 @@
 #$Id$
 # -*- coding: cp1251 -*-
-from util.hacksrc import hacksrc
+from dbcook.util.hacksrc import hacksrc
 from sqlalchemy import sql, ansisql
 
 def accept_visitor(self, visitor):

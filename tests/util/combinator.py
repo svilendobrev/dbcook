@@ -1,6 +1,6 @@
 #$Id$
 
-from util.config import Config
+from dbcook.util.config import Config
 
 #####################
 

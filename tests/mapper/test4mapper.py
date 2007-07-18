@@ -460,9 +460,10 @@ TEST_OUT_ROOT = 'simple/output'
 #else:
 #    print 'usage: ', sys.argv[0], ' path_to_output_dirs'
 
-from util.dictOrder import dictOrder
+from dbcook.util.dictOrder import dictOrder
+from dbcook.util import config
 
-class Config( SAdb.config.__class__):
+class Config( config.Config):
     session_clear = True
     _help = '''\
 workflow control:

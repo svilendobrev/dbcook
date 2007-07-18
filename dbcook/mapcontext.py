@@ -83,8 +83,7 @@ $ settings:
 
 # XXX assert not( DB_NO_MAPPING and DB_HAS_INSTANCES) ???
 
-from util.base import issubclass
-from util.attr import getattr_local_instance_only
+from dbcook.util.attr import getattr_local_instance_only, issubclass
 
 class MappingContext:
     base_klas = None  #_Base or something else

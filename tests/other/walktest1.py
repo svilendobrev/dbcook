@@ -4,7 +4,7 @@
 from tests.util.context import *
 from dbcook import walkklas
 import sys
-walkklas._debug = sys.argv.count( '-v')>1
+walkklas._debug = sys.argv.count( '-v') > 1
 
 import walktest2
 from walktest2 import C

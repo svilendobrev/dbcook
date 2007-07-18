@@ -4,8 +4,8 @@
 from dbcook import builder
 import sqlalchemy
 
-import util.config
-class Config( util.config.Config):
+from dbcook.util import config
+class Config( config.Config):
     db   = ''               #'' or memory or sqlite or postgres or URL
 
     echo     = False
@@ -22,7 +22,7 @@ debug/output options:
 
 config = Config( builder.config )
 
-## nice echo of select etc
+## nice echo of selects
 import sys
 try: sys.argv.remove( 'no_echo_hack')
 except: import sa_hack4echo

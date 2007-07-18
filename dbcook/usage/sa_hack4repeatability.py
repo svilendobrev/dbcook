@@ -17,7 +17,7 @@ Probably there are more places, for untried cases.
 XXX DONT forget to make "requests"/calls also repeatable/ordered!!!
 e.g. SAdb( ..force_ordered=True)
 '''
-from util.hacksrc import hacksrc
+from dbcook.util.hacksrc import hacksrc
 
 def hack4repeat():
     # HACKALL

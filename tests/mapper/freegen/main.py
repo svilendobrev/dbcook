@@ -8,7 +8,7 @@ from param_gen import gen_case_params, str_schema
 
 all_inh = 'concrete table '
 
-from util.dictOrder import dictOrder
+from dbcook.util.dictOrder import dictOrder
 classes = dictOrder((
            ('A', ['concrete', 'Base']),
            ('B', [ all_inh, 'A Base']),

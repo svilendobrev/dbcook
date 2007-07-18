@@ -190,7 +190,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
     return lastcol, clause, False
 
 
-from util import expr
+from dbcook.util import expr
 from sqlalchemy import sql
 
 class Translator( expr.Expr.Visitor):

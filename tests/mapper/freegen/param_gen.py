@@ -28,7 +28,7 @@ def get_combs( all):
     for i in range( len( rows[ 0])):
         yield [ rows[ j][ i] for j in range( len( rows))]
 
-from util.dictOrder import dictOrder
+from dbcook.util.dictOrder import dictOrder
 def order_dict( d):
     res = dictOrder()
     for k,v in d.iteritems():
