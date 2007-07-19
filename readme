@@ -5,9 +5,9 @@ g'day.
 This is dbcook, a framework to cook databases from recipes, written 
 as python declarations. Eventually the result may be edible (;-)
 
-If u're interested, have a look, dbcook/usage/example1.py might be a start. The
-directory-structure is still in flux - u need to get the internal dbcook/
-accessible somehow (PYTHONPATH or else).
+If u're interested, have a look, dbcook/usage/example1.py might be a start. 
+The directory-structure is still in flux - u need to get the internal 
+dbcook/ accessible somehow (PYTHONPATH or else). Licensed as MIT-license.
 
 svn co https://dbcook.svn.sf.net/svnroot/dbcook/trunk
 
@@ -28,7 +28,7 @@ The user can only control certain characteristics of the way the mapping
 happens, mostly related to hierarchy and relations between objects (subclasses,
 instances, leafs, uniqueness etc).
 
-It can handle: 
+Work started somewhen in october 2006. Now it can handle: 
  - data column types
  - reference columns -> foreign keys
  - class inheritance, and class inclusion (inheritance without 
@@ -108,3 +108,4 @@ have fun
 
 svil 
 svilen_dobrev at users point sourceforge point net
+or see me at sqlalchemy's newsgroup.

@@ -1,6 +1,11 @@
 #$Id$
 #s.dobrev 2k4
 
+'''some additional reflection tools - multilevel attrname get/set,
+local vs see-through-hierarchy getattr,
+fail-proof issubclass()
+'''
+
 def set_attrib( self, name, value, getattr =getattr, setattr=setattr):
     if isinstance( name, str):
         name = name.split('.')
