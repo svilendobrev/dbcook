@@ -26,8 +26,8 @@ class Config( config.Config):
 
     _help = '''
 mapping options:
-  force_lazy  :: no eager-loading, i.e. only lazy references (default: do eager where requested/possible)
-  default_lazy:: references with unspecified-loading become lazy (default: unspecifieds are eager if possible)
+  force_lazy  :: no eager-loading, only lazy references (default: do eager where requested/possible)
+  default_lazy:: unspecified-loading become lazy (default: unspecifieds are eager if possible)
   no_lower_pu :: don't lowercase polymorphic_union's name
 debug/output options:
   no_generator:: do not plug SA-source-generator underneath, use for production  [default:generator is on]

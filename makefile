@@ -22,6 +22,11 @@ tar:
 	cd _tmp; tar cvjf ../$(TAR).bz2 --dereference $(_EXCLUDE) $(NAME)
 	rm -rf _tmp
 
+.PHONY: tag tags
+tag tags:
+	ctags -R --links=no --exclude=_t\*.py .
+	-test -L dbcook && ctags -R -a --exclude=_t\*.py dbcook/
+
 rmpyc:
 	rm -f `find . -name \*.pyc `
 

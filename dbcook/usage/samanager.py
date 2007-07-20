@@ -13,8 +13,8 @@ class Config( config.Config):
 
     _help = '''
 database options:
-  db=       :: memory or sqlite (./) or postgres (localhost) or URL (default: memory via sqlite);
-                URL is driver://[user:pass@host[:port]]/database
+  db=       :: memory or sqlite (./) or postgres (localhost) or URI (default: memory via sqlite);
+                URI is driver://[user:pass@host[:port]]/database
 debug/output options:
   echo      :: echo SQL (same as log_sa=sql)        [default:no]
   log_sa=   :: SA-logging: sql,transact,mapper,connect,all  [default:no]
