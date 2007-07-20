@@ -55,8 +55,8 @@ class Address( Base):
 
 class Person( o2r.Base):
 	name = Text()
-	address = o2r.Type4SubStruct( Address)
-	friend  = o2r.Type4SubStruct( 'Person')
+	address = o2r.Type4Reference( Address)
+	friend  = o2r.Type4Reference( 'Person')
 
 class Employee( Person):
 	job = Text()

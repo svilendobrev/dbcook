@@ -1,7 +1,7 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
-from tests.util.context import * #Type4SubStruct, Builder, SAdb, Base, Text, fieldtypemap
+from tests.util.context import * #Type4Reference, Builder, SAdb, Base, Text, fieldtypemap
 
 querys = [ SAdb.query_BASE_instances, SAdb.query_ALL_instances, SAdb.query_SUB_instances]
 inhtr = {
@@ -26,7 +26,7 @@ def test_inh_ref_ABC_any( config,
     class A( Base):
         auto_set = False    #StaticTypeing; else: recursion
         if Alink:
-            linkA = Type4SubStruct( Alink, lazy=Alazy)
+            linkA = Type4Reference( Alink, lazy=Alazy)
         DB_inheritance = inh
         DB_HAS_INSTANCES = 'A' in insts
         name = Text()
@@ -34,7 +34,7 @@ def test_inh_ref_ABC_any( config,
     class B( inhB and A or Base):
         auto_set = False    #StaticTypeing; else: recursion
         if Blink:
-            linkB = Type4SubStruct( Blink, lazy=Blazy)
+            linkB = Type4Reference( Blink, lazy=Blazy)
         DB_inheritance = inh
         DB_HAS_INSTANCES = 'B' in insts
         dataB = Text()
@@ -43,7 +43,7 @@ def test_inh_ref_ABC_any( config,
         class C( inhC=='B' and B or inhC=='A' and A or Base):
             auto_set = False    #StaticTypeing; else: recursion
             if Clink:
-                linkC = Type4SubStruct( Clink, lazy=Clazy)
+                linkC = Type4Reference( Clink, lazy=Clazy)
             DB_inheritance = inh
             DB_HAS_INSTANCES = 'C' in insts
             dataC = Text()

@@ -4,7 +4,7 @@
 regression test: inheritances are not cuttable deps, all else are.
 '''
 
-from tests.util.context import * #Type4SubStruct, SAdb, Base, Text
+from tests.util.context import * #Type4Reference, SAdb, Base, Text
 #if USE_STATIC_TYPE:
 Base.auto_set = False
 
@@ -13,17 +13,17 @@ from tests.util.case2unittest import Case
 class Employee( Base):
     DB_inheritance = 'joined_table'
     DB_HAS_INSTANCES = True
-    boss  = Type4SubStruct( 'Manager')   #put a big weight on this relation
-    boss2 = Type4SubStruct( 'Manager')
-    boss3 = Type4SubStruct( 'Manager')
+    boss  = Type4Reference( 'Manager')   #put a big weight on this relation
+    boss2 = Type4Reference( 'Manager')
+    boss3 = Type4Reference( 'Manager')
     name = Text()
-    dept = Type4SubStruct( 'Dept')          #without this session.topology will not cycle
+    dept = Type4Reference( 'Dept')          #without this session.topology will not cycle
 
 class Manager( Employee):
     extras = Text()
 
 class Dept( Base):
-    boss = Type4SubStruct( Manager)
+    boss = Type4Reference( Manager)
     name = Text()
 
 '''

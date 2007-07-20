@@ -20,12 +20,12 @@ Base = o2r.Base
 class Employee( Base):
     name    = Text()
     age     = Int()
-    manager = o2r.Type4SubStruct( 'Employee')    #or 'Manager'
+    manager = o2r.Type4Reference( 'Employee')    #or 'Manager'
     DB_inheritance = 'joined_table'   #for subclasses - this one is always concrete anyway
     DB_HAS_INSTANCES = True     #by default only class-tree leaves have instances
 
 class Manager( Employee):
-    secretary = o2r.Type4SubStruct( Employee)
+    secretary = o2r.Type4Reference( Employee)
     DB_HAS_INSTANCES = True
 
 class Engineer( Employee):
@@ -40,7 +40,7 @@ director_base = dict(
 
 class Director( director_base):
     if 'secretary' not in director_base.__dict__:   #no life without a secretary!
-        secretary = o2r.Type4SubStruct( Employee)
+        secretary = o2r.Type4Reference( Employee)
     salary = Int()
 
 ####### endof model-definition

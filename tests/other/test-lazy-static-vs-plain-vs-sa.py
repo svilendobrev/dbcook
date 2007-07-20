@@ -61,7 +61,7 @@ if 'sa' not in sys.argv:
     class Name( Element):
         name = TextD()
     class Darzhava( Model): #by ISO 3166
-        name = saw.Type4SubStruct( Name)
+        name = saw.Type4Reference( Name)
 
     s = SAdb( 'sqlite')
     s.open( recreate=False)

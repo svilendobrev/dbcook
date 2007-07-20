@@ -11,12 +11,12 @@ from walktest2 import C
 
 class A( C):
     a = Int()
-    p2B = Type4SubStruct( 'B')
+    p2B = Type4Reference( 'B')
 
 class B( walktest2.D):
     b = Int()
-    q2C = Type4SubStruct( 'C')
-#    r = Type4SubStruct( walktest2.C)
+    q2C = Type4Reference( 'C')
+#    r = Type4Reference( walktest2.C)
 
 AA = A
 BDDD = C

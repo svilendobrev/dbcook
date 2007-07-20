@@ -63,11 +63,11 @@ class Association:
     class _AssocDetails:
         __init__ = setkargs
 
-    Type4SubStruct = None
+    Type4Reference = None
     @classmethod
     def Link( klas, target_klas, attr =None, primary_key =True, nullable =False):
         '''declaration of link to target_klas, aware of being part of association'''
-        typ = klas.Type4SubStruct( target_klas)
+        typ = klas.Type4Reference( target_klas)
         typ.assoc = Association._AssocDetails( primary_key= primary_key, nullable= nullable, relation_attr= attr )
         #the klas is typ.typ (or will be after forward-decl-resolving)
         print 'Link', klas, target_klas, attr, primary_key

@@ -8,7 +8,7 @@
 
 Either use the new Builder here, or staticaly
 modify the base original: setup( builder.Builder).
-Then use the Base, Association, Type4SubStruct, either
+Then use the Base, Association, Type4Reference, either
 via Builder.xxxx, or directly from here.
 '''
 
@@ -17,7 +17,7 @@ from dbcook import builder
 import sys
 
 class Type( object): pass
-class Type4SubStruct( Type):
+class Type4Reference( Type):
     def __init__( me, klas, lazy ='default', as_value =False):
         assert not as_value
         me.itemklas = klas
@@ -25,7 +25,7 @@ class Type4SubStruct( Type):
         me.as_value = False
     @staticmethod
     def resolve_forward1( typ, *namespaces):
-        assert isinstance( typ, Type4SubStruct)
+        assert isinstance( typ, Type4Reference)
         assert isinstance( typ.itemklas, str)
         for namespace in namespaces:
             try:
@@ -36,9 +36,9 @@ class Type4SubStruct( Type):
     @staticmethod
     def resolve_forwards( namespace, klas_attrvalue_iterator, namespace2 ={}):
         for typ in klas_attrvalue_iterator:
-            if isinstance( typ, Type4SubStruct):
+            if isinstance( typ, Type4Reference):
                 if isinstance( typ.itemklas, str):
-                    Type4SubStruct.resolve_forward1( typ, namespace, namespace2)
+                    Type4Reference.resolve_forward1( typ, namespace, namespace2)
     def __str__( me):
         return me.__class__.__name__ + '/'+repr(me.itemklas)
 
@@ -62,7 +62,7 @@ class Reflector4sa( builder.Reflector):
         return attr in me._get_attrtype_all( klas)
 
     def type_is_substruct( me, typ):
-        if not isinstance( typ, Type4SubStruct):
+        if not isinstance( typ, Type4Reference):
             return None
         klas = typ.itemklas
         return dict( klas=typ.itemklas, lazy=typ.lazy, as_value=typ.as_value)
@@ -72,11 +72,11 @@ class Reflector4sa( builder.Reflector):
     def _resolve_forward_references( me, namespace, base_klas):
         for klas in namespace.itervalues():
             if not builder.issubclass( klas, base_klas): continue
-            Type4SubStruct.resolve_forwards( namespace, me._get_attrtype_all( klas ).itervalues(),
+            Type4Reference.resolve_forwards( namespace, me._get_attrtype_all( klas ).itervalues(),
                     sys.modules[ klas.__module__].__dict__ )
-        #this can also remove all Type4SubStruct's from klas
+        #this can also remove all Type4Reference's from klas
     def _resolve_forward_reference1( me, klas, namespace):
-        return Type4SubStruct.resolve_forward1( klas, namespace)
+        return Type4Reference.resolve_forward1( klas, namespace)
 
 
 
@@ -87,11 +87,11 @@ class Base( object):
     __repr__ = __str__
 
 class Association( builder.relation.Association):
-    Type4SubStruct = Type4SubStruct
+    Type4Reference = Type4Reference
 
 def setup( s):
     s.reflector = reflector
-    s.Type4SubStruct = Type4SubStruct
+    s.Type4Reference = Type4Reference
     s.Base = Base
     s.Association = Association
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         alias = Text()
     class C( Base):
         color = Text()
-        blink = Type4SubStruct( B)
+        blink = Type4Reference( B)
 
     from samanager import SAdb
     SAdb.Builder = Builder

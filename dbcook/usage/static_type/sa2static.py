@@ -8,7 +8,7 @@
 
 Either use the new Builder here, or staticaly
 modify the base original: setup( builder.Builder).
-Then use the Base, Association, Type4SubStruct, either
+Then use the Base, Association, Type4Reference, either
 via Builder.xxxx, or directly from here.
 '''
 
@@ -167,7 +167,7 @@ def modelBaser( model_base_klas ):
     '''
     return _ModelBase
 
-def Type4SubStruct( klas, lazy =False, **kargs):
+def Type4Reference( klas, lazy =False, **kargs):
     if isinstance( klas, str):
         r = _static_type.ForwardSubStruct( klas, **kargs)
     else:
@@ -176,14 +176,14 @@ def Type4SubStruct( klas, lazy =False, **kargs):
     return r
 
 class Association( builder.relation.Association):
-    Type4SubStruct = staticmethod( Type4SubStruct)
+    Type4Reference = staticmethod( Type4Reference)
 
 Base = modelBaser( _Base)
 reflector = Reflector4StaticType()
 
 def setup( s):
     s.reflector = reflector
-    s.Type4SubStruct = staticmethod( Type4SubStruct)
+    s.Type4Reference = staticmethod( Type4Reference)
     s.Base = Base
     s.Association = Association
 
@@ -210,20 +210,20 @@ if __name__ == '__main__':
         DB_HAS_INSTANCES = True
 
         name = Text()
-        dept = Type4SubStruct( 'Dept')
+        dept = Type4Reference( 'Dept')
 
     class Engineer( Employee):
-        helper = Type4SubStruct( 'Engineer')
+        helper = Type4Reference( 'Engineer')
         DB_HAS_INSTANCES = True
 
     class Manager( Employee):
-        secretary = Type4SubStruct( Employee)
+        secretary = Type4Reference( Employee)
 
     class Hacker( Engineer):
         tools = Text()
 
     class Dept( Base):
-        boss = Type4SubStruct( Manager)
+        boss = Type4Reference( Manager)
         name = Text()
 
     def populate():

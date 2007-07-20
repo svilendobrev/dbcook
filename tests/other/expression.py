@@ -66,25 +66,25 @@ class Addr0( Base):
     name = property( lambda me: str(getattr( me, 'street','none')) +'#'+str(get_attrib( me, 'home.num', 'none')) )
     street = Text()
     kvartal = Text()
-    home = Type4SubStruct( Home)
+    home = Type4Reference( Home)
 
 class Address( Addr0):
     DB_inheritance = DB_inheritance
     street1 = Text()
-    home1 = Type4SubStruct( Home)
-    owner = Type4SubStruct( 'Person')
+    home1 = Type4Reference( Home)
+    owner = Type4Reference( 'Person')
 
 class Human( Base):
     DB_NO_MAPPING = 'human' not in sys.argv
     DB_HAS_INSTANCES = 1
     name    = Text()
     age     = Int()
-    friend  = Type4SubStruct( DB_NO_MAPPING and 'Person' or 'Human')
+    friend  = Type4Reference( DB_NO_MAPPING and 'Person' or 'Human')
 
 class Person( Human):
     DB_inheritance = DB_inheritance
     alias   = Text()
-    address = Type4SubStruct( Address)
+    address = Type4Reference( Address)
 
     def __eq__( me, other):     #for person.friend == otherperson
         if other is None: return False
