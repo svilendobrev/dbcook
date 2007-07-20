@@ -624,10 +624,14 @@ from tests.util import case2unittest, tester
 class MapperCase( case2unittest.Case):
     generate_samples = False
     queries = [ SAdb.query_BASE_instances, SAdb.query_ALL_instances, SAdb.query_SUB_instances]
-
+    _db = None
+    reuse_db = True
     def setUp( me):
         me.sadb = SAdb( echo=True, log2stream=True)
-        me.sadb.open( recreate=True)
+        if me.reuse_db and MapperCase._db:
+            me.sadb.db = MapperCase._db
+        else:
+            me.sadb.open( recreate=True)
 
         me.namespace = me.params.namespace
         if callable( me.namespace):
@@ -696,7 +700,9 @@ class MapperCase( case2unittest.Case):
         finally:
             if me.builder.generator: print me.params.expected, '\n#====generated SA set-up\n', me.builder.generator.out,'\n#========= eo generated SA set-up'
             me.builder = None
-            me.sadb.destroy()     #ALWAYS!
+            if me.reuse_db:
+                MapperCase._db = getattr( me.sadb, 'db', None)
+            me.sadb.destroy( full= not me.reuse_db)    #ALWAYS!
 
     def gen_sample( me, fname=None):
         current = ( callable( me.params.get_result) and
