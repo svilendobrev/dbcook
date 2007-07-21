@@ -1,7 +1,6 @@
 #$Id$
 
 from sqlalchemy import *
-import traceback
 from tests.util import runCBA
 
 class Config( runCBA.Config):

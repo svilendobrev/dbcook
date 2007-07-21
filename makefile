@@ -6,6 +6,9 @@
 test:
 	$(MAKE) -C tests/
 
+%.test: %.py
+	@echo ===============
+	PYTHONPATH=`pwd` python $*.py -v $(ARGS)
 ##############
 
 EXCLUDE1 = \*pyc \*.result \*.ok \*.tmp .svn  \*.tbz \*.bz2 \*.tar  _t\*.py $(EXCLUDE)
