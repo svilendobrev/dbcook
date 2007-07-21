@@ -32,7 +32,7 @@ mapping options:
 debug/output options:
   no_generator:: do not plug SA-source-generator underneath, use for production  [default:generator is on]
   generate    :: dump generated SA-source for making the tables and mappers [default:no]
-  debug=      :: debug what's happening - some of table,column,graph,mapper,prop [default:none]
+  debug=      :: debug what's happening - some of walk,table,column,graph,mapper,prop [default:none]
 '''
 
 config = Config()

@@ -38,6 +38,7 @@
 
 from reflector import Reflector
 from mapcontext import table_inheritance_types, MappingContext, issubclass
+import walkklas
 import relation
 import sqlalchemy
 import warnings
@@ -538,8 +539,8 @@ class Builder:
             mc.SET  = me.SETordered
 
         #get/scan class declarations to be processed
-        from walkklas import walker
-        namespace = walker( namespace, reflector, base_klas)
+        walkklas._debug = 'walk' in config.debug
+        namespace = walkklas.walker( namespace, reflector, base_klas)
 
         me._loadklasi( namespace)
         reflector._resolve_forward_references( me.klasi, base_klas)
