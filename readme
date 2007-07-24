@@ -105,9 +105,39 @@ Some todo's, long- or short- term:
  - single-table inheritance
  - concrete-polymorphism: polymunion of (type,id) key
  - other reflectors/"syntaxes" - e.g. elixir-like 
+ - substructs as value (contained IN the parent class, not a reference to elsewhere)
 
 have fun
 
 svil 
 svilen_dobrev at users point sourceforge point net
 or see me at sqlalchemy's newsgroup - sqlalchemy at googlegroups point com
+
+===================
+
+> Isn't it what does already Elixir?
+not really. Frankly, i dont know much elixir, just some impressions.
+elixir is sort of syntax sugar over SA, with very little 
+decision-making inside. It leaves all the decisions - the routine 
+ones too - to the programmer. At least thats how i got it.
+
+dbcook hides / automates _everything_ possible - the very concept of 
+existing of relational SQL underneath is seen only by side-effects, 
+e.g. the DB_inheritance types "concrete-", "joined-", "single-" 
+table. It decides things like where to break cyclical references with 
+alter_table/post_update; makes up the polymorphic inheritances - 
+whatever the tree, etc.
+
+Of course this is only the declaration/creation part (model-definition - 
+building the DB); after that it can cover only small/simple part of the 
+queries (model usage) - possibilities there are endless.
+That's why there is plain SA underneath, once the "python function over 
+objects converted into SA-expression over tables" path gets too 
+narrow - or just ends.
+
+dbcook does not have assign_mapper-like things, putting query methods 
+on the objects. it leaves all that to you. Although one day there 
+will be a usage-case/example of some way to do it - once i get there.
+
+more differences maybe - no idea, someone has to have time to try both (:-)
+
