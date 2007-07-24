@@ -5,44 +5,60 @@ g'day.
 This is dbcook, a framework to cook databases from recipes, written 
 as python declarations. Eventually the result may be edible (;-)
 
-If u're interested, have a look, dbcook/usage/example1.py might be a start. 
-The directory-structure is still in flux - u need to get the internal 
-dbcook/ accessible somehow (PYTHONPATH or else). Licensed as MIT-license.
-
-svn co https://dbcook.svn.sf.net/svnroot/dbcook/trunk
+repository: svn co https://dbcook.svn.sf.net/svnroot/dbcook/trunk
 
 http://dbcook.sf.net
+
+If u're interested, have a look, dbcook/usage/example1.py might be a start. 
+The directory-structure is still in flux - to use the framework, 
+the internal dbcook/ has to be accessible somehow (PYTHONPATH or else).
+Licensed under MIT-license. Dependencies:
+ * kjbuckets (from gadfly) for graph-arithmetics
+ * SQLAlchemy, 0.3.6+?
+
 
 
 Here a short description what it probably is, and can do:
 
-A framework for declarative mapping of object hierarchies/relations into a
-(relational or not) database.
+A framework for declarative abstract mapping of object hierarchies/relations into 
+a (relational or not) database, completely hiding the DB where possible.
 
-The "language" itself is made with independence in mind, although currently all
-available builder stuff is over SQLAlchemy as backend (so it looks like
-wrapping declarative translator).
+The "language/syntax" itself is DB-backend independent.
+Currently the available builder is over SQLAlchemy as backend
+(so it looks like another wrapping declarative translator).
 
-It completely hides/automates the table/key/column/mapper/whatever creation.
-The user can only control certain characteristics of the way the mapping
-happens, mostly related to hierarchy and relations between objects (subclasses,
-instances, leafs, uniqueness etc).
+Usage cases/levels:
+ * DB-definition - completely hides/automates the table/ column/ key/ constraint/
+    mapper/ whatever creation. The user can control certain characteristics of the way
+    the mapping happens, mostly related to hierarchy and relations between objects
+    (subclasses, instances, leafs, uniqueness etc).
+ * generate a source of equivalent plain SQLAlchemy-calls to build the DB-definition -
+    very useful for testing and/or generating routine mappings, with or without
+    actualy using dbcook afterwards
+ * use plain SQLAlchemy once the definition is done - e.g. session.query( class)..
+ * dbcook.expressions can partialy abstract the query generation, converting from plain 
+	python functions/expressions (of objects' attributes) into backend/SQL clauses:
+    ``lambda self: (self.friend.manager.age < 40) & self.name.endswith('a')``
+ * writing own reflectors (that walk the declared classes and
+    extracts info from them), eventualy allowing different "language/syntax"
 
 Work started somewhen in october 2006. Now it can handle: 
- - data column types
- - reference columns -> foreign keys
- - class inheritance, and class inclusion (inheritance without 
+ * data column types - the actual mapping is separate from object declaration
+ * reference columns - plain, forward-declared, self-referential -> foreign keys
+ * automatic solving of cyclical references/ dependencies
+    (putting proper alter_table / post_update)
+ * class inheritance, class inclusion (inheritance without
     database mapping of the base), and virtual classes (those never
     have instances). More in mapcontext._Base
- - polymorphism, giving 3 kinds of queries for each mapped class: ALL, 
-    base-only, subclasses only
- - any combination of table-inheritance-types within the tree 
-    (concrete/joined/no-single-yet; beware that sql-polymorphism only 
-    works with joined-table for now)
- - automatic solving of cyclical references/dependencies (and putting 
-    proper alter_table / post_update)
- - associations (many2many) - implicit and explicit
- - more? maybe
+ * polymorphism - giving 3 kinds of queries for each mapped class:
+    all, base-only, subclasses only
+ * any combination of table-inheritance-types within the tree
+    (concrete/joined/no-single-yet) - defined localy or hierarchicaly;
+    beware that sql-polymorphism only works with joined-table for now
+ * associations (many-to-many) - implicit and explicit
+ * dbcook.usage.samanager is a correct context-like keeper of all db-related SQLAlchemy things in
+    one place, on destroy() will try hard to clear _all_ side-effects of its existence,
+    allowing use of same objects within several/different subsequent DB-mappings.
 
 
 Example declarations:
@@ -61,23 +77,16 @@ class Person( o2r.Base):
 class Employee( Person):
 	job = Text()
 
+#build it
+o2r.Builder( metadata, locals(), { Text: sqlalchemy.String } )
+
 ..... and no mentioning of tables, columns etc whatsoever .....
 
-Once the mapping is built, any of these can be done:
- - use it as plain SA - session.query( class).. and similar
- - query-clause expressions can be automatically created from plain 
-    python functions over objects' attributes, e.g.: 
- lambda self: (self.friend.manager.age < 40) & self.name.endswith('a')
- - generate a source of the equivalent plain SA-calls to build it
-
 So far it is just a library. There is no single way to use it. The directory
-usage/ has 2 possible reflectors (things that walk the declared classes and
-gather info from them), one is just plain python (plainwrap.py), another is for
-my static_type/ framework. You can make your own for your own taste.
-
-The usage/samanager thing tries to (correctly - context like) keep all related
-things in one place - mappings, dbs, engines, sessions, etc. If destroy() is
-requested, it'll try hard to clear all side-effects of its existence.
+usage/ has 2 possible reflectors (that walk the declared classes and extract 
+info from them), one is just plain python (plainwrap.py), another is for
+my static_type/ framework, for makeing staticly-declared structs 
+(a-la java/C++ semantics) in python - do mail if interested.
 
 Certain pieces are (almost) independent and are usable as is without all the
 rest: expression.py, usage/hack*py, sa_generator.py - all SQLAlchemy related.
@@ -86,26 +95,19 @@ The tests/ directory contains 2 types of tests - sa/ which proves that the way
 SA is used in dbcook is correct/working, and mapper/other which check whether
 the cooker does right thing as result. It still uses makefile to run all stuff.
 
-external dependencies: 
- - needs kjbuckets (from gadfly) for graph-arithmetics
- - needs sqlalchemy, 0.3.6+?
- - optional static_type/ framework - makes staticly-declared structs 
-    (a-la java/C semantics) in python - do mail if interested.
-
 Some todo's, long- or short- term:
  - nicer/some way of declaring collections 
-     (SA: relation(.. use_list=True))
+     (using or not SQLAlchemy: relation(.. use_list=True))
  - some documentation, translate all in both languages.
- - tests for all the stuff, in most of combinations, 
-    instead of just trying this/that
+ - tests for all the stuff, in most of combinations, instead of just trying this/that
  - generate sql-server-side functions, triggers etc
- - autoload / reverse-engineering
+ - autoload / reverse-engineering / upgrade / migration
  - single-table inheritance
- - other reflectors/"syntaxes" - e.g. elixir-like 
  - concrete-polymorphism: polymunion of (type,id) key
+ - other reflectors/"syntaxes" - e.g. elixir-like 
 
 have fun
 
 svil 
 svilen_dobrev at users point sourceforge point net
-or see me at sqlalchemy's newsgroup.
+or see me at sqlalchemy's newsgroup - sqlalchemy at googlegroups point com
