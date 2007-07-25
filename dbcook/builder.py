@@ -508,6 +508,7 @@ class Builder:
 
                 debug = None,       #same as config.debug
                 generator =None,    #None->see config.generate; True->use SrcGenerator; anything non-empty, use it as the src_generator
+                only_table_defs = False,
             ):
         #config/setup
         if debug is not None:
@@ -553,8 +554,9 @@ class Builder:
         #work
         me.make_subklasi()
 
-        me.make_tables( metadata, fieldtype_mapper=fm)
-        me.make_mappers()
+        me.make_tables( metadata, fieldtype_mapper=fm, only_table_defs= only_table_defs)
+        if not only_table_defs:
+            me.make_mappers()
 
     def _loadklasi( me, namespace_or_iterable):
         try: itervalues = namespace_or_iterable.itervalues()        #if dict-like
@@ -586,7 +588,7 @@ class Builder:
         me.mapcontext.make_subklasi( me.iterklasi() )
 
 
-    def make_tables( me, metadata, **kargs):
+    def make_tables( me, metadata, only_table_defs =False, **kargs):
         me.tables = me.DICT()
         for klas in me.iterklasi():
              me.tables[ klas] = make_table( klas, metadata, me.mapcontext, **kargs)
@@ -608,7 +610,8 @@ class Builder:
             return [ column4ID.name ] + [ k for k,t in me.reflector.iter_attrtype_all( klas) ] #if not k.startswith('link')]
 
         try:
-            metadata.create_all()
+            if not only_table_defs:
+                metadata.create_all()
         finally:
             if me.generator:
                 me.generator.ptabli( metadata)
