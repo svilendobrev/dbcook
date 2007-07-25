@@ -126,7 +126,7 @@ class Var( _Expr):
     hence .walk and _Expr.walk go expanded in Expr.walk'''
     __slots__ = [ '_name___' ]
     def __init__( me, name):
-        assert isinstance( name, str)
+        assert isinstance( name, str), `name`
         assert name
         me._name___ = name
     def __getattr__( me, k):
