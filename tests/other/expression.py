@@ -31,13 +31,11 @@ def model(  address_inh ='', #'','c','j'
         DB_NO_MAPPING = not address_inh
         name = property( lambda me: str(getattr( me, 'street','none')) +'#'+str(get_attrib( me, 'home.num', 'none')) )
         street = Text()
-        kvartal = Text()
         home = Type4Reference( Home)
 
-    class Address( Addr0):
+    class Adres( Addr0):
         if address_inh: DB_inheritance = address_inh
-        street1 = Text()
-        home1 = Type4Reference( Home)
+        kvartal = Text()
         owner = Type4Reference( 'Person')
 
     class Human( Base):
@@ -50,7 +48,7 @@ def model(  address_inh ='', #'','c','j'
     class Person( Human):
         if person_inh: DB_inheritance = person_inh
         alias   = Text()
-        address = Type4Reference( Address)
+        adr = Type4Reference( Adres)
 
         def __eq__( me, other):     #for person.friend == otherperson
             if other is None: return False
@@ -75,12 +73,12 @@ def model(  address_inh ='', #'','c','j'
             person = Person()
             person.name, person.age, street, homenum = i
             if street:
-                person.address          = Address()
-                person.address.street   = street
-                person.address.kvartal  = street.replace('str', 'kv')
-                person.address.home     = Home()
-                person.address.home.num = homenum
-                person.address.owner = r.get( 'pesho')
+                person.adr          = Adres()
+                person.adr.street   = street
+                person.adr.kvartal  = street.replace('str', 'kv')
+                person.adr.home     = Home()
+                person.adr.home.num = homenum
+                person.adr.owner = r.get( 'pesho')
             person.alias = (person.age % 2) and person.name + 'ali' or 'b-'+person.name
             aa = nn% 5
             if aa==0: person.friend = person            #self
@@ -114,19 +112,20 @@ def tests( person_pesho):
         lambda person: ( (person.name == 'pencho') | (person.age == 34) ),  #or  of 2 simple eq
         lambda person: ( (person.age > 45) & (person.name != 'mencho') & (person.age < 80) ),   #and of 3 value comparisons
     #multilevel
-        lambda person: (person.address.street == 'str.22'), #value eq
-        lambda person: (person.address.street == None),     #value eq NULL
-        lambda person: (person.address.street != None),     #value neq NULL
-        lambda person: (person.address.home.num == 33),
+        lambda person: (person.adr.street == 'str.22'), #value eq
+        lambda person: (person.adr.street == None),     #value eq NULL
+        lambda person: (person.adr.street != None),     #value neq NULL
+        lambda person: (person.adr.home.num == 33),
+        lambda person: (person.adr.kvartal == 'kv.22'), #value eq
 
-        lambda person: (person.address == None),        #the reference itself; property
+        lambda person: (person.adr == None),        #the reference itself; property
 
         lambda person: (
-               (  (person.address.home.num > 20)
-                & (person.address.home.num < 70)
-                | (person.address.street != 'str.22')
+               (  (person.adr.home.num > 20)
+                & (person.adr.home.num < 70)
+                | (person.adr.street != 'str.22')
                )
-               & (person.address.kvartal >='kv.17')
+               & (person.adr.kvartal >='kv.17')
            ),
 
         #these must raise
@@ -139,14 +138,15 @@ def tests( person_pesho):
         lambda person: ('p' + person.name ) == 'ppesho',
 
      #nested with joins
-        lambda person: ((person.address.street + 'o') == 'str.1o'),
+        lambda person: ((person.adr.street + 'o') == 'str.1o'),
     ] + do_recursive *[
      #multilevel self-referential/recursive
         lambda person: (person.friend != None),
         lambda person: (person.friend.age >35),
+        lambda person: (person.friend.age >35),
         lambda person: (person.friend.name == 'pesho'),
         lambda person: (person.friend.friend.friend.name == 'pesho'),
-        lambda person: (person.friend.address.owner.friend.name == 'pesho'),
+        lambda person: (person.friend.adr.owner.friend.name == 'pesho'),
      #db_id comparison - precalculated ("const")
         lambda person : (person.friend.db_id == 2),         #ok
         lambda person : (person.friend.db_id == p2.db_id),  #ok
@@ -160,26 +160,26 @@ def tests( person_pesho):
      #method-operator-func
         lambda person, f: f.like( person.name, '%sho'),
         lambda person, f: f.like( person.alias, person.name+'%'),
-        lambda person, f: f.like( person.address.street, person.name+'%'),
+        lambda person, f: f.like( person.adr.street, person.name+'%'),
     ] + do_method *[ #needs fix/hack in SA
      #method-func
         lambda person, f: f.startswith( person.name, 'pe'),
         lambda person, f: f.endswith( person.name, 'sho'),
         lambda person, f: f.startswith( person.alias, person.name),
-        lambda person, f: f.endswith( person.address.street, 'o' ),
+        lambda person, f: f.endswith( person.adr.street, 'o' ),
 
         lambda person, f: f.in_( person.name, 'pesho', 'mencho' ),
         lambda person, f: f.in_( person.alias, 'peshoali', 'b-'+person.name ),
     ] + [
-        lambda person, f: (f.between( person.age, 10, 45) & f.like( person.address.street, 'str%')),
+        lambda person, f: (f.between( person.age, 10, 45) & f.like( person.adr.street, 'str%')),
     ] + do_method * [
         lambda person: person.name.endswith( 'sho'),
     ] + do_nested * do_method * [
      #nested + method
         lambda person, f: f.endswith( person.name+ 'o', 'oo' ),
-        lambda person, f: f.endswith( person.address.street + 'o', 'oo' ),
+        lambda person, f: f.endswith( person.adr.street + 'o', 'oo' ),
      #method off nested
-        #lambda person: (person.address.street + 'o').endswith('oo'),   #does not work
+        #lambda person: (person.adr.street + 'o').endswith('oo'),   #does not work
     ]
     ''' missing cases:
         * filter on X where other table pointing to X
@@ -202,11 +202,11 @@ def tests( person_pesho):
         lambda person, faggr: faggr.max( person.age) == person.age,     #?? rows of max value
         lambda person, faggr: faggr.max( person.age-9) == person.age,   #?? what this means
         lambda person, faggr: faggr.max( person.age)-9 == person.age,   #?? what this means
-        lambda person, faggr: faggr.max( person.address.home.num) == person.age,   #??
+        lambda person, faggr: faggr.max( person.adr.home.num) == person.age,   #??
     ]
     orders = [  #similar thing - any joins should go in the FROM?
         lambda person, forder: forder.asc( person.age),                 #no joins!
-        lambda person, forder: forder.asc( person.address.home.num),    #no joins!
+        lambda person, forder: forder.asc( person.adr.home.num),    #no joins!
     ]
 
     allfuncs = plains + funcs #+ 0*aggregates
@@ -298,9 +298,13 @@ SAdb.config.getopt()
 inhs = ['', CONCRETE, JOINED ]
 
 def combinator():   #no polymorphic
-    for person_inh in inhs:
-        for person_ref_person in [True] + bool( person_inh)*[ False]:
-            for address_inh in inhs:
+#    for person_inh in inhs:
+#        for person_ref_person in [True] + bool( person_inh)*[ False]:
+#            for address_inh in inhs:
+    for person_ref_person in [True, False]:
+        for address_inh in inhs:
+            for person_inh in inhs:
+                if not person_ref_person and not person_inh: continue
                 yield dict(
                         person_inh=person_inh,
                         person_ref_person=person_ref_person,
@@ -333,14 +337,13 @@ for combina in combinator():
     sa.saveall( session, popu)
     session.flush()
 
-    print ' ----objects:'
-    for p in popu.itervalues():
-        print p
+    #print ' ----objects:'
+    objects = '\n'.join( str(p) for p in popu.itervalues() )
     session.clear()
 
     #print '-----tables:'
     #sa.query_all_tables()
-    print '======\n'
+#    print '======\n'
 
     Person = namespace['Person']
     Human  = namespace['Human']
@@ -360,7 +363,7 @@ for combina in combinator():
             e = expr.makeExpresion( func)
             #print e
             etxt = e.walk( expr.as_expr)
-            print 'expr:', etxt
+            #print 'expr:', etxt
 
             if expected_err:
                 expected = None
@@ -368,6 +371,7 @@ for combina in combinator():
                 for p in popu.itervalues():
                     e.walk( expr.Eval( AttrWrap( Struct( person=p, faggr=Funcs))))
                 #print Funcs.max.all, Funcs.max.calc()
+                print 'expr:', etxt
                 print NotImplementedError
                 continue
 
@@ -417,11 +421,15 @@ for combina in combinator():
 
                 assert sres==sexp, '\n%(sres1)s \n !=\n%(sexp1)s' % locals()
             except Exception, e:
+                print 'expr:', etxt
                 print 'err:', e.__class__, e
                 err.append( (combina, etxt, str(e)) )
                 #TODO: use MultiTester or mix.myTestCase4Function
-        print
-        print not err and 'OK' or 'ERRORS:'+ str( len(err))
+
+        if not err: print 'OK'
+        else:
+            print 'ERRORS:', len(err)
+            print ' ----objects:\n', objects
         errors += err
     finally:
         sa.destroy()
@@ -429,5 +437,46 @@ for combina in combinator():
 
 for e in errors:
     print 40*'=' + '\n' + '\n'.join( str(s) for s in e)
+
+
+'''
+TODO: polymorphic Person / Adres(?)
+
+errors: 27.07.2007
+1. address_inh = joined
+        -> Addr0.items not visible in Adres, e.g.
+    expr: ( var:person.adr.street == 'str.22' ) -> ERR
+        трябва да е mapper(adr).prop('street').table, а не mapper(adr).table
+    expr: ( var:person.adr.kvartal== 'kv.22' ) -> OK
+
+2
+=== {'person_inh': 'concrete_table', 'address_inh': '', 'person_ref_person': False}
+=== {'person_inh': 'concrete_table', 'address_inh': 'concrete_table', 'person_ref_person': False}
+
+expr: ( var:person.friend.age > 35 )
+expr: ( var:person.friend.name == 'pesho' )
+expr: ( var:person.friend.friend.friend.name == 'pesho' )
+expr: ( var:person.friend.db_id == 2 )
+-> no result:
+    ????? невалиден тест - friend -> Human, а му се дава Person - не работи за concrete_table/PM
+expr: ( var:person.friend.adr.owner.friend.name == 'pesho' )
+-> err: <type 'exceptions.KeyError'> 'adr'
+    грешна таблица? friend -> Human а там няма adr
+
+3
+=== {'person_inh': 'joined_table', 'address_inh': '', 'person_ref_person': False}
+=== {'person_inh': 'joined_table', 'address_inh': 'concrete_table', 'person_ref_person': False}
+expr: ( var:person.friend.adr.owner.friend.name == 'pesho' )
+err: <type 'exceptions.KeyError'> 'adr'
+    грешна таблица? friend -> Human а там няма adr
+
+4
+=== {'person_inh': 'concrete_table', 'address_inh': 'joined_table', 'person_ref_person': False}
+1+2
+
+5
+=== {'person_inh': 'joined_table', 'address_inh': 'joined_table', 'person_ref_person': False}
+1+3
+'''
 
 # vim:ts=4:sw=4:expandtab
