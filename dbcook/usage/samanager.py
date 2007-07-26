@@ -107,22 +107,42 @@ class SAdb:
 
         return db
 
-    def _recreate_sqlite( me):
+    def _recreate_sqlite( me, dbname= 'proba1.db'):
         import os
-        try: os.remove( 'proba1.db')
+        try: os.remove( dbname)
         except OSError: pass
 
-    def _recreate_postgres( me):
+    def _recreate_postgres( me, dbname= 'proba'):
         import os
         try:
-            r = os.system( 'dropdb proba')
-            r = os.system( 'createdb proba')
+            r = os.system( 'dropdb '   + dbname)
+            r = os.system( 'createdb ' + dbname)
         except OSError: pass
 
+    def _recreate_mssql( me, dbname= 'probams' ):
+        if 0*'pyodbc & lunix': # not recomended in this combination
+            import os
+            try:
+                r = os.system( '''echo -e "drop database %s;\\ncreate database %s;\\n" | isql probacfg sa test''' % (dbname, dbname))
+            except OSError: pass
+        else:
+            import pymssql, _mssql  #recomended for lunix
+            con = _mssql.connect( 'host:port', 'usr', 'psw')
+            #print 'cfg DB selected: ', con.select_db( 'probacfg')
+            cur = pymssql.pymssqlCursor( con)
+            try:
+                cur.execute( 'drop database %(dbname)s;' % locals())
+            except pymssql.DatabaseError:
+                pass
+            cur.execute( 'create database %(dbname)s;' % locals())
+            con.close()
+
+
     _default_url = dict(
-        memory  = dict( url='sqlite:///:memory:' , recreate= None),
-        sqlite  = dict( url='sqlite:///proba1.db', recreate= _recreate_sqlite),
-        postgres= dict( url='postgres:///proba'  , recreate= _recreate_postgres),
+        memory  = dict( url= 'sqlite:///:memory:' , recreate= None),
+        sqlite  = dict( url= 'sqlite:///proba1.db', recreate= _recreate_sqlite),
+        postgres= dict( url= 'postgres:///proba'  , recreate= _recreate_postgres),
+        mssql   = dict( url= 'mssql://usr:psw@host:port/probams?text_as_varchar=1', recreate= _recreate_mssql),
     )
     ###### eo open stuff
 
