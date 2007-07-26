@@ -3,18 +3,20 @@
 
 from dbcook import builder
 import sqlalchemy
+from sa_engine_defs import Dengine
 
 from dbcook.util import config
 class Config( config.Config):
     db   = ''               #'' or memory or sqlite or postgres or URL
 
-    echo     = False
+    echo     = False        #same as log_sa=sql
     log_sa   = ''           #'sql all transact mapper'
 
     _help = '''
 database options:
   db=       :: memory or sqlite (./) or postgres (localhost) or URI (default: memory via sqlite);
                 URI is driver://[user:pass@host[:port]]/database
+  no_echo_hack :: do not hack SA for nicer echo of selects
 debug/output options:
   echo      :: echo SQL (same as log_sa=sql)        [default:no]
   log_sa=   :: SA-logging: sql,transact,mapper,connect,all  [default:no]
@@ -27,7 +29,7 @@ import sys
 try: sys.argv.remove( 'no_echo_hack')
 except: import sa_hack4echo
 
-
+############################
 
 def _argdef( v, default):
     if v is None: v = default
@@ -54,8 +56,7 @@ class SAdb:
 
     Builder = builder.Builder           #do override
     fieldtypemap = None                 #do override
-    def bind( me, namespace, fieldtypemap =None, builder =None, **kargs):
-        print_srcgenerator = kargs.pop( 'print_srcgenerator', True)
+    def bind( me, namespace, fieldtypemap =None, builder =None, print_srcgenerator =True, **kargs):
         if builder is None: builder = me.Builder
         if fieldtypemap is None: fieldtypemap = me.fieldtypemap
 
@@ -79,72 +80,21 @@ class SAdb:
         me.metadata = metadata
         return metadata
 
-    def open( me, recreate =True, debug =False, **kargs):
-        db_type = me.db_type
-        if debug or 'open' in config.debug:  #XXX move ?????
-            print 'open db:', db_type, recreate and 'recreate' or 'must-exist'
 
-        if not db_type: db_type = 'memory'
-
-        default_url = me._default_url.get( db_type, None)
-        if not default_url:
-            url = db_type
-            if recreate:
-                print 'cannot recreate by url, DIY'
-
-            echo_pool= ('connect' in me.log_sa) or ('all' in me.log_sa)
-            #to be replaced by kargs-per-enginetype, like default_url above
-            if 'postgres' in db_type:
-                kargs.update( echo_pool= echo_pool, max_overflow= -1)
-        else:
-            recreator = default_url[ 'recreate']
-            url = default_url[ 'url']
-            if recreate and callable( recreator):
-                recreator( me)
-
-        db = sqlalchemy.create_engine( url, **kargs)
-        me.db = db
-
+    def _open( me, url, **kargs):
+        if 'open' in config.debug:  print '_open db:', url
+        echo_pool= ('connect' in me.log_sa) or ('all' in me.log_sa)
+    #    dict( echo_pool= echo_pool, max_overflow= -1)
+        db = me.db = sqlalchemy.create_engine( url, echo_pool=echo_pool, **kargs)
         return db
 
-    def _recreate_sqlite( me, dbname= 'proba1.db'):
-        import os
-        try: os.remove( dbname)
-        except OSError: pass
+    def open( me, recreate =False, **engine_kargs):
+        'uses default urls, and can recreate'
+        db_type = me.db_type or 'memory'
+        if 'open' in config.debug: print 'open db:', db_type, recreate and 'recreate' or ''
 
-    def _recreate_postgres( me, dbname= 'proba'):
-        import os
-        try:
-            r = os.system( 'dropdb '   + dbname)
-            r = os.system( 'createdb ' + dbname)
-        except OSError: pass
-
-    def _recreate_mssql( me, dbname= 'probams' ):
-        if 0*'pyodbc & lunix': # not recomended in this combination
-            import os
-            try:
-                r = os.system( '''echo -e "drop database %s;\\ncreate database %s;\\n" | isql probacfg sa test''' % (dbname, dbname))
-            except OSError: pass
-        else:
-            import pymssql, _mssql  #recomended for lunix
-            con = _mssql.connect( 'host:port', 'usr', 'psw')
-            #print 'cfg DB selected: ', con.select_db( 'probacfg')
-            cur = pymssql.pymssqlCursor( con)
-            try:
-                cur.execute( 'drop database %(dbname)s;' % locals())
-            except pymssql.DatabaseError:
-                pass
-            cur.execute( 'create database %(dbname)s;' % locals())
-            con.close()
-
-
-    _default_url = dict(
-        memory  = dict( url= 'sqlite:///:memory:' , recreate= None),
-        sqlite  = dict( url= 'sqlite:///proba1.db', recreate= _recreate_sqlite),
-        postgres= dict( url= 'postgres:///proba'  , recreate= _recreate_postgres),
-        mssql   = dict( url= 'mssql://usr:psw@host:port/probams?text_as_varchar=1', recreate= _recreate_mssql),
-    )
-    ###### eo open stuff
+        url,kargs = Dengine.setup( db_type, recreate, **engine_kargs)
+        return me._open( url, **kargs)
 
     def destroy( me, full =True):
         #my caches
