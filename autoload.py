@@ -1,4 +1,5 @@
 #$Id$
+#sdobrev
 
 import sqlalchemy
 
@@ -128,6 +129,9 @@ sqlite.SQLiteDialect.AutoLoader = AutoLoader4sqlite
 '''
 
 if __name__ == '__main__':
+
+    # yet another autocode.py
+    # http://www.sqlalchemy.org/trac/wiki/UsageRecipes/AutoCode
 
     ########################################
     #some nice-printing stuff
