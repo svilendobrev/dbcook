@@ -48,5 +48,6 @@ class T( unittest.TestCase):
         }
         me.assertEquals( r, expect)
 
+SAdb.config.getopt()
 unittest.main()
 # vim:ts=4:sw=4:expandtab

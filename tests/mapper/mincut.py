@@ -88,8 +88,8 @@ class TestMinCut( Case):
 if __name__ == '__main__':
     import sys
     sys.setrecursionlimit( 50)
+    SAdb.config.getopt()
     import unittest
     unittest.main()
-
 
 # vim:ts=4:sw=4:expandtab
