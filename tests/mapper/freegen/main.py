@@ -6,30 +6,29 @@ from case_gen import NamespaceGen
 from param_gen import gen_case_params, str_schema
 
 
-all_inh = 'concrete table '
+all_inh = 'joined' # concrete
 
 from dbcook.util.dictOrder import dictOrder
 classes = dictOrder((
+           #class  inherits  parent(s)
            ('A', ['concrete', 'Base']),
            ('B', [ all_inh, 'A Base']),
-           ('C', [ all_inh, 'A B']),
+           ('C', [ all_inh, 'Base A B']),
            ('D', [ all_inh, 'A B C']),
-#           ('E', [ all_inh, 'A B C D']),
-          # ('F', [ all_inh, 'A B C D E']),
           ))
 
 links = dict(
-          A=  dict( Alink= 'A B C'),#E F'),
-          B=  dict( Alink= 'A B C', Blink= 'A B C' ),
-          C=  dict( Alink= 'A B C1', Blink= 'A'    , Clink= 'C1' ),
-#          D=  dict( Alink= 'A B C', Blink= 'A C'    , Clink= 'C' ),
-#          E=  dict( Alink= 'A B C', Blink= 'A C'    ,  ),
+         #class     has_link    to instance of
+          A=  dict( Alink=      'A B '),
+          B=  dict( Alink=      'B'  , Blink= 'A B C' ),
+          #C=  dict( Alink=      'A B', Blink= 'A B C', Clink= 'C1 D'),
+          #D=  dict( Alink=      'A B', Blink= 'A B C', Clink= 'C D'),
             )
 
 from tests.util import multi_tester, tester
 
 class MyTester( multi_tester.MultiTester):
-    Printer = Builder.SrcGenerator
+    Printer = context.Builder.SrcGenerator
     def _run_one( me, printer, **parameters):
         nms_gen = NamespaceGen( context, parameters.get('classes'), parameters.get('links'))
         namespace = nms_gen.make_namespace()

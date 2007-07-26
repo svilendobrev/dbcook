@@ -38,6 +38,7 @@ def order_dict( d):
             res[k] = v
     return res
 
+
 def gen_classes_schema( classes_unordered):
     classes = order_dict( classes_unordered)
     inh_sets = [ inh[ 0] for inh in classes.values()]  #i.e. [ 'concrete joined single', 'joined concrete']
@@ -116,9 +117,7 @@ def valid_params( classes, links):
                     return 'cls %(k)s: %(link)s cannot refer to %(target_class)s' % locals()
     return None
 
-from dbcook import builder
-INH = builder.table_inheritance_types
-
+from tests.util.context import table_inheritance_types as INH
 known_inh_types = {
     'concrete': INH.CONCRETE,
     'joined'  : INH.JOINED,
@@ -128,10 +127,7 @@ known_inh_types = {
 
 def check4duplicates( s):
     l = str2list(s)
-    for el in l:
-        if s.count( el) > 1:
-            return True
-    return False
+    return len( set(l) ) < len(l)
 
 def check_classes( classes):
     for k,v in classes.iteritems():
@@ -228,18 +224,15 @@ def gen_case_params( classes, links):
 def str_schema( classes, links):
     res = ''
     for k,v in classes.iteritems():
-        bracket = v[0] == 'concrete' and ['(',') '] or ['<','> ']
-        s = k + bracket[0] + v[1] + bracket[1]
-        res += s
+        bracket = v[0] == 'concrete' and '()' or '<>'
+        res += k + bracket[0] + v[1] + bracket[1] + ' '
 
     res += '| '
     for k,v in links.iteritems():
         pfx = k
-        for link, ref in v.iteritems():
-            #s = pfx + link[:-len('link')].lower() + '->' + ref.ljust(2) + ' '
-            s = pfx + link + '->' + ref.ljust(2) + ' '
-            res += s
-        res += '| '
+        res += ' '.join( pfx + link + '->' + ref.ljust(2)
+                            for link, ref in v.iteritems() )
+        res += ' | '
     return res
 
 # vim:ts=4:sw=4:expandtab

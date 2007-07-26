@@ -7,6 +7,9 @@ dbcook.config.table_namer = lambda klas: klas.__name__ + '_tbl'
 from tests.util import context
 SAdb = context.SAdb
 
+JOINED = context.JOINED
+CONCRETE = context.CONCRETE
+
 def gen_inh_types( inh_types, n):
     if n==0:
         yield []
@@ -18,9 +21,10 @@ def gen_inh_types( inh_types, n):
 def inh_symb( inh_type, dir):
     direction = dict( l=0, r=1)
     pos = direction[ dir]
-    symbols = dict( concrete_table=['/','\\'],
-                    joined_table=['//','\\\\'],
-                    single_table=2 * '*')
+    symbols = { context.CONCRETE : ['/','\\'],
+                context.JOINED   : ['//','\\\\'],
+                context.SINGLE   : 2 * '*'
+              }
     symb = symbols[ inh_type][ pos]
     return symb
 
@@ -212,7 +216,7 @@ def test_inh_empty( context, inh):
 def test_inh_nonempty( context, inh):
     class A( context.Base):
         DB_HAS_INSTANCES = True
-        DB_inheritance = inh # 'joined_table' or else:'concrete_table'
+        DB_inheritance = inh # JOINED or else:CONCRETE
         imea = context.Text()
     class B( A):
         DB_HAS_INSTANCES = True
@@ -220,7 +224,7 @@ def test_inh_nonempty( context, inh):
         imeb = context.Text()
     if 10:
         class C( B):
-            DB_inheritance = inh #'concrete_table'
+            DB_inheritance = inh #CONCRETE
             imec = context.Text()
     use_D =0
     if use_D:
@@ -255,22 +259,22 @@ def test_inh_diff_at_node( context):
     #root
     class A( context.Base):
         DB_HAS_INSTANCES = True
-        DB_inheritance = 'concrete_table'
+        DB_inheritance = CONCRETE
         imea = context.Text()
     # A_nodes
     class B( A):
         DB_HAS_INSTANCES = True
-        DB_inheritance = 'concrete_table'
+        DB_inheritance = CONCRETE
         imeb = context.Text()
     class D( A):
-        DB_inheritance = 'joined_table'
+        DB_inheritance = JOINED
         imed = context.Text()
     # B_nodes
     class C( B):
-        DB_inheritance = 'concrete_table'
+        DB_inheritance = CONCRETE
         imec = context.Text()
     class E( B):
-        DB_inheritance = 'joined_table'
+        DB_inheritance = JOINED
         imee = context.Text()
 
     def populate():
@@ -296,13 +300,13 @@ def test_inh_same_at_node( context, nodes =None):
     '''вариант 2. еднакво наследяване на всяко ниво - но различно на различните нива'''
 
     if nodes is None:
-        nodes = dict( A_nodes='joined_table',
-                      B_nodes='concrete_table',
-                      C_nodes='joined_table')
+        nodes = dict( A_nodes= JOINED,
+                      B_nodes= CONCRETE,
+                      C_nodes= JOINED)
     #root
     class A( context.Base):
         DB_HAS_INSTANCES = True
-        DB_inheritance = 'concrete_table'
+        DB_inheritance = CONCRETE
         imea = context.Text()
     # A_nodes
     class B( A):
@@ -364,7 +368,7 @@ def test_B_inh_A_ref( context, inh, refs):
         auto_set = False
         if 'A' in refs:
             aref = context.SubStruct( refs['A'])
-        DB_inheritance = 'concrete_table'
+        DB_inheritance = CONCRETE
         imea = context.Text()
     class B( A):
         if 'B' in refs:
@@ -491,8 +495,8 @@ class MapperCaseParams( object):
     default_flow_config = ['save', 'flush', 'query']
 
     filename_abbrevs = {
-        'joined_table'  : 't',
-        'concrete_table': 'c',
+        JOINED  : 'j',
+        CONCRETE: 'c',
         'dictOrder'     : '',
         ', ' : ',',
         ': ' : ':',
@@ -577,35 +581,35 @@ all_cases = [
     P( test_forw_ref_A_B_C_A ,    ),
     P( test_self_ref_2list      ,    ),
     P( test_self_ref_tree       ,    ),
-    P( test_inh_empty   , func_params= dict( inh='concrete_table'),      ),
-    P( test_inh_empty   , func_params= dict( inh='joined_table'),   ),
-    P( test_inh_nonempty, func_params= dict( inh='concrete_table'),      ),
-    P( test_inh_nonempty, func_params= dict( inh='joined_table'),   ),
-    P( test_inh_all_nodes_same, get_result=str_joins, func_params= dict( inh='concrete_table')),
-    P( test_inh_all_nodes_same, get_result=str_joins, func_params= dict( inh='joined_table')),
+    P( test_inh_empty   , func_params= dict( inh=CONCRETE),      ),
+    P( test_inh_empty   , func_params= dict( inh=JOINED),   ),
+    P( test_inh_nonempty, func_params= dict( inh=CONCRETE),      ),
+    P( test_inh_nonempty, func_params= dict( inh=JOINED),   ),
+    P( test_inh_all_nodes_same, get_result=str_joins, func_params= dict( inh=CONCRETE)),
+    P( test_inh_all_nodes_same, get_result=str_joins, func_params= dict( inh=JOINED)),
     P( test_inh_diff_at_node, get_result=str_joins,    ),
     P( test_inh_same_at_node, get_result=str_joins,
-                                    func_params= dict( nodes=dict(A_nodes='concrete_table',
-                                                                  B_nodes='joined_table',
-                                                                  C_nodes='concrete_table'))),
+                                    func_params= dict( nodes=dict(A_nodes=CONCRETE,
+                                                                  B_nodes=JOINED,
+                                                                  C_nodes=CONCRETE))),
     P( test_inh_same_at_node, get_result=str_joins,
-                                    func_params= dict( nodes=dict(A_nodes='joined_table',
-                                                                  B_nodes='joined_table',
-                                                                  C_nodes='concrete_table'))),
-    P( test_B_inh_A_ref, func_params= dict( inh='concrete_table',    refs= dict(A='A'))),
-    P( test_B_inh_A_ref, func_params= dict( inh='concrete_table',    refs= dict(A='B'))),
-    P( test_B_inh_A_ref, func_params= dict( inh='concrete_table',    refs= dict(B='A'))),
-    P( test_B_inh_A_ref, func_params= dict( inh='concrete_table',    refs= dict(B='B'))),
-    P( test_B_inh_A_ref, func_params= dict( inh='joined_table', refs= dict(A='A'))),
-    P( test_B_inh_A_ref, func_params= dict( inh='joined_table', refs= dict(A='B'))),
-    P( test_B_inh_A_ref, func_params= dict( inh='joined_table', refs= dict(B='A'))),
-    P( test_B_inh_A_ref, func_params= dict( inh='joined_table', refs= dict(B='B'))),
-#    P( test_B_inh_A_ref, func_params= dict( inh='joined_table', refs= dict(B='B')),
+                                    func_params= dict( nodes=dict(A_nodes=JOINED,
+                                                                  B_nodes=JOINED,
+                                                                  C_nodes=CONCRETE))),
+    P( test_B_inh_A_ref, func_params= dict( inh=CONCRETE,    refs= dict(A='A'))),
+    P( test_B_inh_A_ref, func_params= dict( inh=CONCRETE,    refs= dict(A='B'))),
+    P( test_B_inh_A_ref, func_params= dict( inh=CONCRETE,    refs= dict(B='A'))),
+    P( test_B_inh_A_ref, func_params= dict( inh=CONCRETE,    refs= dict(B='B'))),
+    P( test_B_inh_A_ref, func_params= dict( inh=JOINED, refs= dict(A='A'))),
+    P( test_B_inh_A_ref, func_params= dict( inh=JOINED, refs= dict(A='B'))),
+    P( test_B_inh_A_ref, func_params= dict( inh=JOINED, refs= dict(B='A'))),
+    P( test_B_inh_A_ref, func_params= dict( inh=JOINED, refs= dict(B='B'))),
+#    P( test_B_inh_A_ref, func_params= dict( inh=JOINED, refs= dict(B='B')),
 ]
 
 #all_cases = []
-for inh in gen_inh_types( ['concrete_table', 'joined_table'], 2):
-    klasi = dictOrder( ( ('A', ['concrete_table', 'Base']),
+for inh in gen_inh_types( [CONCRETE, JOINED], 2):
+    klasi = dictOrder( ( ('A', [CONCRETE, 'Base']),
                          ('B', [inh[0], 'A']),
                          ('C', [inh[1], 'B']) ) )
     case = P( test_user_defined,
@@ -616,7 +620,7 @@ for inh in gen_inh_types( ['concrete_table', 'joined_table'], 2):
     all_cases.append( case)
 
 zall_cases = [
-   P( test_inh_nonempty, func_params= dict( inh='joined_table'), ),
+   P( test_inh_nonempty, func_params= dict( inh=JOINED), ),
 ]
 
 

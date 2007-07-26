@@ -19,6 +19,7 @@ mapper: mapper/mincut.test
 mapper: abc
 mapper: mapper/relation.test
 mapper: other/expression.test
+mapper: mapper/freegen/main.test
 
 #abc: ARGS= zno_sisters Binhs=A Cinhs=B Clinks=None doC zdummy
 abc: mapper/test_ABC_inh_ref_all.test

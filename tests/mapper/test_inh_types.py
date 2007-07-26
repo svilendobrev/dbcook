@@ -1,6 +1,6 @@
 #$Id$
 # -*- coding: cp1251 -*-
-from tests.util import context
+from tests.util.context import *
 from test4mapper import gen_inh_types, inh_symb, MapperCase
 
 def picture( inh):
@@ -18,28 +18,27 @@ def picture( inh):
 class InhCaseParams( object):
     def __init__( me, namespace, descr =None):
         me.namespace = namespace
-        me.base_klas = context.Base
+        me.base_klas = Base
         me.descr = descr
 
-def param_gen( context):
+def param_gen():
     '''вариант 3. наследявания в случаен ред'''
-    for inh in gen_inh_types( ['concrete_table', 'joined_table'], 4):
-        #print picture( inh)
-        class A( context.Base):    #root
-            DB_inheritance = 'concrete_table'
-            imea = context.Text()
+    for inh in gen_inh_types( [ CONCRETE, JOINED], 4):
+        class A( Base):    #root
+            DB_inheritance = CONCRETE
+            imea = Text()
         class B( A):    # A_nodes
             DB_inheritance = inh[0]
-            imeb = context.Text()
+            imeb = Text()
         class D( A):
             DB_inheritance = inh[1]
-            imed = context.Text()
+            imed = Text()
         class C( B):    # B_nodes
             DB_inheritance = inh[2]
-            imec = context.Text()
+            imec = Text()
         class E( B):
             DB_inheritance = inh[3]
-            imee = context.Text()
+            imee = Text()
 
         def populate():
             a = A()
@@ -82,10 +81,10 @@ class InhCase( MapperCase):
         me.queryall()
 
 from tests.util.case2unittest import get_test_suite
-testsuite = get_test_suite( param_gen( context), InhCase)
+testsuite = get_test_suite( param_gen(), InhCase)
 
 if __name__ == '__main__':
-    context.SAdb.config.getopt()
+    SAdb.config.getopt()
     import unittest
     unittest.TextTestRunner( unittest.sys.stdout,
             verbosity=2, descriptions=True, ).run( testsuite)

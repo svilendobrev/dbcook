@@ -4,14 +4,14 @@
 regression test: inheritances are not cuttable deps, all else are.
 '''
 
-from tests.util.context import * #Type4Reference, SAdb, Base, Text
+from tests.util.context import *
 #if USE_STATIC_TYPE:
 Base.auto_set = False
 
 from tests.util.case2unittest import Case
 
 class Employee( Base):
-    DB_inheritance = 'joined_table'
+    DB_inheritance = JOINED
     DB_HAS_INSTANCES = True
     boss  = Type4Reference( 'Manager')   #put a big weight on this relation
     boss2 = Type4Reference( 'Manager')

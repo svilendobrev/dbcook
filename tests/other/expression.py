@@ -5,6 +5,7 @@ import dbcook.config
 dbcook.config.table_namer = lambda klas: klas.__name__.lower()
 
 from tests.util.context import *
+
 if USE_STATIC_TYPE:
     Base.auto_set = False
     from dbcook import builder
@@ -291,10 +292,10 @@ class AttrWrap:
 ######## use model
 
 import sys
-DB_inheritance = 'joined' in sys.argv and 'joined_table' or 'concrete_table'
+DB_inheritance = 'joined' in sys.argv and JOINED or CONCRETE
 
 SAdb.config.getopt()
-inhs = ['', 'concrete_table', 'joined_table']
+inhs = ['', CONCRETE, JOINED ]
 
 def combinator():   #no polymorphic
     for person_inh in inhs:

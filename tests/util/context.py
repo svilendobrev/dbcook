@@ -37,4 +37,12 @@ fieldtypemap = {
 SAdb.Builder = Builder
 SAdb.fieldtypemap = fieldtypemap
 
+
+from dbcook.mapcontext import table_inheritance_types
+JOINED    = table_inheritance_types.JOINED
+CONCRETE  = table_inheritance_types.CONCRETE
+SINGLE    = table_inheritance_types.SINGLE
+DEFAULT   = table_inheritance_types.DEFAULT
+
+
 # vim:ts=4:sw=4:expandtab
