@@ -1,10 +1,10 @@
 #$Id$
 # -*- coding: cp1251 -*-
-'''descriptions of various engines:
+'''descriptions of various db-drivers/engines:
     - db recreation,
-    - default kargs/connect_args,
-    - default url - may come via environment as $DB_<DRIVERNAME>, without the drivername:// prefix
-      e.g. export DB_SQLITE=myfile
+    - default driver-kargs/ connect_args,
+    - default url - may come via environment as $DB_<DRIVERNAME>, omit the drivername:// prefix
+      e.g. export DB_SQLITE=/myfile
 '''
 
 import sqlalchemy
@@ -50,16 +50,15 @@ class Dengine:
 class Dsqlite( Dengine):
     url= 'sqlite://'  +environ.get( 'DB_SQLITE',   '/proba1.db')
     def recreate( me, ourl):
-        if not ourl.database: return
-        if ourl.host and ourl.host != 'localhost':
-            print 'cannot recreate via url, DIY'
-        else:
+        filename = ourl.database
+        if filename and filename != ':memory:':
             import os
-            try: os.remove( ourl.database)
+            try: os.remove( filename)
             except OSError: pass
 
 class Dpostgres( Dengine):
     url= 'postgres://'+environ.get( 'DB_POSTGRES', '/proba')
+    engine_kargs = dict( max_overflow= -1)  #echo_pool= echo_pool,
     def recreate( me, ourl):
         if ourl.host and ourl.host != 'localhost':
             print 'cannot recreate via url, DIY'
@@ -75,7 +74,7 @@ class Dmemory( Dengine):
     recreate = None
 
 class Dmssql( Dengine):
-    url= 'mssql://' +environ.get( 'DB_MSSQL', 'usr:psw@host:port/probams?text_as_varchar=1')
+    url= 'mssql://' +environ.get( 'DB_MSSQL', 'usr:psw@host:port/dbname?text_as_varchar=1')
     connect_args= dict( text_as_varchar=1)
     #engine_kargs = dict( connect_args= dict( text_as_varchar=1) )
     def recreate( me, ourl):
@@ -85,13 +84,21 @@ class Dmssql( Dengine):
         user = ourl.username
         pasw = ourl.password
         if 0*'pyodbc & lunix': # not recomended in this combination
-            import os
+            another_db_used_to_kill_others = 'probacfg'
+            cmd = 'isql %(another_db_used_to_kill_others)s %(user)s (%pasw)s' % locals()
+                #XXX user/pasw above maybe different than dbname's!!!
+            stdin = '''\
+drop database %(dbname)s;
+create database %(dbname)s;
+''' % locals()
             try:
-                r = os.system( '''\
-echo -e "drop database %(dbname)s;\\n
-create database %(dbname)s;\\n" \
-| isql probacfg %(user)s (%pasw)s''' % locals()
-                    )   #XXX probacfg is ... WHAT?
+                if 'subprocess':
+                    from subprocess import Popen, PIPE
+                    p = Popen( cmd.split(), stdin= PIPE, stdout= PIPE )
+                    output = p.communicate( stdin)[0]
+                else:
+                    import os
+                    r = os.system( 'echo -e "'+stdin.replace('\n','\\n')+ '" | %(cmd)s' % locals() )
             except OSError: pass
         else:
             import pymssql, _mssql  #recomended for lunix
