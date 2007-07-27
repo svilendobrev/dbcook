@@ -88,7 +88,7 @@ class AutoLoader4mssql( AutoLoader):
     coltypes = dict( (v,k) for k,v in mssql.MSSQLDialect.colspecs.iteritems() )
     def __init__( me, engine):
         me.engine = engine
-        schema = engine.dialect
+        schema = engine.url.database
         #XXX or engine.url? or dialect.descriptor['name']? was dburl.database
 
         from sqlalchemy.databases import information_schema
