@@ -744,6 +744,7 @@ class Builder:
             #subclasses_only
             subatypes = [ sk.__name__ for sk in subklasi if sk != name]
             m.polymorphic_sub_only = THE_table.select( column4type( THE_table).in_( *subatypes) )
+            #also, explicitly list all properties to be included/excluded from base_klas
 
         inherits= base_mapper and base_mapper.polymorphic_all or None
 
