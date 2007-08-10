@@ -84,7 +84,7 @@ class Config:
                 k = aa[0]
                 if k+'=' in possible_args:
                     sys.argv.remove( a)
-                    val = aa[1]
+                    val = '='.join( aa[1:])   #XXX working in case >= 2 = like "db=sapdb:///sap?kliuche=abdahalia"
                     uselist = isinstance( getattr( me.__class__, k, ''), (list,tuple) )
                     if uselist:
                         val = val.split(',')
