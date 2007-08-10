@@ -248,12 +248,13 @@ metadata = MetaData()
         print
 
     print '''
-import sys
-try: dburl = sys.argv[1]
-except IndexError:
-    raise SystemExit, 'usage: '+sys.argv[0]+ ' dburl'
+if __name__ == '__main__':
+    import sys
+    try: dburl = sys.argv[1]
+    except IndexError:
+        raise SystemExit, 'usage: '+sys.argv[0]+ ' dburl'
 
-metadata.bind = create_engine( dburl)
-metadata.create_all()
+    metadata.bind = create_engine( dburl)
+    metadata.create_all()
 '''
 # vim:ts=4:sw=4:expandtab
