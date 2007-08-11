@@ -20,6 +20,7 @@ class _static_type:
 
 import sqlalchemy
 from dbcook import builder
+table_inheritance_types = builder.table_inheritance_types
 
 class Reflector4StaticType( builder.Reflector):
     def iter_attrtype_all( me, klas): return klas.StaticType.itertypes()  #name,type

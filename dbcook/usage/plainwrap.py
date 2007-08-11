@@ -14,7 +14,7 @@ via Builder.xxxx, or directly from here.
 
 
 from dbcook import builder
-import sys
+table_inheritance_types = builder.table_inheritance_types
 
 class Type( object): pass
 class Type4Reference( Type):
@@ -70,6 +70,7 @@ class Reflector4sa( builder.Reflector):
     def type_is_collection( me, typ): return False
 
     def _resolve_forward_references( me, namespace, base_klas):
+        import sys
         for klas in namespace.itervalues():
             if not builder.issubclass( klas, base_klas): continue
             Type4Reference.resolve_forwards( namespace, me._get_attrtype_all( klas ).itervalues(),
