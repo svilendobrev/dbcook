@@ -1,14 +1,17 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
-class table_inheritance_types:      #layout
-    JOINED  = 'joined_table'    #it's own (extra-base) fields only + join(base)
-    TABLE_INH = JOINED
+class table_inheritance_types:      #db-layout
+    JOINED    = 'joined_table'      #it's own (extra-base) fields only + join(base)
     CONCRETE  = 'concrete_table'    #each is complete and separate, stand-alone
     SINGLE    = 'single_table'      #all-in-one: all fields go in base's table - no own representation
     DEFAULT = CONCRETE
-    #TODO:  особен случай за оптимизация: наследяване без нови полета (=смяна на типа)
-    #       JOINED  може да мине без собствена (празна) таблица - като single_table
+    #TODO:  особен случай за оптимизация: при JOINED наследяване без нови полета (=смяна на типа)
+    #       може да мине без собствена (празна) таблица - като single_table
+    #       special case for optimisation: JOINED inheritance without new fields (=change of type)
+    #       can do without own (empty)             table - like single_table
+    _all = dict( (v,v) for k,v in locals().iteritems() if not k.startswith('__') )
+    _all.update( (v.split('_table',1)[0],v) for v in _all.keys() )
 
 class _Base( object):   #use as example/template
     '''постоянстващ обект, т.е. persistent;
@@ -127,7 +130,9 @@ class MappingContext:
             inheritype = getattr( klas, 'DB_inheritance', None)
             #local:
             inheritype = getattr_local_instance_only( klas, 'DB_inheritance_local', inheritype) or table_inheritance_types.DEFAULT
-            assert inheritype in table_inheritance_types.__dict__.values(), '%(klas)s: DB_inheritance?? %(inheritype)r' % locals()
+            try: inheritype = table_inheritance_types._all[ inheritype]
+            except KeyError, e:
+                assert 0, '%(klas)s: unknown DB_inheritance=%(inheritype)r' % locals()
         return base, inheritype
 
     def is_direct_inherited_non_concrete( me, klas):

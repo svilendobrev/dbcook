@@ -21,7 +21,8 @@ class Employee( Base):
     name    = Text()
     age     = Int()
     manager = o2r.Type4Reference( 'Employee')    #or 'Manager'
-    DB_inheritance = 'joined_table'   #for subclasses - this one is always concrete anyway
+    DB_inheritance = 'joined'   #for subclasses - this(base) one is always concrete anyway
+    #or DB_inheritance = o2r.table_inheritance_types.JOINED
     DB_HAS_INSTANCES = True     #by default only class-tree leaves have instances
 
 class Manager( Employee):
