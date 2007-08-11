@@ -45,17 +45,19 @@ __r/truediv__
 class Expr( _Expr):
     class Visitor: pass
     __slots__ = ( 'op', 'args', 'kargs', 'arg_names', 'arg_defaults' )
-    def __new__( klas, op, *args, **kargs):
+    def __new__( klas, op ='pic-kle', *args, **kargs):
         ''' op без аргументи === константа
-            празна op: === константа/аргумент1
+            празна op === константа в аргумент1
             op == 'var': променлива
+            op == 'pic-kle': just for pickling -> __new__() + setattr
         '''
-        if not args:
-            args = (op,)
-            op = ''
-        if not op:
-            assert len(args) == 1
-            return Const( args[0] )
+        if op != 'pic-kle':
+            if not args:
+                args = (op,)
+                op = ''
+            if not op:
+                assert len(args) == 1
+                return Const( args[0] )
         return object.__new__( klas, op, *args, **kargs)
 
     def __init__( me, op, *args, **kargs):

@@ -179,6 +179,7 @@ def Type4Reference( klas, lazy =False, **kargs):
 class Association( builder.relation.Association):
     Type4Reference = staticmethod( Type4Reference)
 
+Type = _static_type.StaticType
 Base = modelBaser( _Base)
 reflector = Reflector4StaticType()
 
