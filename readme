@@ -96,16 +96,21 @@ SA is used in dbcook is correct/working, and mapper/other which check whether
 the cooker does right thing as result. It still uses makefile to run all stuff.
 
 Some todo's, long- or short- term:
- - nicer/some way of declaring collections 
+ - a way of declaring collections 
      (using or not SQLAlchemy: relation(.. use_list=True))
- - some documentation, translate all in both languages.
- - tests for all the stuff, in most of combinations, instead of just trying this/that
+ - some documentation, translate all in both languages
+ - tests for all the stuff, systematically in most of combinations
  - generate sql-server-side functions, triggers etc
- - autoload / reverse-engineering / upgrade / migration
  - single-table inheritance
  - concrete-polymorphism: polymunion of (type,id) key
  - other reflectors/"syntaxes" - e.g. elixir-like 
- - substructs as value (contained IN the parent class, not a reference to elsewhere)
+ - substructs as value (contained IN the parent class, not a reference 
+     to elsewhere, but still used as x.y)
+ - user-notion types for reflector, e.g. aggregators are like a relation
+ - caching tables/columns - e.g. aggregators
+ - autoload / reverse-engineering / upgrade / migration (see misc/metadata/)
+
+see dbcook/misc/readme.txt for some usable recipes.
 
 have fun
 
