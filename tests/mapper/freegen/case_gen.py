@@ -37,8 +37,8 @@ class NamespaceGen( object):
             class TemplateClass( base_name == 'Base' and Base or all[ base_name] ):
                 __metaclass__ = Dyn_factory
                 auto_set = False
-                DB_inheritance = known_inh_types[ inh_type]
-                DB_HAS_INSTANCES = True
+                DBCOOK_inheritance = known_inh_types[ inh_type]
+                DBCOOK_has_instances = True
 
                 _DYNAMIC_ = dyn_attrs
 

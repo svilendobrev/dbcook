@@ -27,24 +27,24 @@ class _Base( object):   #use as example/template
 
   настройки:
 $ settings:
-    DB_inheritance = <table_inheritance_type> (default =table_inheritance_types.DEFAULT)
+    DBCOOK_inheritance = <table_inheritance_type> (default =table_inheritance_types.DEFAULT)
         table_inheritance_type: едно от 'joined_table' , 'concrete_table' , 'single_table';
         тази настройка се наследява / разпространява / вижда от подкласовете.
       $ this setting is inherited / distributed / seen in the subclasses.
 
-    DB_inheritance_local = <table_inheritance_type>
+    DBCOOK_inheritance_local = <table_inheritance_type>
         за улесняване на специфични случаи.
         важи само локално за класа (не се разпространява в подкласовете),
-        И има приоритет над горната обща DB_inheritance:
+        И има приоритет над горната обща DBCOOK_inheritance:
             пример: А: inh=1
                     B(A): inh_local=2
                     C(B): pass
                 -> inhtype(A) == 1; inhtype(B) == 2; inhtype(C) == 1 (остава от А)
       $ to ease some special cases.
         Applies only locally for the class (is not inherited / seen in sublasses),
-        AND has priority over the above general DB_inheritance.
+        AND has priority over the above general DBCOOK_inheritance.
 
-    DB_NO_MAPPING = boolean (default =False)
+    DBCOOK_no_mapping = boolean (default =False)
         този клас няма БД-съответствие (междинен, "пълнител", невалиден).
         Всичкото му съдържание се "изсипва" / разпространява във всичките му (реални) наследници.
         Важи само локално за класа в който е обявено.
@@ -54,7 +54,7 @@ $ settings:
         Applies only locally for the class.
         Use carefully - attributes of such class appear in all of its heirs/subclasses (!)
 
-    DB_HAS_INSTANCES = boolean  (default =is_leaf)
+    DBCOOK_has_instances = boolean  (default =is_leaf)
         този клас има екземпляри, т.е. не е само междинно ниво,
         и всички полиморфни заявки през него трябва да го включват.
         Листата в йерархията винаги имат екземпляри.
@@ -64,27 +64,27 @@ $ settings:
         Leafs in a hierarchy always have instances.
         Applies only locally.
 
-    DB_NEEDS_ID = boolean   (default =False, i.e. has_no_primary_key or is_joined_table-inheritance)
+    DBCOOK_needs_id = boolean   (default =False, i.e. has_no_primary_key or is_joined_table-inheritance)
         този клас трябва да има db_id независимо от наличието на друг уникален ключ
-        (виж DB_UNIQ_KEYS), например защото други класове го сочат направо.
+        (виж DBCOOK_unique_keys), например защото други класове го сочат направо.
         се добавя db_id, не да се премхва.
         Важи само локално за класа.
       $ this class must have db_id regardless of availability of other unique keys
-        (see DB_UNIQ_KEYS), for example because other classes are pointing it directly.
+        (see DBCOOK_unique_keys), for example because other classes are pointing it directly.
         Applies only locally.
 
-    DB_UNIQ_KEYS = списък от списъци от (имена на полета или полета (търси се .name) )
+    DBCOOK_unique_keys = списък от списъци от (имена на полета или полета (търси се .name) )
                    $ list of lists of (field-names or fields (.name wanted) )
                    default = () #nothing
         Важи само локално за класа.
       $ Applies only locally.
     '''
     #__slots__ = [ column4ID.name ]     #db_id is automatic
-    #DB_inheritance = 'concrete_table'  #default
-    #DB_NO_MAPPING = True    #default; klas-local only
-    #DB_HAS_INSTANCES = False   #default; klas-local only
+    #DBCOOK_inheritance = 'concrete_table'  #default
+    #DBCOOK_no_mapping = True    #default; klas-local only
+    #DBCOOK_has_instances = False   #default; klas-local only
 
-# XXX assert not( DB_NO_MAPPING and DB_HAS_INSTANCES) ???
+# XXX assert not( DBCOOK_no_mapping and DBCOOK_has_instances) ???
 
 from dbcook.util.attr import getattr_local_instance_only, issubclass
 
@@ -94,22 +94,22 @@ class MappingContext:
 
     def mappable( me, klas):
         if klas and issubclass( klas, me.base_klas) and klas is not me.base_klas:
-            DB_NO_MAPPING = getattr_local_instance_only( klas, 'DB_NO_MAPPING', None)
-            if not DB_NO_MAPPING: return True
+            DBCOOK_no_mapping = getattr_local_instance_only( klas, 'DBCOOK_no_mapping', None)
+            if not DBCOOK_no_mapping: return True
         return False
 
     def has_instances( me, klas):
         #if not me.mappable( klas): return False
         if len( me.subklasi[ klas]) == 1: return True      #leaf
-        DB_HAS_INSTANCES = getattr_local_instance_only( klas, 'DB_HAS_INSTANCES', None)
-        return bool( DB_HAS_INSTANCES)
+        DBCOOK_has_instances = getattr_local_instance_only( klas, 'DBCOOK_has_instances', None)
+        return bool( DBCOOK_has_instances)
 
     def needs_id( me, klas):
-        return getattr_local_instance_only( klas, 'DB_NEEDS_ID', False)
+        return getattr_local_instance_only( klas, 'DBCOOK_needs_id', False)
 
     def uniques( me, klas):
         'list of lists of (column-names or columns  (having .name) )'
-        return getattr_local_instance_only( klas, 'DB_UNIQ_KEYS', () )
+        return getattr_local_instance_only( klas, 'DBCOOK_unique_keys', () )
 
     def base( me, klas):
         '''дава (първия) базов валиден клас, None ако няма такъв. т.е. на или отвъд валидния корен
@@ -127,12 +127,12 @@ class MappingContext:
         base = me.base( klas)
         inheritype = table_inheritance_types.DEFAULT
         if base:
-            inheritype = getattr( klas, 'DB_inheritance', None)
+            inheritype = getattr( klas, 'DBCOOK_inheritance', None)
             #local:
-            inheritype = getattr_local_instance_only( klas, 'DB_inheritance_local', inheritype) or table_inheritance_types.DEFAULT
+            inheritype = getattr_local_instance_only( klas, 'DBCOOK_inheritance_local', inheritype) or table_inheritance_types.DEFAULT
             try: inheritype = table_inheritance_types._all[ inheritype]
             except KeyError, e:
-                assert 0, '%(klas)s: unknown DB_inheritance=%(inheritype)r' % locals()
+                assert 0, '%(klas)s: unknown DBCOOK_inheritance=%(inheritype)r' % locals()
         return base, inheritype
 
     def is_direct_inherited_non_concrete( me, klas):

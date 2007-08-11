@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     class A( Base):
         name = Text()
-        DB_HAS_INSTANCES =True
+        DBCOOK_has_instances =True
     class B( A):
         alias = Text()
     class C( Base):

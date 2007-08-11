@@ -3,7 +3,7 @@ from klasi import *
 from klasi import _printcallfunc
 
 from dbcook.builder import table_inheritance_types, column4ID
-A.DB_inheritance = table_inheritance_types.JOINED
+A.DBCOOK_inheritance = table_inheritance_types.JOINED
 from dbcook.samanager import SAdb
 
 i_d = column4ID.name

@@ -25,19 +25,19 @@ def param_gen():
     '''вариант 3. наследявания в случаен ред'''
     for inh in gen_inh_types( [ CONCRETE, JOINED], 4):
         class A( Base):    #root
-            DB_inheritance = CONCRETE
+            DBCOOK_inheritance = CONCRETE
             imea = Text()
         class B( A):    # A_nodes
-            DB_inheritance = inh[0]
+            DBCOOK_inheritance = inh[0]
             imeb = Text()
         class D( A):
-            DB_inheritance = inh[1]
+            DBCOOK_inheritance = inh[1]
             imed = Text()
         class C( B):    # B_nodes
-            DB_inheritance = inh[2]
+            DBCOOK_inheritance = inh[2]
             imec = Text()
         class E( B):
-            DB_inheritance = inh[3]
+            DBCOOK_inheritance = inh[3]
             imee = Text()
 
         def populate():

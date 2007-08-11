@@ -28,25 +28,25 @@ def model(  address_inh ='', #'','c','j'
         num = Int()
 
     class Addr0( Base):
-        DB_NO_MAPPING = not address_inh
+        DBCOOK_no_mapping = not address_inh
         name = property( lambda me: str(getattr( me, 'street','none')) +'#'+str(get_attrib( me, 'home.num', 'none')) )
         street = Text()
         home = Type4Reference( Home)
 
     class Adres( Addr0):
-        if address_inh: DB_inheritance = address_inh
+        if address_inh: DBCOOK_inheritance = address_inh
         kvartal = Text()
         owner = Type4Reference( 'Person')
 
     class Human( Base):
-        DB_NO_MAPPING = not person_inh
-        DB_HAS_INSTANCES = 1
+        DBCOOK_no_mapping = not person_inh
+        DBCOOK_has_instances = 1
         name    = Text()
         age     = Int()
         friend  = Type4Reference( (person_ref_person or not person_inh) and 'Person' or 'Human')
 
     class Person( Human):
-        if person_inh: DB_inheritance = person_inh
+        if person_inh: DBCOOK_inheritance = person_inh
         alias   = Text()
         adr = Type4Reference( Adres)
 
@@ -292,7 +292,7 @@ class AttrWrap:
 ######## use model
 
 import sys
-DB_inheritance = 'joined' in sys.argv and JOINED or CONCRETE
+DBCOOK_inheritance = 'joined' in sys.argv and JOINED or CONCRETE
 
 SAdb.config.getopt()
 inhs = ['', CONCRETE, JOINED ]
@@ -411,7 +411,7 @@ for combina in combinator():
 
                 #print 'querying:', sae
 
-                q = session.query( Human.DB_NO_MAPPING and Person or Human)
+                q = session.query( Human.DBCOOK_no_mapping and Person or Human)
 
                 q = q.select(sae)
 

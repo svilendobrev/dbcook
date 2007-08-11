@@ -87,11 +87,11 @@ class Person( o2r.Base):
 	name = Text()
 	address = o2r.Type4Reference( Address)
 	friend  = o2r.Type4Reference( 'Person')
-    DB_HAS_INSTANCES = True
+    DBCOOK_has_instances = True
 
 class Employee( Person):
 	job = Text()
-    DB_inheritance = 'joined'
+    DBCOOK_inheritance = 'joined'
 
 #build it
 o2r.Builder( metadata, locals(), { Text: sqlalchemy.String } )

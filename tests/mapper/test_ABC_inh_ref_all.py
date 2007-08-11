@@ -27,16 +27,16 @@ def test_inh_ref_ABC_any( config,
         auto_set = False    #StaticTypeing; else: recursion
         if Alink:
             linkA = Type4Reference( Alink, lazy=Alazy)
-        DB_inheritance = inh
-        DB_HAS_INSTANCES = 'A' in insts
+        DBCOOK_inheritance = inh
+        DBCOOK_has_instances = 'A' in insts
         name = Text()
 
     class B( inhB and A or Base):
         auto_set = False    #StaticTypeing; else: recursion
         if Blink:
             linkB = Type4Reference( Blink, lazy=Blazy)
-        DB_inheritance = inh
-        DB_HAS_INSTANCES = 'B' in insts
+        DBCOOK_inheritance = inh
+        DBCOOK_has_instances = 'B' in insts
         dataB = Text()
 
     if doC:
@@ -44,8 +44,8 @@ def test_inh_ref_ABC_any( config,
             auto_set = False    #StaticTypeing; else: recursion
             if Clink:
                 linkC = Type4Reference( Clink, lazy=Clazy)
-            DB_inheritance = inh
-            DB_HAS_INSTANCES = 'C' in insts
+            DBCOOK_inheritance = inh
+            DBCOOK_has_instances = 'C' in insts
             dataC = Text()
         if 0:
             class D(C):

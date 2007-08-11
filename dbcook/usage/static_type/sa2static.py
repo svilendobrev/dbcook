@@ -42,9 +42,9 @@ class Reflector4StaticType( builder.Reflector):
 
 class _Base( _static_type.StaticStruct):
     __slots__ = [ builder.column4ID.name ]  #db_id автоматично, не-StaticType
-    #DB_inheritance = 'concrete_table'    #default
-    #DB_NO_MAPPING = True       #default; klas-local only
-    #DB_HAS_INSTANCES = True    #default: only for leafs; klas-local only
+    #DBCOOK_inheritance = 'concrete_table'    #default
+    #DBCOOK_no_mapping = True       #default; klas-local only
+    #DBCOOK_has_instances = True    #default: only for leafs; klas-local only
 
     if 'needs _str_ with id':
         @staticmethod
@@ -207,15 +207,15 @@ if __name__ == '__main__':
 
     class Employee( Base):
         auto_set = False    #StaticTypeing; else: maximum recursion depth at cascade_*
-        DB_inheritance = inh
-        DB_HAS_INSTANCES = True
+        DBCOOK_inheritance = inh
+        DBCOOK_has_instances = True
 
         name = Text()
         dept = Type4Reference( 'Dept')
 
     class Engineer( Employee):
         helper = Type4Reference( 'Engineer')
-        DB_HAS_INSTANCES = True
+        DBCOOK_has_instances = True
 
     class Manager( Employee):
         secretary = Type4Reference( Employee)

@@ -190,16 +190,16 @@ def test_self_ref_tree( context):
 
 def test_inh_empty( context, inh):
     class A( context.Base):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = inh
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = inh
         imea = context.Text()
     class B( A):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = inh
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = inh
     class C( B):
-        DB_inheritance = inh
+        DBCOOK_inheritance = inh
     class D( A):
-        DB_inheritance = inh
+        DBCOOK_inheritance = inh
 
     def populate():
         a = A()
@@ -215,21 +215,21 @@ def test_inh_empty( context, inh):
 
 def test_inh_nonempty( context, inh):
     class A( context.Base):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = inh # JOINED or else:CONCRETE
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = inh # JOINED or else:CONCRETE
         imea = context.Text()
     class B( A):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = inh
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = inh
         imeb = context.Text()
     if 10:
         class C( B):
-            DB_inheritance = inh #CONCRETE
+            DBCOOK_inheritance = inh #CONCRETE
             imec = context.Text()
     use_D =0
     if use_D:
         class D( A):
-            DB_inheritance = inh
+            DBCOOK_inheritance = inh
             imed = context.Text()
 
     def populate():
@@ -258,23 +258,23 @@ def test_inh_diff_at_node( context):
 
     #root
     class A( context.Base):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = CONCRETE
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = CONCRETE
         imea = context.Text()
     # A_nodes
     class B( A):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = CONCRETE
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = CONCRETE
         imeb = context.Text()
     class D( A):
-        DB_inheritance = JOINED
+        DBCOOK_inheritance = JOINED
         imed = context.Text()
     # B_nodes
     class C( B):
-        DB_inheritance = CONCRETE
+        DBCOOK_inheritance = CONCRETE
         imec = context.Text()
     class E( B):
-        DB_inheritance = JOINED
+        DBCOOK_inheritance = JOINED
         imee = context.Text()
 
     def populate():
@@ -305,31 +305,31 @@ def test_inh_same_at_node( context, nodes =None):
                       C_nodes= JOINED)
     #root
     class A( context.Base):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = CONCRETE
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = CONCRETE
         imea = context.Text()
     # A_nodes
     class B( A):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = nodes['A_nodes']
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = nodes['A_nodes']
         imeb = context.Text()
     class D( A):
-        DB_inheritance = nodes['A_nodes']
+        DBCOOK_inheritance = nodes['A_nodes']
         imed = context.Text()
     # B_nodes
     class C( B):
-        DB_HAS_INSTANCES = True
-        DB_inheritance = nodes['B_nodes']
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = nodes['B_nodes']
         imec = context.Text()
     class E( B):
-        DB_inheritance = nodes['B_nodes']
+        DBCOOK_inheritance = nodes['B_nodes']
         imee = context.Text()
     # C_nodes
     class P( C):
-        DB_inheritance = nodes['C_nodes']
+        DBCOOK_inheritance = nodes['C_nodes']
         imep = context.Text()
     class Q( C):
-        DB_inheritance = nodes['C_nodes']
+        DBCOOK_inheritance = nodes['C_nodes']
         imeq = context.Text()
 
 
@@ -364,16 +364,16 @@ def test_inh_all_nodes_same( context, inh):
 def test_B_inh_A_ref( context, inh, refs):
     '''всичките случаи inh+ref: А->А Б(А);  А->Б б(А);  Б(А) Б->А;  Б(А) Б->Б'''
     class A( context.Base):
-        DB_HAS_INSTANCES = True
+        DBCOOK_has_instances = True
         auto_set = False
         if 'A' in refs:
             aref = context.SubStruct( refs['A'])
-        DB_inheritance = CONCRETE
+        DBCOOK_inheritance = CONCRETE
         imea = context.Text()
     class B( A):
         if 'B' in refs:
             bref = context.SubStruct( refs['B'])
-        DB_inheritance = inh
+        DBCOOK_inheritance = inh
         imeb = context.Text()
     def populate():
         a = A()
@@ -413,8 +413,8 @@ Base = context.Base'''
             class_gen += '''
 class %(clas)s( %(base)s):
     auto_set = False
-    DB_HAS_INSTANCES = True
-    DB_inheritance='%(inh)s'
+    DBCOOK_has_instances = True
+    DBCOOK_inheritance='%(inh)s'
     %(lower)sime  = context.Text()
     %(lower)slink = context.SubStruct('%(ref)s')
 ''' % locals()

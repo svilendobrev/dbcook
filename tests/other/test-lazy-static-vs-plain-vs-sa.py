@@ -16,7 +16,7 @@ if 'sa' not in sys.argv:
             must_be_reference = True
             auto_set = False
 
-            DB_inheritance = 'joined_table'
+            DBCOOK_inheritance = 'joined_table'
             if 1:
                 obj_id  = Number()
                 time_valid  = Date()
@@ -54,7 +54,7 @@ if 'sa' not in sys.argv:
 
     if 'model' in sys.argv:
         class Model( Entity):
-            DB_NO_MAPPING = True
+            DBCOOK_no_mapping = True
             pass
     else: Model=Entity
 

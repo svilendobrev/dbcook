@@ -42,13 +42,13 @@ class Employee( Base):
     dept    = o2r.Type4Reference( 'Dept')
     lover   = o2r.Type4Reference( 'Employee')
     manager = o2r.Type4Reference( 'Employee')    #or 'Manager'
-    DB_inheritance = inh        #for subclasses - this one is always concrete anyway
-    DB_HAS_INSTANCES = True     #by default only class-tree leaves have instances
+    DBCOOK_inheritance = inh        #for subclasses - this one is always concrete anyway
+    DBCOOK_has_instances = True     #by default only class-tree leaves have instances
 
 class Manager( Employee):
     secretary = o2r.Type4Reference( Employee)
     extras = Text()
-    DB_HAS_INSTANCES = True
+    DBCOOK_has_instances = True
 
 Engineer =  Employee
 class Engineer( Employee):

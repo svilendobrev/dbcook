@@ -14,7 +14,7 @@ print 'config:', SAdb.config
 
 class Base4Association( Base, orm.Association):
 #   Type4Reference = orm.Type4Reference
-    DB_NO_MAPPING = True
+    DBCOOK_no_mapping = True
 
 class IntermediateAB( Base4Association):    #color
     color = Text()

@@ -21,13 +21,13 @@ class Employee( Base):
     name    = Text()
     age     = Int()
     manager = o2r.Type4Reference( 'Employee')    #or 'Manager'
-    DB_inheritance = 'joined'   #for subclasses - this(base) one is always concrete anyway
-    #or DB_inheritance = o2r.table_inheritance_types.JOINED
-    DB_HAS_INSTANCES = True     #by default only class-tree leaves have instances
+    DBCOOK_inheritance = 'joined'   #for subclasses - this(base) one is always concrete anyway
+    #or DBCOOK_inheritance = o2r.table_inheritance_types.JOINED
+    DBCOOK_has_instances = True     #by default only class-tree leaves have instances
 
 class Manager( Employee):
     secretary = o2r.Type4Reference( Employee)
-    DB_HAS_INSTANCES = True
+    DBCOOK_has_instances = True
 
 class Engineer( Employee):
     machine = Text()

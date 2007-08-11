@@ -146,7 +146,7 @@ class DiffMetaData( DiffNode):
 if __name__ == '__main__':
 
     import dbcook.usage.plainwrap as o2r
-    o2r.Base.DB_inheritance = 'joined_table'
+    o2r.Base.DBCOOK_inheritance = 'joined_table'
 
     class Text( o2r.Type): pass
     class Text2( o2r.Type): pass

@@ -19,9 +19,9 @@ TODO:
 
       много към много:
 -       = неявна
-+           сега се обявява съвсем явно, но като неявна (без междинен обект) (DB_HIDDEN=True)
++           сега се обявява съвсем явно, но като неявна (без междинен обект) (DBCOOK_hidden=True)
                 class myAssocAB( Association):
-                    DB_HIDDEN=True
+                    DBCOOK_hidden=True
                     ... .Links
                 x = Association.Relation( myAssocAB, име_в_асоциацията='')
 -           трябва да може да се обявява съвсем служебно:
@@ -31,7 +31,7 @@ TODO:
 
     = явна
 +       class myAssocAB( Association):
-            DB_HIDDEN=False
+            DBCOOK_hidden=False
             ... .Links
         x = Association.Relation( myAssocAB, име_в_асоциацията='')
             име_в_асоциацията е на Reference/Association.Link
@@ -55,10 +55,10 @@ class Association:
     It is a mix-in only to allow attaching to different bases -
     the resulting subclasses may or may not be mixable.
     '''
-    DB_NO_MAPPING = True
+    DBCOOK_no_mapping = True
     #DB_NO_ID = True    #XXX db_id is a must only if table is referred
-    #DB_UNIQ_KEYS= ...  #primary key consist of which fields; all by default
-    DB_HIDDEN = False
+    #DBCOOK_unique_keys= ...  #primary key consist of which fields; all by default
+    DBCOOK_hidden = False
 
     class _AssocDetails:
         __init__ = setkargs
@@ -201,7 +201,7 @@ def make_relations( builder):
 
             colid = builder.column4ID( klas )
 
-            if assoc_klas.DB_HIDDEN:
+            if assoc_klas.DBCOOK_hidden:
                 if len(fks)==2:     #2 diff links to same klas
                     print 'same klas x2'
                     assert len(assoc_klas.foreign_keys) == 1

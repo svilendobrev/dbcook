@@ -11,8 +11,8 @@ Base.auto_set = False
 from tests.util.case2unittest import Case
 
 class Employee( Base):
-    DB_inheritance = JOINED
-    DB_HAS_INSTANCES = True
+    DBCOOK_inheritance = JOINED
+    DBCOOK_has_instances = True
     boss  = Type4Reference( 'Manager')   #put a big weight on this relation
     boss2 = Type4Reference( 'Manager')
     boss3 = Type4Reference( 'Manager')
