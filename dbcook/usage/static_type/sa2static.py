@@ -32,7 +32,7 @@ class Reflector4StaticType( builder.Reflector):
         if not isinstance( typ, _static_type.SubStruct):
             return None
         klas = typ.typ
-        lazy = getattr( klas, 'must_be_reference', False) or getattr( typ, 'lazy', False)
+        lazy = getattr( klas, 'DB_must_be_reference', False) or getattr( typ, 'lazy', False)
         return dict( klas=klas, lazy=lazy, as_value=False)
         #as_value = callable( me.checker4substruct_as_value) and me.checker4substruct_as_value( klas)
 
