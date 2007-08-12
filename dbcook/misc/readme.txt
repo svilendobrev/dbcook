@@ -5,7 +5,7 @@ but is related in a way or another.
 
 
 metadata/: (SA-only)
-  metadata autoload and diff
+  metadata autoload and diff / db-copy / migration
 
 bitemporal/: (SA-only for now)
   addon for objects that have 2-time-history and state(enabled/disabled)
