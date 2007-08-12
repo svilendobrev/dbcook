@@ -17,7 +17,7 @@ else:
 Base = o2r.Base
 from dbcook.usage.samanager import SAdb
 
-class Config( SAdb.config.__class__):
+class Config( SAdb.config.Config):
     inh             = 'joined' #, 'concrete']
     director_base   = 'Manager'  #'Employee', 'Engineer']
 

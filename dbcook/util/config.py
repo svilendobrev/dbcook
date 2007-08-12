@@ -93,4 +93,6 @@ class Config:
         if me._chain:
             me._chain._getopt( help, use_own)    #having _chain and not use_own ... useless - argv is empty
 
+Config.Config = Config  #easy available as cfg.Config, instead of cfg.__base__[0].__class__...
+
 # vim:ts=4:sw=4:expandtab

@@ -5,8 +5,7 @@ from dbcook import builder
 import sqlalchemy
 from sa_engine_defs import Dengine
 
-from dbcook.util import config
-class Config( config.Config):
+class Config( builder.config.Config):
     db   = ''               #'' or memory or sqlite or postgres or URL
 
     echo     = False        #same as log_sa=sql
