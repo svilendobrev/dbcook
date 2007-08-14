@@ -1,5 +1,6 @@
 #$Id$
 #sdobrev
+# uses sa0.4beta2 MetaData.reflect; no indexes there!
 
 import sqlalchemy
 
@@ -7,8 +8,6 @@ import sqlalchemy
 def plain( name): return name.encode( 'utf-8')
 
 class AutoLoader:
-#    registry = {}
-
     '''metadata stuff from:
 http://sqlzoo.cn/howto/source/z.dir/tip137084/i12meta.xml
 
@@ -32,18 +31,18 @@ db2: SELECT * FROM syscat.tables WHERE tabschema = '<schemaname>'
         return indexes-of-the-table
 
     def metadata( me, engine =None):
+        coltypes = dict( (v,k) for k,v in me.colspecs.iteritems() )
         engine = engine or me.engine
-        metadata = sqlalchemy.BoundMetaData( engine)
-        for tname,schema in me.table_names:
-            tname = plain( tname)
-            table = sqlalchemy.Table( tname, metadata, schema= schema, autoload= True)
-            table.name = tname  #this gets screwed up again - autoload?
+        me.metadata = metadata = sqlalchemy.MetaData( engine, reflect=True)
+        for table in metadata.table_iterator():
+            table.name = plain( table.name)
+            #print `table`
 
             #convert types back to abstract
             for c in table.columns:
                 # try engine.dialect.type_descriptor( type) - no
-                #     sqlalchemy.types.adapt_type( c.type, me.coltypes ) - no
-                c.type = c.type.adapt( me.coltypes[ c.type.__class__] )
+                #     sqlalchemy.types.adapt_type( c.type, coltypes ) - no
+                c.type = c.type.adapt( coltypes[ c.type.__class__] )
                 c.name = plain( c.name)
 
             for c in table.constraints:
@@ -56,13 +55,11 @@ db2: SELECT * FROM syscat.tables WHERE tabschema = '<schemaname>'
 
 from sqlalchemy.databases import postgres
 class AutoLoader4postgress( AutoLoader):
-    coltypes = dict( (v,k) for k,v in postgres.pg2_colspecs.iteritems() )
+    colspecs = postgres.colspecs
         #XXX schema-name???
-    sql4tables  = sqlalchemy.text( "SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
     sql4indexes = sqlalchemy.text( "SELECT indexname, tablename, indexdef FROM pg_indexes" )
     def __init__( me, engine):
         me.engine = engine
-        me.table_names = [ (name,None) for (name,) in engine.execute( me.sql4tables) ]
         me._indexes = ix = {}
         for name,tbl_name,sqltext in engine.execute( me.sql4indexes):
             ix.setdefault( tbl_name, [] ).append( (name,sqltext) )
@@ -85,19 +82,9 @@ postgres.PGDialect.AutoLoader = AutoLoader4postgress
 
 from sqlalchemy.databases import mssql
 class AutoLoader4mssql( AutoLoader):
-    coltypes = dict( (v,k) for k,v in mssql.MSSQLDialect.colspecs.iteritems() )
+    colspecs = mssql.MSSQLDialect.colspecs
     def __init__( me, engine):
         me.engine = engine
-        schema = engine.url.database
-        #XXX or engine.url? or dialect.descriptor['name']? was dburl.database
-
-        from sqlalchemy.databases import information_schema
-        itables = information_schema.tables
-        sqltext = select(
-                [itables.c.table_name, itables.c.table_schema],
-                itables.c.table_schema == schema
-            )
-        me.table_names = engine.execute( sqltext)
 
     def indexes( me, table): return table.indexes
 mssql.MSSQLDialect.AutoLoader = AutoLoader4mssql
@@ -115,8 +102,10 @@ CREATE TABLE sqlite_master (
   sql TEXT
 );'''
 
-    coltypes = dict( (v,k) for k,v in sqlite.colspecs.iteritems() )
-    sql4tables  = sqlalchemy.text( "SELECT name FROM sqlite_master WHERE type='table'")
+    if 'BOOLEAN' not in sqlite.pragma_names:    #pre 0.4beta
+        sqlite.pragma_names[ 'BOOLEAN' ] = sqlite.SLBoolean
+
+    colspecs = sqlite.colspecs
     sql4indexes = sqlalchemy.text( "SELECT name,tbl_name,sql FROM sqlite_master WHERE type='index'" )
 sqlite.SQLiteDialect.AutoLoader = AutoLoader4sqlite
 
@@ -168,36 +157,8 @@ if __name__ == '__main__':
         if ks: lines.append( ks)
         return (',\n'+2*tab).join( lines) + ' )'
 
-    if 0:
-        def get_colspec( col):
-            return '.'.join( [ tablenamer( col.table.name), 'c', col.name ])
-
-        def get_fk_colspec( col):
-            '''like Column._get_colspec - actualy,
-                this is dialect.reflecttable job, it must not leave strings !!!''' #XXX
-            colspec = col._colspec
-
-            if isinstance( colspec, basestring):
-                x = colspec.split( '.' )
-                if len(x) == 3:
-                    schema, tablename, colname = x
-                    #ignore schema...
-                elif len(x) == 2:
-                    tablename, colname = x
-                else:
-                    raise NotImplementedError, s
-            else:
-                tablename = colspec.table.name
-                colname = colspec.key
-
-            return '.'.join( [ tablenamer( tablename), 'c', colname ])
-
     def foreignkeyconstraint_repr( self):
         return 'ForeignKeyConstraint( ' + ', '.join( [
-#                    '[ '+ ', '.join( get_colspec( x.parent)  for x in self.elements ) + ' ]',
-#                    '[ '+ ', '.join( get_fk_colspec(x) for x in self.elements ) + ' ]',
-#                    '[ '+ ', '.join( repr( x.parent.name)  for x in self.elements ) + ' ]',
-#                    '[ '+ ', '.join( repr(plain(x._get_colspec())) for x in self.elements ) + ' ]',
                     repr( [ x.parent.name for x in self.elements ]),
                     repr( [ plain( x._get_colspec()) for x in self.elements ]),
                     'name= ' + repr(self.name)
@@ -223,7 +184,6 @@ if __name__ == '__main__':
     except IndexError:
         raise SystemExit, 'usage: '+sys.argv[0]+ ' dburl'
 
-#   dburl = sqlalchemy.engine.url.make_url( dburl)
     engine = sqlalchemy.create_engine( dburl)
     try:
         AutoLoader = engine.dialect.__class__.AutoLoader
@@ -231,7 +191,6 @@ if __name__ == '__main__':
         assert 0, 'unsupported engine.dialect:'+str( engine.dialect)
 
     autoloader = AutoLoader( engine)
-    #print '\n'.join( str(s) for s in autoloader.table_names )
 
     print '''\
 from sqlalchemy import *
@@ -239,8 +198,8 @@ metadata = MetaData()
 '''
 
     metadata = autoloader.metadata()
-    for tname,table in metadata.tables.iteritems():
-        tvarname = tablenamer( tname)
+    for table in metadata.table_iterator():
+        tvarname = tablenamer( table.name)
         print tvarname, '=', repr(table)
 
         pindexes = '\n'.join( repr_index( index, tvarname) for index in table.indexes )
