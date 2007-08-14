@@ -69,11 +69,11 @@ class Dpostgres( Dengine):
     engine_kargs = dict( max_overflow= -1)  #echo_pool= echo_pool,
     def recreate( me, ourl):
         parms = []
-        for url_parm,parm in [ ('host','h'), ('port','p'), ('username','U') ]:  #XXX does the order really matter?
+        for url_parm,parm in [ ('host','-h'), ('port','-p'), ('username','-U') ]:  #XXX does the order really matter?
             url_attr = getattr( ourl, url_parm, '')
             if not url_attr: continue
             if not isinstance( url_attr, basestring): url_attr = str(url_attr)
-            parms.append( '-' + parm + ' ' + url_attr )
+            parms += [ parm, url_attr ]
         parms.append( ourl.database )
         print '<', parms, '>'
         #assert 0
@@ -116,6 +116,7 @@ class Dmssql( Dengine):
         else:   # 'pyodbc & windoze'
             import pyodbc
             another_db_used_to_kill_others = '' # fill it
+            #TODO: use MSSQLDialect_pyodbc.make_connect_string()
             con = pyodbc.connect('''\
 DRIVER={SQL Server}
 SERVER=%(host)s:%(port)s
