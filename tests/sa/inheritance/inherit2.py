@@ -169,7 +169,7 @@ else:
         _polymorphic_map = mappers.A.polymorphic_map    #biggest of all
         )
     #needs _polymorphic_map = {}
-    x = db.session.query( mappers.A2).select()
+    x = db.session.query( mappers.A2).all()
 
 res = [e for e in x]
 print '  ', res

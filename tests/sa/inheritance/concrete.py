@@ -118,11 +118,6 @@ db.populate( mappers)
 
 print '======'
 
-if 0*'base_instances_only':
-    #doesnot work as mappers.B has/expects polymorphic_on pjoin.atype
-    m = mappers.B
-    x = db.pipequery( m, tables.B.select())
-
 if db.USE_B:
     #'subklas_instances_only'
     bB2join = dict( (k,v) for (k,v) in bjoin.iteritems() if k !='B' )
@@ -140,7 +135,7 @@ if db.USE_B:
             concrete=True,
             )
         #needs _polymorphic_map = {}
-        x = db.session.query( mappers.B2).select()
+        x = db.session.query( mappers.B2).all()
 
     res = [e for e in x]
     print '  ', res

@@ -112,9 +112,9 @@ if __name__ == '__main__':
     session.flush()
 
     session = sa.session()
-    query = session.query( A).select()
+    query = session.query( A)
     print '\n'.join( str(r) for r in query )
-    r = session.query( A).selectfirst()
+    r = session.query( A).first()
     print 'enum->value:', r.enum, value_of_AKeyFromDict( r, 'enum')
 
 # vim:ts=4:sw=4:expandtab

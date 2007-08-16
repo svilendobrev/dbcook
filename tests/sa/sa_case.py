@@ -2,7 +2,6 @@
 # -*- coding: cp1251 -*-
 
 from tests.util import sa_gentestbase
-import sqlalchemy
 import sqlalchemy.orm
 
 class SACase( sa_gentestbase.Test_SA):
@@ -34,7 +33,7 @@ class SACase( sa_gentestbase.Test_SA):
                 result = str(s)
                 me.assertEqual( result, expect)
             #all
-            s = list( me.session.query( typ).select() )
+            s = me.session.query( typ).all()
             result = set( str(z) for z in s )
             me.assertEqual( len(result), len(items) )
             expect = set( exp for (id,exp) in items )

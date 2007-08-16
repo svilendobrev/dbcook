@@ -130,7 +130,7 @@ if 0:
             _polymorphic_map = mappers.A.polymorphic_map
             )
         #needs _polymorphic_map = {}
-        x = db.session.query( mappers.B2).select()
+        x = db.session.query( mappers.B2).all()
 
     res = [e for e in x]
     print '  ', res

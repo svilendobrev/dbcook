@@ -53,6 +53,7 @@ class D(A):
 
 metadata = MetaData( 'sqlite:///')
 
+
 class DB:
     #XXX unbound MetaData can't print joins/unions
     #bound MetaData: 'sqlalchemy.exceptions.NoSuchColumnError: "Could not locate column in row for column 'A.imea'"
@@ -137,7 +138,7 @@ class DB:
             print '--------', mn, m #.class_#__name__
             if 10:
                 #ok if all join-union names are _same_
-                x = session.query(m).select()
+                x = session.query(m).all()
             else:
                 #else, join-unions do not has to be in select_table
                 y = session.execute( m, m.select_table, {})

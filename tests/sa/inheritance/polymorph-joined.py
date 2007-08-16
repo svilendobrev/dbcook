@@ -4,8 +4,8 @@ from sqlalchemy import *
 from sqlalchemy.orm import *
 import sets, sys
 
-metadata = MetaData('sqlite:///')
-metadata.bind.echo = 'echo' in sys.argv
+metadata = MetaData( 'sqlite://')
+metadata.bind.echo='echo' in sys.argv
 
 people = Table('people', metadata,
    Column('person_id', Integer, primary_key=True),
@@ -131,12 +131,12 @@ assert len(q)==1 #and q[0] ==
 
 print '>>>>> subclasses-only'
 print ' ---', Person
-q = list(session.query( Person).select( people.c.type != 'person'))
+q = list(session.query( Person).filter( people.c.type != 'person'))
 for e in q: print e
 assert len(q)==5 #and q[0] ==
 
 print ' ---', Hacker
-q = list(session.query( Hacker).select( people.c.type != 'hacker'))
+q = list(session.query( Hacker).filter( people.c.type != 'hacker'))
 for e in q: print e
 assert len(q)==1 #and q[0] ==
 

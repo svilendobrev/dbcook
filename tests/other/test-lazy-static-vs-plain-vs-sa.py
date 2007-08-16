@@ -76,7 +76,7 @@ else:
     from sqlalchemy import *
     from sqlalchemy.orm import *
     meta = MetaData( 'sqlite:///proba1.db')
-    meta.bind.echo = 'echo' in sys.argv
+    meta.bind.echo= 'echo' in sys.argv))
 
         #decomposed by joined_table
     table_Entity = Table( 'Entity', meta,
@@ -176,13 +176,13 @@ else:
         session = create_session()
 
     if 'Entity' in sys.argv:
-        print session.query( Entity).select()
+        print session.query( Entity).all()
     if 'Name' in sys.argv:
-        print session.query( Name).select()
-    #print session.query( Darzhava).select()
+        print session.query( Name).all()
+    #print session.query( Darzhava).all()
 
 print '------'
-q = session.query( Darzhava).select()
+q = session.query( Darzhava).all()
 print '------', [a.name.name for a in q]
 
 # vim:ts=4:sw=4:expandtab

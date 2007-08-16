@@ -130,7 +130,7 @@ def tests( person_pesho):
 
         #these must raise
         #[AttributeError,    lambda person: (alabala > 45) ],
-        [KeyError,          lambda person: (person.alabala > 45) ],
+        [sqlalchemy.exceptions.InvalidRequestError, lambda person: (person.alabala > 45) ],
 
     ] + do_nested* [
      #nested no joins
@@ -347,7 +347,7 @@ for combina in combinator():
 
     Person = namespace['Person']
     Human  = namespace['Human']
-    p2 = session.query( Person).get_by( name= 'pesho')
+    p2 = session.query( Person).filter_by( name= 'pesho').first()
     #print p2
     #session.clear()
 
@@ -413,7 +413,7 @@ for combina in combinator():
 
                 q = session.query( Human.DBCOOK_no_mapping and Person or Human)
 
-                q = q.select(sae)
+                q = q.filter(sae)
 
                 sres,sres1 = strres( q, 'result')
                 sexp,sexp1 = strres( expected, 'expect')

@@ -67,7 +67,7 @@ class Test_SA( unittest.TestCase):
         if config.log_sa:
             import logging
             logging.basicConfig( level=logging.DEBUG, format=format, stream =logging.sys.stdout)
-            logging.getLogger('sqlalchemy').setLevel( logging.DEBUG) #debug EVERYTHING!
+            logging.getLogger( 'sqlalchemy').setLevel( logging.DEBUG) #debug EVERYTHING!
 
         me.db = db
         db.echo = config.echo
@@ -112,14 +112,14 @@ class Test_SA( unittest.TestCase):
     def query1( me, session, idname, klas, table, oid, exp_single, exp_multi):
         if config.session_clear: session.clear()
         #single
-        q = session.query( klas).get_by( **{idname: oid})
+        q = session.query( klas).filter_by( **{idname: oid}).first()
         me.assertEqual( exp_single, str(q),
                 klas.__name__+'.getby_'+idname+'():\n result= %(q)s\n expect= %(exp_single)s' % locals()
             )
 
         if config.session_clear: session.clear()
         #multiple
-        q = session.query( klas).select()
+        q = session.query( klas)
         x = [ str(z) for z in q ]
         x.sort()
         exp_multi.sort()

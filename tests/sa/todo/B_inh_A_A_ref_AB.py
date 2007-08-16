@@ -149,7 +149,7 @@ if 0:
             pass
 
         meta = MetaData( 'sqlite:///')
-        meta.bind.echo = ECHO
+        meta.bind.echo=ECHO
 
         class tables: pass
 
@@ -252,7 +252,7 @@ if 0:
                     print '>>>>>', r
                     assert x == astr, r
                 else:
-                    s = session.query( klas).select()
+                    s = session.query( klas).all()
                     x = '; '.join( str(z) for z in s )
                     r = 'assert multiple %(x)s ; expect: %(astr)s' % locals()
                     assert len(s) >= 1, 'size? '+ r

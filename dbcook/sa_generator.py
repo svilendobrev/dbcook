@@ -31,7 +31,6 @@ class CV( sqlalchemy.ClauseVisitor):
     def visit_binary(me, b):
         r = me.stack.pop()
         l = me.stack.pop()
-#        t = ' '.join( [l, me.ops.get( b.operator, b.operator), r ])
         try:
             op = me.ops[ b.operator]
         except KeyError:
@@ -197,10 +196,10 @@ class %(name)s( %(base)s):
 from sqlalchemy import *
 from sqlalchemy.orm import *
 meta = MetaData( 'sqlite:///')
-meta.bind.echo = True
+meta.bind.echo=True)
 
 #import logging
-#logging.getLogger('sqlalchemy.orm').setLevel( logging.DEBUG)
+#logging.getLogger( 'sqlalchemy.orm').setLevel( logging.DEBUG)
 
 try:
     from dbcook.baseobj import Base

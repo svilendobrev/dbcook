@@ -1,7 +1,7 @@
 #$Id$
 
 from sqlalchemy import *
-from sqlalchemy.orm import *
+from sqlalchemy.orm import create_session, mapper, relation, clear_mappers
 import traceback
 
 from tests.util.combinator import ConfigCombinator
@@ -50,7 +50,7 @@ def test( session, klas, aid, single, expect, **kargs_ignore):
         r = 'single %(klasname)s %(aid)s \t%(x)s \n   expect: \t%(expect)s' % locals()
     else:
         expect.sort()
-        s = session.query( klas).select()
+        s = session.query( klas).all()
         x = [ str(z) for z in s ]
         x.sort()
         r = 'multi  %(klasname)s     \t%(x)s \n   expect: \t%(expect)s' % locals()
@@ -306,7 +306,7 @@ if __name__ == '__main__':
         Printer = Printer
 #        def any_echo( me): return me.config.debug or me.config.echo
         def _run_one( me, printer, **parameters):
-            db = create_engine( config.db, echo= config.echo )
+            db = create_engine( config.db, echo= config.echo)
             meta = MetaData( db)
 
             err = test_inh_ref_A_B_A( meta, printer=printer, **parameters)

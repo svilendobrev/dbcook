@@ -4,7 +4,7 @@
 import sa_case
 from sa_case import A,B,C
 from sqlalchemy import *
-from sqlalchemy.orm import *
+from sqlalchemy.orm import mapper, relation
 
 class Case_A_A_self( sa_case.SACase):
     def make_tables( me):

@@ -19,7 +19,7 @@ def test( session, klas, aid, single, expect, **kargs_ignore):
         r = 'single %(klasname)s %(aid)s \t%(x)s \n   expect: \t%(expect)s' % locals()
     else:
         expect.sort()
-        s = session.query( klas).select()
+        s = session.query( klas)
         x = [ str(z) for z in s ]
         x.sort()
         r = 'multi  %(klasname)s     \t%(x)s \n   expect: \t%(expect)s' % locals()
@@ -44,7 +44,7 @@ def test_inh_ref_ABC(
     if Clink: Clink = Clink[0]
 
     meta = MetaData( 'sqlite:///')
-    meta.bind.echo = config.echo
+    meta.bind.echo= config.echo
 
     class A( Base):
         props = [ 'id', 'name' ] + bool(Alink)*['link1' ]

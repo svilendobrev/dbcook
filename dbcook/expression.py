@@ -1,18 +1,31 @@
 #$Id$
 # -*- coding: cp1251 -*-
 import sqlalchemy
+import sqlalchemy.orm
 
 _debug = 0
+v03 = hasattr( sqlalchemy, 'mapper')
+if v03:
+    def base_mapper(m): return m.base_mapper()
+    def equivs( parent):
+        return parent._get_inherited_column_equivalents()
+    def joincopy( c): return c.copy_container()
+else:
+    def base_mapper(m): return m.base_mapper
+    def equivs( parent):
+        return parent._get_equivalent_columns()
+    def joincopy( c): return c._clone()
+
 
 def prop_get_join( self, parent, primary=True, secondary=True):
     ''' from PropertyLoader.get_join(), no cache, no polymorphic joins '''
     from sqlalchemy.orm import sync
 
-    parent_equivalents = parent._get_inherited_column_equivalents()
-    primaryjoin = self.primaryjoin.copy_container()
+    parent_equivalents = equivs( parent)
+    primaryjoin = joincopy( self.primaryjoin)
 
     if self.secondaryjoin is not None:
-        secondaryjoin = self.secondaryjoin.copy_container()
+        secondaryjoin = joincopy( self.secondaryjoin)
     else:
         secondaryjoin = None
 
@@ -56,16 +69,17 @@ def join_via( keys, mapper, must_alias =None):
     if must_alias:
         self_table = must_alias.table
         if not self_table:
-            self_table = mapper.base_mapper().mapped_table.alias()   #? local_table ? select_table?
+            self_table = base_mapper(mapper).mapped_table.alias()   #? local_table ? select_table?
             must_alias.table = self_table
     else:
         self_table = mapper.select_table
 
     self_colequivalents = None
     xmappers = [mapper]        #mapper === parent
-    ymappers = [mapper.base_mapper() ]
+    ymappers = [base_mapper(mapper) ]
     for key in keys:
-        prop = mapper.props[key]
+#       prop = mapper.props[key]
+        prop = mapper.get_property(key)
 
         c = prop_get_join( prop, mapper)
 
@@ -74,7 +88,7 @@ def join_via( keys, mapper, must_alias =None):
         parent_table = self_table
         self_table = prop.target
         parent_colequivalents = self_colequivalents
-        self_colequivalents = prop.mapper._get_inherited_column_equivalents()
+        self_colequivalents = equivs( prop.mapper)
 
         if _debug:
             print '--prop:', key
@@ -82,8 +96,8 @@ def join_via( keys, mapper, must_alias =None):
             print '  foreignkeys:', forkey
             print '  remote_side:', prop.remote_side
             print '>', c
-#        ymappers = [ x.base_mapper() for x in xmappers]
-        if prop.mapper in xmappers or prop.mapper.base_mapper() in ymappers:
+#        ymappers = [ base_mapper(x) for x in xmappers]
+        if prop.mapper in xmappers or base_mapper(prop.mapper) in ymappers:
             class OnDemand:
                 def __init__( me, self_table):
                     me.self_table = self_table
@@ -106,9 +120,9 @@ def join_via( keys, mapper, must_alias =None):
                 ).traverse(c)
 
             xmappers.append( prop.mapper)
-            ymappers.append( prop.mapper.base_mapper() )
+            ymappers.append( base_mapper(prop.mapper) )
         if _debug: print '>>>', c
-        if mapper in xmappers or mapper.base_mapper() in ymappers:
+        if mapper in xmappers or base_mapper(mapper) in ymappers:
             if parent_table:
                 sqlalchemy.sql_util.ClauseAdapter(
                     parent_table, include=forkey, equivalents= parent_colequivalents
@@ -152,9 +166,10 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
     via_names = path[1:-1]
 
         #needs the query's mapper; for now assume primary
-    mapper0 = sqlalchemy.class_mapper( root_value)
+    mapper0 = sqlalchemy.orm.class_mapper( root_value)
     clause, mapper, lasttable = join_via( via_names, mapper0, must_alias= must_alias4root.get( root_name,None) )
-    prop = mapper.props[ attr_name]
+#    prop = mapper.props[ attr_name]
+    prop = mapper.get_property( attr_name)
     if _debug: print 'cols/joins:', mapper, prop, lasttable, 'clause:', clause
 
         #hope for the first if many...
@@ -174,8 +189,8 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
         if 0:
             lastcol = lasttable.corresponding_column( lastcol)
         else:   #see PropertyLoader._create_polymorphic_joins in orm/properies.py
-            self_colequivalents = mapper._get_inherited_column_equivalents()
-            for col in [lastcol] + self_colequivalents.get( lastcol, []):
+            self_colequivalents = equivs( mapper)
+            for col in [lastcol] + list( self_colequivalents.get( lastcol, [])):
                 #print col, lasttable.__class__
                 lc = lasttable.corresponding_column( col, raiseerr=False)
                 #print '*******', col, lc
@@ -394,7 +409,7 @@ def query2( e, context_in ={}, klas =None, namespace4klasi =None, **kargs ):
 
 def query3( sae, klas, session =None):
 #    print sae, klas
-    return session.query( klas).select( sae)
+    return session.query( klas).filter( sae)
 
 
 

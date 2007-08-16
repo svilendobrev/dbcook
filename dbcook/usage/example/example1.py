@@ -50,8 +50,9 @@ class Director( director_base):
 
 
 import sqlalchemy
+import sqlalchemy.orm
 meta = sqlalchemy.MetaData( 'sqlite:///')
-meta.bind.echo = 'echo' in sys.argv
+meta.bind.echo= 'echo' in sys.argv
 
 
 
@@ -133,20 +134,26 @@ def test_klas_tree_structure():
     session = sqlalchemy.orm.create_session()
     for klas in [Employee, Manager, Engineer, Director]:
         print '== query_ALL_under', klas.__name__
-        q1 = list( session.query( klas).select())
+        q1 = session.query( klas).all()
         print  '\n'.join( '  '+str(x) for x in q1)
 
         mapper = mybuild.mappers[ klas]
         print '== query_BASE_only', klas.__name__
         if mapper.plain:
-            q2 = list( session.query( mapper.plain).select())
+            q2 = session.query( mapper.plain).all()
             print  '\n'.join( '  '+str(x) for x in q2)
             for a in q2: assert a.__class__ == klas
         else: q2 = []
 
         print '== query_SUB_classes_only', klas.__name__
         if mapper.polymorphic_sub_only:
-            q3 = list( session.query( klas).select( mapper.polymorphic_sub_only))
+            q3 = list( session.query( klas)
+            flt = mapper.polymorphic_sub_only
+            if isinstance( flt, sqlalchemy.sql.Selectable):
+                q3 = q3.from_statement( flt)
+            else:
+                q3 = q3.filter( flt)
+            q3 = q3.all()
             print  '\n'.join( '  '+str(x) for x in q3)
             for a in q3: assert a.__class__ != klas and isinstance( a, klas)
         else: q3 = []
@@ -164,7 +171,7 @@ def test_selects():
     ######## simple
     age = 40
     print '====== all Employee with age<=', age, ', plain SA'
-    prn( session.query( Employee).select( empl_table.c.age <= age) )
+    prn( session.query( Employee).all( empl_table.c.age <= age) )
 
     print '       --- same, via expression'
     prn( expression.query1( lambda self: self.age <= age, klas=Employee, session=session) )
@@ -176,7 +183,7 @@ def test_selects():
     age = 40
     print '====== all Employee with manager of age<=', age, ', plain SA'
     mgr = empl_table.alias()
-    prn( session.query( Employee).select(
+    prn( session.query( Employee).all(
             (mgr.c.age <= age)
             & (empl_table.c.manager_id == mgr.c.db_id) ) )
 
@@ -194,7 +201,7 @@ def test_selects():
     ######## multilevel self-ref
     mgr2 = empl_table.alias()
     print '====== multilevel: all Employee with manager with manager of age >', age, 'plain SA'
-    prn( session.query( Employee).select(
+    prn( session.query( Employee).all(
             (mgr2.c.age > age)
             & (mgr.c.manager_id == mgr2.c.db_id)
             & (empl_table.c.manager_id == mgr.c.db_id) ) )

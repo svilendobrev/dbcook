@@ -203,7 +203,6 @@ def value_of_AKeyFromDict( obj, attrname):
 
 if __name__ == '__main__':
 
-    import sqlalchemy
     from static_type.types.atomary import Text
     inh = 'joined_table'     #or 'concrete_table'
 

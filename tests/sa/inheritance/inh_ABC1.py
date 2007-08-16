@@ -2,7 +2,7 @@
 from sqlalchemy import *
 from sqlalchemy.orm import *
 meta = MetaData( 'sqlite:///')
-meta.bind.echo = 0
+
 
     #decomposed by joined_table inheritance
 table_Employee = Table( 'Employee', meta,
@@ -75,9 +75,9 @@ session.flush()
 print a,b,c
 import sys
 
-if 'noA' not in sys.argv: print session.query( Employee).select()
-print session.query( Engineer).select()
-print session.query( Manager).select()
+if 'noA' not in sys.argv: print session.query( Employee).all()
+print session.query( Engineer).all()
+print session.query( Manager).all()
 
 query_Engineer_sql = '''
 SELECT "pu_Engineer".machine AS pu_Engineer_machine, "pu_Engineer".atype AS pu_Engineer_atype, "pu_Engineer".name AS pu_Engineer_name, pu_Engineer.duties AS "pu_Engineer_duties", "pu_Engineer".id AS pu_Engineer_id

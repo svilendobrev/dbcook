@@ -166,26 +166,24 @@ class SAdb:
 
     ####### klasifier querys
 
-    def query_BASE_instances_raw( sadb, session, klas ):
+    def query_BASE_instances( sadb, session, klas ):
         m = sadb.mappers[ klas]
         if m.plain is None: return ()
         return session.query( m.plain )
 
-    def query_ALL_instances_raw( sadb, session, klas ):
+    def query_ALL_instances( sadb, session, klas ):
         return session.query( klas) #must be equivalent ??
         #return session.query( sadb.mappers[ klas].polymorphic_all )
 
-    def query_BASE_instances( sadb, session, klas ):
-        r = sadb.query_BASE_instances_raw( session, klas )
-        if r: r = r.select()
-        return r
-    def query_ALL_instances( sadb, session, klas ):
-        return sadb.query_ALL_instances_raw( session, klas).select()
-
     def query_SUB_instances( sadb, session, klas ):
         m = sadb.mappers[ klas]
-        if m.polymorphic_sub_only is None: return ()
-        return session.query( m.polymorphic_all ).select( m.polymorphic_sub_only )
+        f = m.polymorphic_sub_only
+        if f is None: return ()
+        q = session.query( m.polymorphic_all )
+        if isinstance( f, sqlalchemy.sql.Selectable):
+            return q.from_statement( f)
+        else:
+            return q.filter( f)
 
 
 def setup_logging( log_sa, log2stream =None):
@@ -194,7 +192,7 @@ def setup_logging( log_sa, log2stream =None):
     format ='* SA: %(levelname)s %(message)s'
     logging.basicConfig( format= format, stream= log2stream or logging.sys.stdout)  #level= logging.DEBUG,
     if log_sa == 'all':
-        logging.getLogger('sqlalchemy').setLevel( logging.DEBUG) #debug EVERYTHING!
+        logging.getLogger( 'sqlalchemy').setLevel( logging.DEBUG) #debug EVERYTHING!
     else:
         sqlalchemy.logging.default_enabled= True    #else, default_logging() will setFormatter...
 
@@ -202,7 +200,7 @@ def setup_logging( log_sa, log2stream =None):
             from sqlalchemy.orm import mapperlib
             mapperlib.Mapper.logger.setLevel( logging.DEBUG)
         if 'orm' in log_sa:
-            logging.getLogger('sqlalchemy.orm').setLevel( logging.DEBUG)
+            logging.getLogger( 'sqlalchemy.orm').setLevel( logging.DEBUG)
 
 def detach_instances( namespace_or_iterable, idname ):
     try: itervalues = namespace_or_iterable.itervalues()        #if dict-like

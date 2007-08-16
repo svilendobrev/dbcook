@@ -17,7 +17,6 @@ def case( Alink='Manager' ):
             return Employee.__str__(me) + ' ' + str(me.bonus)
 
     meta = MetaData( 'sqlite:///')
-    #meta.bind.echo = 0
 
     employee_table = Table('Employee', meta,
             Column('id', Integer, primary_key=True),
@@ -92,7 +91,7 @@ def case( Alink='Manager' ):
         print '>>>>>', r
         assert x == xstr, r
 
-        all = session.query( klas).select()
+        all = session.query( klas).all()
         x = '; '.join( str(z) for z in all )
         r = 'multiple %(x)s ; expect[0]: %(xstr)s' % locals()
         print '>>>>>', r
