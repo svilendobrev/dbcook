@@ -31,6 +31,9 @@ except: import sa_hack4echo
 
 ############################
 
+v03 = hasattr( sqlalchemy, 'mapper')
+
+
 def _argdef( v, default):
     if v is None: v = default
     return v
@@ -165,21 +168,37 @@ class SAdb:
             print k,':',[r for r in t.select().execute()]
 
     ####### klasifier querys
+    if v03:
+        def query_BASE_instances_raw( sadb, session, klas ):
+            m = sadb.mappers[ klas]
+            if m.plain is None: return ()
+            return session.query( m.plain )
 
-    def query_BASE_instances( sadb, session, klas ):
-        m = sadb.mappers[ klas]
-        if m.plain is None: return ()
-        return session.query( m.plain )
+        def query_ALL_instances_raw( sadb, session, klas ):
+            return session.query( klas)
 
-    def query_ALL_instances( sadb, session, klas ):
-        return session.query( klas) #must be equivalent ??
-        #return session.query( sadb.mappers[ klas].polymorphic_all )
+        def query_BASE_instances( sadb, session, klas ):
+            r = sadb.query_BASE_instances_raw( session, klas )
+            if r: r = r.select()
+            return r
+        def query_ALL_instances( sadb, session, klas ):
+            return sadb.query_ALL_instances_raw( session, klas).select()
+
+    else:
+        def query_BASE_instances( sadb, session, klas ):
+            m = sadb.mappers[ klas]
+            if m.plain is None: return ()
+            return session.query( m.plain )
+
+        def query_ALL_instances( sadb, session, klas ):
+            return session.query( klas)
 
     def query_SUB_instances( sadb, session, klas ):
         m = sadb.mappers[ klas]
         f = m.polymorphic_sub_only
         if f is None: return ()
         q = session.query( m.polymorphic_all )
+        if v03: return q.select( f)
         if isinstance( f, sqlalchemy.sql.Selectable):
             return q.from_statement( f)
         else:
