@@ -1,6 +1,7 @@
 #$Id$
 
 from sqlalchemy import *
+from sqlalchemy.orm import *
 
 _debug = 'echo'
 def mmapper( *args,**kargs):
@@ -113,7 +114,7 @@ class Case_B_inh_A_A_ref_AB( SACase):
                 aid  = item['id']
                 astr = item['str']
                 if single:
-                    s = me.session.query( klas).get_by_id( aid)
+                    s = me.session.query( klas).get_by( id=aid)
                     x = str(s)
                     r = 'assert single %(x)s ; expect: %(astr)s' % locals()
                     print '>>>>>', r
@@ -147,9 +148,8 @@ if 0:
             data = property( lambda me: me.data2)
             pass
 
-        db = create_engine( 'sqlite:///:memory:')
-        meta = BoundMetaData( db)
-        meta.engine.echo = ECHO
+        meta = MetaData( 'sqlite:///')
+        meta.bind.echo = ECHO
 
         class tables: pass
 
@@ -246,7 +246,7 @@ if 0:
                 aid  = item['id']
                 astr = item['str']
                 if single:
-                    s = session.query( klas).get_by_id( aid)
+                    s = session.query( klas).get_by( id=aid)
                     x = str(s)
                     r = 'assert single %(x)s ; expect: %(astr)s' % locals()
                     print '>>>>>', r

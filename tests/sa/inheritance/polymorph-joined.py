@@ -1,7 +1,11 @@
+#$Id$
+# -*- coding: cp1251 -*-
 from sqlalchemy import *
+from sqlalchemy.orm import *
 import sets, sys
 
-metadata = MetaData('sqlite://', echo='echo' in sys.argv)
+metadata = MetaData('sqlite:///')
+metadata.bind.echo = 'echo' in sys.argv
 
 people = Table('people', metadata,
    Column('person_id', Integer, primary_key=True),
@@ -137,3 +141,4 @@ for e in q: print e
 assert len(q)==1 #and q[0] ==
 
 
+# vim:ts=4:sw=4:expandtab

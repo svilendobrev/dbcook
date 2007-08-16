@@ -3,6 +3,7 @@
 
 from tests.util import sa_gentestbase
 import sqlalchemy
+import sqlalchemy.orm
 
 class SACase( sa_gentestbase.Test_SA):
     clear_session = True
@@ -15,7 +16,7 @@ class SACase( sa_gentestbase.Test_SA):
         sa_gentestbase.Test_SA.setUp( me)
         me.make_tables()
 
-        me.session = sqlalchemy.create_session()
+        me.session = sqlalchemy.orm.create_session()
         expect = me.populate()
         me.session.flush()
 

@@ -2,6 +2,8 @@
 #store+print SA constructor-args in order to recreate the source
 
 import sqlalchemy
+import sqlalchemy.orm
+import operator
 from dbcook.util.attr import issubclass
 
 def traverse( visitor, obj):
@@ -12,6 +14,7 @@ def traverse( visitor, obj):
 class CV( sqlalchemy.ClauseVisitor):
     ops = {
         '=':'==',
+        operator.eq: '==',
     }
     def __init__(me):
         me.stack = []
@@ -28,7 +31,13 @@ class CV( sqlalchemy.ClauseVisitor):
     def visit_binary(me, b):
         r = me.stack.pop()
         l = me.stack.pop()
-        t = ' '.join( [l, me.ops.get( b.operator, b.operator), r ])
+#        t = ' '.join( [l, me.ops.get( b.operator, b.operator), r ])
+        try:
+            op = me.ops[ b.operator]
+        except KeyError:
+            print 'XXXXXXXX', type(l), b.operator, type(r)
+            op = b.operator
+        t = ' '.join( [l, op, r ])
         me.stack.append( t)
 
 class _state:
@@ -186,9 +195,9 @@ class %(name)s( %(base)s):
 
     _head4standalone_file = '''
 from sqlalchemy import *
-db = create_engine( 'sqlite:///:memory:')
-meta = BoundMetaData( db)
-meta.engine.echo = True
+from sqlalchemy.orm import *
+meta = MetaData( 'sqlite:///')
+meta.bind.echo = True
 
 #import logging
 #logging.getLogger('sqlalchemy.orm').setLevel( logging.DEBUG)
@@ -263,7 +272,7 @@ meta.create_all()
         maps.sort( key=lambda m:m.class_.__name__)
         for m in maps:
             pu = m.select_table
-            if isinstance( pu,sqlalchemy.sql.Alias):  #CompoundSelect
+            if isinstance( pu, sqlalchemy.sql.Alias):  #CompoundSelect
                 me.punion( pu, m)
 
             varname = mapper_varname( m)
@@ -390,7 +399,7 @@ repr2tstr( sqlalchemy.Join)
 
 select = duper( sqlalchemy.select)
 
-mapper= duper( sqlalchemy.mapper, otherstr=mapper_varname, nl='\n'+12*' ', nl4args='',
+mapper= duper( sqlalchemy.orm.mapper, otherstr=mapper_varname, nl='\n'+12*' ', nl4args='',
             no_kargs= dict(
                 concrete=False,
                 inherit_condition= None,
@@ -400,11 +409,11 @@ mapper= duper( sqlalchemy.mapper, otherstr=mapper_varname, nl='\n'+12*' ', nl4ar
             ) )
 join  = duper( sqlalchemy.join)
 outerjoin  = duper( sqlalchemy.outerjoin)
-relation = duper( sqlalchemy.relation, nl='\n'+12*' ', nl4args='',
+relation = duper( sqlalchemy.orm.relation, nl='\n'+12*' ', nl4args='',
             no_kargs= dict(
                 remote_side=None,
                 post_update= False,
             ) )  #lazy=True,
-polymorphic_union= duper4polymorphic_union( sqlalchemy.polymorphic_union )
+polymorphic_union= duper4polymorphic_union( sqlalchemy.orm.polymorphic_union )
 
 # vim:ts=4:sw=4:expandtab

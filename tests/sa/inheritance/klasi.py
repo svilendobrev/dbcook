@@ -1,6 +1,7 @@
 #$Id$
 
 from sqlalchemy import *
+from sqlalchemy.orm import *
 
 def _printcallfunc( func, *args,**kargs):
     print func,'(\n ', args, '\n  '+ '\n  '.join( '%s=%s' % kv for kv in kargs.iteritems()), '\n)'
@@ -50,8 +51,7 @@ class D(A):
 
 ###############
 
-engine = create_engine('sqlite:///')
-metadata = BoundMetaData( engine)
+metadata = MetaData( 'sqlite:///')
 
 class DB:
     #XXX unbound MetaData can't print joins/unions
@@ -65,11 +65,11 @@ class DB:
     def __init__( me, echo =False, meta =None, dont_init =False):
         if not dont_init:
             meta = meta or metadata
-            if echo: meta.engine.echo = True     #Debug Show SQL statements only
+            if echo: meta.bind.echo = True     #Debug Show SQL statements only
             meta.create_all()
 
     def populate( me, mappers):
-        session = create_session()# bind_to= engine)
+        session = create_session()
         me.session = session
 
         a1 = A("A1")

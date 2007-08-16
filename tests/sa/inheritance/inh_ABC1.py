@@ -1,8 +1,8 @@
 #$Id$
 from sqlalchemy import *
-db = create_engine( 'sqlite:///:memory:')
-meta = BoundMetaData( db)
-meta.engine.echo = 0
+from sqlalchemy.orm import *
+meta = MetaData( 'sqlite:///')
+meta.bind.echo = 0
 
     #decomposed by joined_table inheritance
 table_Employee = Table( 'Employee', meta,

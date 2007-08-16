@@ -18,7 +18,6 @@ class _static_type:
     from static_type.types.sequence import Sequence
     from static_type.types.forward import ForwardSubStruct
 
-import sqlalchemy
 from dbcook import builder
 table_inheritance_types = builder.table_inheritance_types
 
@@ -124,6 +123,7 @@ if 0:
     def _typeprocess( self, value, *a, **k):
         if value is _static_type.StaticType._NONE: value = None
         return self._typeprocess( value, *a,**k)
+    import sqlalchemy
     sqlalchemy.sql._BindParamClause._typeprocess = sqlalchemy.sql._BindParamClause.typeprocess
     sqlalchemy.sql._BindParamClause.typeprocess = _typeprocess
 
@@ -203,6 +203,7 @@ def value_of_AKeyFromDict( obj, attrname):
 
 if __name__ == '__main__':
 
+    import sqlalchemy
     from static_type.types.atomary import Text
     inh = 'joined_table'     #or 'concrete_table'
 

@@ -74,9 +74,9 @@ if 'sa' not in sys.argv:
 
 else:
     from sqlalchemy import *
-    db = create_engine( 'sqlite:///proba1.db')
-    meta = BoundMetaData( db)
-    meta.engine.echo = 'echo' in sys.argv
+    from sqlalchemy.orm import *
+    meta = MetaData( 'sqlite:///proba1.db')
+    meta.bind.echo = 'echo' in sys.argv
 
         #decomposed by joined_table
     table_Entity = Table( 'Entity', meta,

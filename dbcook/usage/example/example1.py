@@ -50,9 +50,8 @@ class Director( director_base):
 
 
 import sqlalchemy
-db = sqlalchemy.create_engine( 'sqlite:///:memory:')
-meta = sqlalchemy.BoundMetaData( db)
-meta.engine.echo = 'echo' in sys.argv
+meta = sqlalchemy.MetaData( 'sqlite:///')
+meta.bind.echo = 'echo' in sys.argv
 
 
 
@@ -116,7 +115,7 @@ def populate():
 
     m.manager = h
 
-    session = sqlalchemy.create_session()
+    session = sqlalchemy.orm.create_session()
     #yes, i AM lazy - anything off Base, go to db
     for a in locals().values():
         if isinstance( a, Base): session.save( a)
@@ -131,7 +130,7 @@ def test_klas_tree_structure():
         print klas,':',[r for r in table.select().execute()]
 
     print '\n-------------- classes and subclassing:'
-    session = sqlalchemy.create_session()
+    session = sqlalchemy.orm.create_session()
     for klas in [Employee, Manager, Engineer, Director]:
         print '== query_ALL_under', klas.__name__
         q1 = list( session.query( klas).select())
@@ -159,7 +158,7 @@ def prn(q):
 
 def test_selects():
     from dbcook import expression
-    session = sqlalchemy.create_session()
+    session = sqlalchemy.orm.create_session()
     empl_table = mybuild.tables[ Employee]
 
     ######## simple

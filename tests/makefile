@@ -5,6 +5,7 @@
 
 now: utilz
 now: sa
+now: simple
 now: mapper
 
 utilz: ../dbcook/kjmincut.test
@@ -12,10 +13,10 @@ utilz: ../dbcook/kjmincut.test
 sa: sa/ref_AxA.test
 sa: sa/ref_A_B_A_all.test
 
+simple: other/walktest1.test
+simple: mapper/mincut.test
 mapper: mapper/test4mapper.test
 mapper: mapper/test_inh_types.test
-mapper: other/walktest1.test
-mapper: mapper/mincut.test
 mapper: abc
 mapper: mapper/relation.test
 mapper: other/expression.test
@@ -24,7 +25,7 @@ mapper: mapper/freegen/main.test
 #abc: ARGS= zno_sisters Binhs=A Cinhs=B Clinks=None doC zdummy
 abc: mapper/test_ABC_inh_ref_all.test
 
-AA= doC inhs=j generate=failed,one
+AA= doC inhs=j generate=all,one
 abcj: override ARGS+=$(AA)
 abcj: abc
 

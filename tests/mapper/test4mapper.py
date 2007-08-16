@@ -452,10 +452,12 @@ import os, os.path
 
 SHOW_DEFAULT_QUERY_RESULTS = False
 
-## XXX HACK за повтаряемост на теста, подменя Set/dict на OrderedSet/Dict
-## XXX НЕ забравяй SAdb също да е подреден!!! force_ordered=True
-from dbcook.usage.sa_hack4repeatability import hack4repeat
-hack4repeat()
+import sys
+if 'no_repeat_hack' not in sys.argv:
+    ## XXX HACK за повтаряемост на теста, подменя Set/dict на OrderedSet/Dict
+    ## XXX НЕ забравяй SAdb също да е подреден!!! force_ordered=True
+    from dbcook.usage.sa_hack4repeatability import hack4repeat
+    hack4repeat()
 
 TEST_OUT_ROOT = 'simple/output'
 #import sys

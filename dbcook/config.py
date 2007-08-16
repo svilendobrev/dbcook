@@ -43,6 +43,8 @@ config = Config()
 
 #### automatic-columns - names and configuration
 
+import sqlalchemy
+
 class _column4( object):
     'used as a function with subclassable default args'
     @classmethod
@@ -55,7 +57,14 @@ class _column4( object):
             raise
     def __new__( klas, selectable): return klas.get_column( selectable)
 
-import sqlalchemy
+    @classmethod
+    def typemap_( klas):
+        if hasattr( sqlalchemy, 'mapper'):   #v0.3
+            return klas.typemap
+        t = klas.typemap.copy()
+        t[ 'type_' ] = t.pop('type')
+        return t
+
 
 class column4ID( _column4):
     'use as column4ID( selectable)'

@@ -1,6 +1,7 @@
 #$Id$
 
 from sqlalchemy import *
+from sqlalchemy.orm import *
 from tests.util import runCBA
 
 class Config( runCBA.Config):
@@ -13,7 +14,7 @@ from dbcook.baseobj import Base
 def test( session, klas, aid, single, expect, **kargs_ignore):
     klasname = klas.__name__
     if single:
-        s = session.query( klas).get_by_id( aid)
+        s = session.query( klas).get_by( id=aid)
         x = str(s)
         r = 'single %(klasname)s %(aid)s \t%(x)s \n   expect: \t%(expect)s' % locals()
     else:
@@ -42,9 +43,8 @@ def test_inh_ref_ABC(
     Clink0 = Clink
     if Clink: Clink = Clink[0]
 
-    db = create_engine( 'sqlite:///:memory:')
-    meta = BoundMetaData( db)
-    meta.engine.echo = config.echo
+    meta = MetaData( 'sqlite:///')
+    meta.bind.echo = config.echo
 
     class A( Base):
         props = [ 'id', 'name' ] + bool(Alink)*['link1' ]

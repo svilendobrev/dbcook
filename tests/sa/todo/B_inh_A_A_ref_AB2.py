@@ -1,6 +1,7 @@
 #$Id$
 
 from sqlalchemy import *
+from sqlalchemy.orm import *
 
 #joined_table, polymorphic
 def case( Alink='Manager' ):
@@ -15,9 +16,8 @@ def case( Alink='Manager' ):
         def __str__(me):
             return Employee.__str__(me) + ' ' + str(me.bonus)
 
-    db = create_engine( 'sqlite:///:memory:')
-    meta = BoundMetaData( db)
-    meta.engine.echo = 0
+    meta = MetaData( 'sqlite:///')
+    #meta.bind.echo = 0
 
     employee_table = Table('Employee', meta,
             Column('id', Integer, primary_key=True),

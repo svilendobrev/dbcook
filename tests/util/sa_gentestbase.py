@@ -1,6 +1,7 @@
 #$Id$
 
 from sqlalchemy import *
+from sqlalchemy.orm import *
 
 #see baseobj.py
 class Base( object):
@@ -69,8 +70,8 @@ class Test_SA( unittest.TestCase):
             logging.getLogger('sqlalchemy').setLevel( logging.DEBUG) #debug EVERYTHING!
 
         me.db = db
-        me.meta = BoundMetaData( db)
-        me.meta.engine.echo = config.echo
+        db.echo = config.echo
+        me.meta = MetaData( db)
 
     def tearDown(me):
         me.meta.drop_all()
@@ -82,7 +83,7 @@ class Test_SA( unittest.TestCase):
             me.db.dispose()
         me.db = None
         if config.leak:
-            import gc, sqlalchemy
+            import gc
             gc.set_debug( gc.DEBUG_UNCOLLECTABLE | gc.DEBUG_SAVEALL | gc.DEBUG_INSTANCES | gc.DEBUG_STATS ) #OBJECTS
             gc.collect()
             #print "MAPPER REG:", dict(sqlalchemy.orm.mapperlib.mapper_registry)
@@ -90,7 +91,7 @@ class Test_SA( unittest.TestCase):
             #print "CLASSKEYS:", dict(sqlalchemy.util.ArgSingleton.instances)
             i = 0
             for x in gc.get_objects():
-                if isinstance(x, sqlalchemy.orm.Mapper) or isinstance(x, sqlalchemy.BoundMetaData):
+                if isinstance(x, Mapper) or isinstance(x, MetaData):
                     i+=1
                     #print x
             print 'gc/sqlalc', i

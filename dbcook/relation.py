@@ -40,6 +40,7 @@ TODO:
 '''
 
 import sqlalchemy
+import sqlalchemy.orm
 import warnings
 
 class _Relation: pass
@@ -148,7 +149,8 @@ class Associator:       #used in mapper-builder
 def make_relations( builder):
     ##XXX in builder._make_mapper_polymorphic() ???
 
-    if 'needed for assoc-object case':
+    v03 = hasattr( sqlalchemy, 'mapper')   #v0.3
+    if v03*'needed for assoc-object case':  #TODO find how this looks in 0.4 - this way is invalid
         def append( self, *args, **kwargs):
             item = self._data_appender( *args,**kwargs)
             self._InstrumentedList__setrecord( item)    #private __setrecord; was _before_ _data_appender
@@ -233,7 +235,7 @@ def make_relations( builder):
                         remote_side = fk,
                     )
             print ' property', name, 'on', klas, 'via', assoc_klas, ':', assoc_klas_actual, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
-            m.add_property( name, sqlalchemy.relation( assoc_klas_actual, **rel_kargs) )
+            m.add_property( name, sqlalchemy.orm.relation( assoc_klas_actual, **rel_kargs) )
             relations[ name ] = assoc_klas
 
         if relations:       #винаги ли е нужно? май тр€бва само при изрично поискване

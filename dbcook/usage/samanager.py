@@ -3,6 +3,7 @@
 
 from dbcook import builder
 import sqlalchemy
+import sqlalchemy.orm
 from sa_engine_defs import Dengine
 
 class Config( builder.config.Config):
@@ -73,9 +74,9 @@ class SAdb:
         return b
 
     def make_metadata( me):
-        metadata = sqlalchemy.BoundMetaData( me.db)
+        metadata = sqlalchemy.MetaData( me.db)
         if me.echo or 'sql' in me.log_sa:
-            metadata.engine.echo = True
+            me.db.echo = True
         me.metadata = metadata
         return metadata
 
@@ -102,7 +103,7 @@ class SAdb:
             except AttributeError: pass
 
         #SA caches/data
-        sqlalchemy.clear_mappers()
+        sqlalchemy.orm.clear_mappers()
 
         try: me.metadata.drop_all()
         except AttributeError: pass
@@ -127,14 +128,14 @@ class SAdb:
 
 
     def echo_sql( me, x):       #show SQL statements
-        old = me.metadata.engine.echo
-        me.metadata.engine.echo = x
+        old = me.db.echo
+        me.db.echo = x
         return old
 
     def iterklasi( me): return me.klasi.itervalues()
 
     def session( me):
-        return sqlalchemy.create_session( echo_uow= 'transact' in me.log_sa)
+        return sqlalchemy.orm.create_session( echo_uow= 'transact' in me.log_sa)
 
     def saveall( me, session, *args):
         ''' usages:

@@ -87,7 +87,7 @@ class TestMinCut( Case):
 
 if __name__ == '__main__':
     import sys
-    sys.setrecursionlimit( 50)
+    sys.setrecursionlimit( 100)
     SAdb.config.getopt()
     import unittest
     unittest.main()

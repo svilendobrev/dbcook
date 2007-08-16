@@ -20,6 +20,10 @@ e.g. SAdb( ..force_ordered=True)
 from dbcook.util.hacksrc import hacksrc
 
 def hack4repeat():
+    import sqlalchemy
+    if not hasattr( sqlalchemy, 'mapper'):
+        print 'v04 - cant hack4repeat'
+        return
     # HACKALL
     import sqlalchemy.util
     sqlalchemy.util.Set = sqlalchemy.util.OrderedSet

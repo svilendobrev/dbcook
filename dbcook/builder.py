@@ -41,6 +41,7 @@ from mapcontext import table_inheritance_types, MappingContext, issubclass
 import walkklas
 import relation
 import sqlalchemy
+import sqlalchemy.orm
 import warnings
 
 
@@ -55,6 +56,8 @@ else:
 
 if config_components.no_generator:
     sa = sqlalchemy
+    sa.mapper = sa.orm.mapper
+    sa.relation = sa.orm.relation
     SrcGenerator = None
 else:
     import sa_generator
@@ -327,7 +330,7 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
 
     ## column4type
     if mapcontext.need_typcolumn( klas):
-        c = sa.Column( column4type.name, **column4type.typemap)
+        c = sa.Column( column4type.name, **column4type.typemap_() )
         if dbg: print '  need_typcolumn', c
         columns.append( c)
 
@@ -346,7 +349,7 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
         if is_joined_table:
             c = make_table_column4id_fk( column4ID.name, base_klas, **column4ID.typemap)
         else:
-            c = sa.Column( column4ID.name, **column4ID.typemap)
+            c = sa.Column( column4ID.name, **column4ID.typemap_() )
         columns.append( c)
         if primary_key:     #convert it to just uniq constraint
             for c in primary_key: c.primary_key = False
@@ -485,7 +488,7 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                 )
 
 
-class _MapExt( sqlalchemy.MapperExtension):
+class _MapExt( sqlalchemy.orm.MapperExtension):
     def before_insert( self, mapper, connection, instance):
         assert instance.__class__ is not mapper.class_, 'load_only_object - no save: ' + str( instance.__class__) + ':'+str(mapper)
     before_update = before_delete = before_insert
@@ -748,9 +751,10 @@ class Builder:
 
         inherits= base_mapper and base_mapper.polymorphic_all or None
 
+        is_pm = inherits and inherits.polymorphic_on or pjoin_key
         #primary, eventualy polymorphic_all if pjoin
         pm = make_mapper( klas, table,
-                    polymorphic_identity= name,
+                    polymorphic_identity= is_pm and name or None,
                     concrete= is_concrete,
                     select_table= pjoin,
                     polymorphic_on= pjoin_key,
@@ -776,7 +780,7 @@ class Builder:
             t = me.klas_only_selectables[ klas]['filtered']
             pm = make_mapper( klas,
                     table =t,
-                    polymorphic_identity= name,
+#                    polymorphic_identity= is_pm and name or None,
                     concrete= is_concrete,
                     non_primary= True,
                 )
