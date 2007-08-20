@@ -104,7 +104,7 @@ class Association:
                 obj = me.factory( **kargs)
             list.append( me, obj)
             return obj
-        if _v03: append = sqlalchemy.orm.collections.collection.appender( append)
+        if not _v03: append = sqlalchemy.orm.collections.collection.appender( append)
 
     @classmethod
     def myCollectionFactory( klas):
