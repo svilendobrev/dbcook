@@ -65,7 +65,7 @@ fieldtypemap = {
 
 # build the mapping
 mybuild = o2r.Builder( meta,
-        locals(),       #i am lazy, so just scan anything here that looks like class off Base
+        locals(),       #just scan anything here that looks like subclass of Base
         fieldtypemap,
         generator =True     #lets see how this would look in plain sqlalchemy
     )

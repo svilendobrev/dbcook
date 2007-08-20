@@ -115,28 +115,10 @@ class Association:
             @sqlalchemy.orm.collections.collection.appender
             def _append( me, *a,**k): return list.append( me, *a, **k)
 
-    if 0:
-        class MyCollection( object):
-            __emulates__=None
-            factory = None
-            def __init__( me, *a, **k):
-                me._list = list(*a,**k)
-            @sqlalchemy.orm.collections.collection.appender
-            def append( me, obj =_Unspecified, **kargs):
-                if obj is _Unspecified:
-                    obj = me.factory( **kargs)
-                me._list.append( obj)
-                return obj
-            @sqlalchemy.orm.collections.collection.remover
-            def remove( me, *a,**k): return me._list.remove( *a,**k)
-            @sqlalchemy.orm.collections.collection.iterator
-            def __iter__( me, *a,**k): return me._list.__iter__( *a,**k)
-
     @classmethod
     def myCollectionFactory( klas):
         m = Association.MyCollection()
         m.factory = klas
-#        print 'made', m, m.factory
         return m
 
 #########

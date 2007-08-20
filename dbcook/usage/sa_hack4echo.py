@@ -75,6 +75,7 @@ if _v03:
 else:   #v04
 
     try:
+        import sqlalchemy.ansisql
         compiler = sqlalchemy.ansisql.ANSICompiler
     except :    #after 3362
         import sqlalchemy.sql.compiler

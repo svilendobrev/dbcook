@@ -274,8 +274,14 @@ class Translator( expr.Expr.Visitor):
 
     aggregates = [ 'max', 'min', 'avg', 'sum', 'count' ]
 
-    _COMPOUNDexpr = getattr( sql, '_CompoundClause',
-            getattr( sql, 'ClauseList'))    #? maybe also DESC,ASC,DISTINCT -> now UnaryExpr
+    try: _COMPOUNDexpr = sql._CompoundClause
+    except:
+        try:
+            _COMPOUNDexpr = sql.ClauseList
+        except: #after v3362
+            import sqlalchemy.sql.expression
+            _COMPOUNDexpr = sqlalchemy.sql.expression.ClauseList
+        #? maybe also DESC,ASC,DISTINCT -> now UnaryExpr
 
     def __call__( me, level, op, *args, **kargs):
         op = me._ops.get( op,op)
