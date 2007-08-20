@@ -46,6 +46,7 @@ import warnings
 _v03 = hasattr( sqlalchemy, 'mapper')
 
 class _Relation: pass
+class _Unspecified: pass
 
 def setkargs( me, **kargs):
     for k,v in kargs.iteritems():
@@ -96,25 +97,33 @@ class Association:
         r.assoc_klas = klas
         return r
 
-    if 1:#_v03:
+    if _v03:
         class MyCollection( list):
             factory = None
-    #        @collection.appender  XXX  v04only
-            def append( me, obj =_Relation, **kargs):
-                if obj is _Relation:    #marker for notset
-                    obj = me.factory( **kargs)
+            def append( me, obj =_Unspecified, **kargs):
+                if obj is _Unspecified: obj = me.factory( **kargs)
                 list.append( me, obj)
                 return obj
-            if not _v03: append = sqlalchemy.orm.collections.collection.appender( append)
     else:
+        class MyCollection( list):
+            factory = None
+            @sqlalchemy.orm.collections.collection.internally_instrumented
+            def append( me, obj =_Unspecified, **kargs):
+                if obj is _Unspecified: obj = me.factory( **kargs)
+                me._append( obj)
+                return obj
+            @sqlalchemy.orm.collections.collection.appender
+            def _append( me, *a,**k): return list.append( me, *a, **k)
+
+    if 0:
         class MyCollection( object):
             __emulates__=None
             factory = None
             def __init__( me, *a, **k):
                 me._list = list(*a,**k)
             @sqlalchemy.orm.collections.collection.appender
-            def append( me, obj =_Relation, **kargs):
-                if obj is _Relation:    #marker for notset
+            def append( me, obj =_Unspecified, **kargs):
+                if obj is _Unspecified:
                     obj = me.factory( **kargs)
                 me._list.append( obj)
                 return obj
@@ -132,7 +141,6 @@ class Association:
 
 #########
 
-_empty_dict = {}
 class Associator:       #used in mapper-builder
     def associate( me, klas, attrklas, assoc, column):
         if not assoc.primary_key: return
@@ -158,7 +166,7 @@ class Associator:       #used in mapper-builder
 
 
     def is_assoc_attr( me, klas, attrtyp, attrklas):
-        column_kargs = _empty_dict
+        column_kargs = {}
         column_func = None
         assoc = issubclass( klas, Association) and getattr( attrtyp, 'assoc', None)
 #        print 'isassoc', assoc, attrtyp, klas
@@ -171,7 +179,7 @@ class Associator:       #used in mapper-builder
 def make_relations( builder):
     ##XXX in builder._make_mapper_polymorphic() ???
 
-    if _v03*'needed for assoc-object case':  #TODO find how this looks in 0.4 - this way is invalid
+    if _v03: #needed for assoc-object case':  #TODO find how this looks in 0.4 - this way is invalid
         def append( self, *args, **kwargs):
             item = self._data_appender( *args,**kwargs)
             self._InstrumentedList__setrecord( item)    #private __setrecord; was _before_ _data_appender

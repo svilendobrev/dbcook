@@ -117,7 +117,7 @@ def populate():
     m.manager = h
 
     session = sqlalchemy.orm.create_session()
-    #yes, i AM lazy - anything off Base, go to db
+    #anything off Base, go to db
     for a in locals().values():
         if isinstance( a, Base): session.save( a)
     session.flush()
