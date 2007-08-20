@@ -63,9 +63,9 @@ class _Base( _static_type.StaticStruct):
 ###########################
 'адаптиране на StaticStruct за пред sqlAlchemy'
 
-if 'AVOID having privately-named __sa_attr_state':
+if 'AVOID having privately-named __sa_attr_state':      #not needed for v04?
     from sqlalchemy.orm import mapperlib
-    mapperlib.attribute_manager.init_attr = lambda me: None #DO NOT setup _sa_attr
+    mapperlib.attribute_manager.init_attr = lambda me: None
 
 _static_type.config.notSetYet = None
 _debug = 0*'dict'
@@ -81,6 +81,7 @@ class dict_via_attr( object):
         try: me[k]
         except KeyError: return False
         return True
+    __contains__ = has_key
     def __getitem__( me,k):
         src = me.src
         dbg = 'dict' in _debug
@@ -96,7 +97,7 @@ class dict_via_attr( object):
         except KeyError,e:  #extra attribute
             try: d = src._my_sa_stuff
             except AttributeError: d = src._my_sa_stuff = dict()
-            if dbg: print ' _my_sa_stuff get', k, d.get(k,'<missing>')
+            if dbg: print ' _my_sa_stuff get', k, d.get( k, '<missing>')
             #raise KeyError, a.args
             return d[k]
     def __setitem__( me, k,v, delete =False):
