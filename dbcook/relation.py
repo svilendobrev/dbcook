@@ -43,7 +43,7 @@ import sqlalchemy
 import sqlalchemy.orm
 import warnings
 
-_v03 = hasattr( sqlalchemy, 'mapper')   #v0.3
+_v03 = hasattr( sqlalchemy, 'mapper')
 
 class _Relation: pass
 

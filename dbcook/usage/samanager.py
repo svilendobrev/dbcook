@@ -4,6 +4,7 @@
 from dbcook import builder
 import sqlalchemy
 import sqlalchemy.orm
+_v03 = hasattr( sqlalchemy, 'mapper')
 from sa_engine_defs import Dengine
 
 class Config( builder.config.Config):
@@ -30,8 +31,6 @@ try: sys.argv.remove( 'no_echo_hack')
 except: import sa_hack4echo
 
 ############################
-
-v03 = hasattr( sqlalchemy, 'mapper')
 
 
 def _argdef( v, default):
@@ -168,7 +167,7 @@ class SAdb:
             print k,':',[r for r in t.select().execute()]
 
     ####### klasifier querys
-    if v03:
+    if _v03:
         def query_BASE_instances_raw( sadb, session, klas ):
             m = sadb.mappers[ klas]
             if m.plain is None: return ()
@@ -198,7 +197,7 @@ class SAdb:
         f = m.polymorphic_sub_only
         if f is None: return ()
         q = session.query( m.polymorphic_all )
-        if v03: return q.select( f)
+        if _v03: return q.select( f)
         if isinstance( f, sqlalchemy.sql.Selectable):
             return q.from_statement( f)
         else:

@@ -2,7 +2,9 @@
 # -*- coding: cp1251 -*-
 from dbcook.util.hacksrc import hacksrc
 import sqlalchemy
-if hasattr( sqlalchemy, 'mapper'):  #v03
+
+_v03 = hasattr( sqlalchemy, 'mapper')
+if _v03:
     from sqlalchemy import sql, ansisql
 
     def accept_visitor(self, visitor):

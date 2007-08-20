@@ -21,7 +21,8 @@ from dbcook.util.hacksrc import hacksrc
 
 def hack4repeat():
     import sqlalchemy
-    if not hasattr( sqlalchemy, 'mapper'):
+    _v03 = hasattr( sqlalchemy, 'mapper')
+    if not _v03:
         print 'v04 - cant hack4repeat'
         return
     # HACKALL

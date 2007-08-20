@@ -44,6 +44,7 @@ config = Config()
 #### automatic-columns - names and configuration
 
 import sqlalchemy
+_v03 = hasattr( sqlalchemy, 'mapper')
 
 class _column4( object):
     'used as a function with subclassable default args'
@@ -59,8 +60,7 @@ class _column4( object):
 
     @classmethod
     def typemap_( klas):
-        if hasattr( sqlalchemy, 'mapper'):   #v0.3
-            return klas.typemap
+        if _v03: return klas.typemap
         t = klas.typemap.copy()
         t[ 'type_' ] = t.pop('type')
         return t

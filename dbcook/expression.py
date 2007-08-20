@@ -4,8 +4,8 @@ import sqlalchemy
 import sqlalchemy.orm
 
 _debug = 0
-v03 = hasattr( sqlalchemy, 'mapper')
-if v03:
+_v03 = hasattr( sqlalchemy, 'mapper')
+if _v03:
     def base_mapper(m): return m.base_mapper()
     def equivs( parent):
         return parent._get_inherited_column_equivalents()

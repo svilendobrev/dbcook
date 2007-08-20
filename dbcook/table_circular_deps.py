@@ -63,25 +63,4 @@ def fix_table_circular_deps( tablelist, dbg =0, **kargs):
                 result_fkeys.append( fkey)
     return result_fkeys
 
-
-class DepCollector: #fake UOWTransaction
-    def __init__(me):
-        me.deps= set()
-
-        #as orm.unitofwork.UOWTransaction.register_dependency
-    def register_dependency( me, mapper, dependency):
-        mapper = mapper.primary_mapper().base_mapper()
-        dependency = dependency.primary_mapper().base_mapper()
-        me.deps.add( (mapper, dependency) )
-
-    def register_processor( me, mapper, processor, mapperfrom): pass
-    def __str__( me):
-        return '\n '.join( str(m) + '->' + (hasattr(p,'mapper') and 'stub/'+str(p.mapper) or str(p))
-                    for m,p in me.deps)
-    def items(me):
-        for m,p in me.deps:
-            try: p = p.mapper   #stubMapper
-            except AttributeError: pass
-            yield m,p
-
 # vim:ts=4:sw=4:expandtab
