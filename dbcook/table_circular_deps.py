@@ -1,10 +1,14 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
+from sqlalchemy import schema
+try:
+    from sqlalchemy import sql_util
+except: #after v3362
+    import sqlalchemy.sql.util as sql_util
 
 def fix_table_circular_deps( tablelist, dbg =0, **kargs):
     if dbg: print 'fix_table_circular_dependencies...'
-    from sqlalchemy import sql_util, schema
 
     def traverse( visitor, obj):
         try: f = visitor.traverse

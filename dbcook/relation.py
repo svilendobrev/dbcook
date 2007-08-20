@@ -96,15 +96,32 @@ class Association:
         r.assoc_klas = klas
         return r
 
-    class MyCollection( list):
-        factory = None
-#        @collection.appender
-        def append( me, obj =_Relation, **kargs):
-            if obj is _Relation:    #marker for notset
-                obj = me.factory( **kargs)
-            list.append( me, obj)
-            return obj
-        if not _v03: append = sqlalchemy.orm.collections.collection.appender( append)
+    if 1:#_v03:
+        class MyCollection( list):
+            factory = None
+    #        @collection.appender  XXX  v04only
+            def append( me, obj =_Relation, **kargs):
+                if obj is _Relation:    #marker for notset
+                    obj = me.factory( **kargs)
+                list.append( me, obj)
+                return obj
+            if not _v03: append = sqlalchemy.orm.collections.collection.appender( append)
+    else:
+        class MyCollection( object):
+            __emulates__=None
+            factory = None
+            def __init__( me, *a, **k):
+                me._list = list(*a,**k)
+            @sqlalchemy.orm.collections.collection.appender
+            def append( me, obj =_Relation, **kargs):
+                if obj is _Relation:    #marker for notset
+                    obj = me.factory( **kargs)
+                me._list.append( obj)
+                return obj
+            @sqlalchemy.orm.collections.collection.remover
+            def remove( me, *a,**k): return me._list.remove( *a,**k)
+            @sqlalchemy.orm.collections.collection.iterator
+            def __iter__( me, *a,**k): return me._list.__iter__( *a,**k)
 
     @classmethod
     def myCollectionFactory( klas):

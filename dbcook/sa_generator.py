@@ -43,9 +43,12 @@ class _state:
     do_columns = False
 
 try:
-    _BinaryThing = sqlalchemy.sql._BinaryExpression
-except AttributeError:  #old pre ..??
-    _BinaryThing = sqlalchemy.sql._BinaryClause
+    _BinaryThing = sqlalchemy.sql.expression._BinaryExpression
+except AttributeError:  #old pre 3362
+    try:
+        _BinaryThing = sqlalchemy.sql._BinaryExpression
+    except AttributeError:  #old pre ..??
+        _BinaryThing = sqlalchemy.sql._BinaryClause
 
 level = 0
 def tstr(o):

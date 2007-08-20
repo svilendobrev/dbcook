@@ -18,7 +18,7 @@ if _v03:
     Select._old_accept_visitor = Select.accept_visitor
     Select.accept_visitor = accept_visitor
 
-    ANSICompiler = ansisql.ANSICompiler
+    compiler = ansisql.ANSICompiler
 
     def traverse(self, obj, stop_on=None):
         stack = [(obj,0)]   #X
@@ -43,7 +43,7 @@ if _v03:
 
     tabbing = '\\n"+tabbing'
 
-    for func in ANSICompiler.visit_select, ANSICompiler.visit_compound_select:
+    for func in compiler.visit_select, compiler.visit_compound_select:
         hacksrc( func,
         [
         ( '):\n', '''):
@@ -74,9 +74,13 @@ if _v03:
 
 else:   #v04
 
-    from sqlalchemy import ansisql
+    try:
+        compiler = sqlalchemy.ansisql.ANSICompiler
+    except :    #after 3362
+        import sqlalchemy.sql.compiler
+        compiler = sqlalchemy.sql.compiler.DefaultCompiler
 
-    for func in ansisql.ANSICompiler.visit_select, ansisql.ANSICompiler.visit_compound_select:
+    for func in compiler.visit_select, compiler.visit_compound_select:
         hacksrc( func,
         1*[
         ( '):\n', '''):

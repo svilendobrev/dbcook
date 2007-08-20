@@ -16,6 +16,11 @@ else:
         return parent._get_equivalent_columns()
     def joincopy( c): return c._clone()
 
+try:
+    ClauseAdapter = sqlalchemy.sql_util.ClauseAdapter
+except:
+    import sqlalchemy.sql.util
+    ClauseAdapter = sqlalchemy.sql.util.ClauseAdapter
 
 def prop_get_join( self, parent, primary=True, secondary=True):
     ''' from PropertyLoader.get_join(), no cache, no polymorphic joins '''
@@ -38,7 +43,7 @@ def prop_get_join( self, parent, primary=True, secondary=True):
         elif self.secondaryjoin:
             adapt = dict( exclude=self.foreign_keys)
         if adapt:
-            sqlalchemy.sql_util.ClauseAdapter( parent.select_table, equivalents=parent_equivalents,
+            ClauseAdapter( parent.select_table, equivalents=parent_equivalents,
                             **adapt ).traverse( primaryjoin)
 
     if secondaryjoin is not None:
@@ -110,12 +115,12 @@ def join_via( keys, mapper, must_alias =None):
             if _debug: print '>>', self_table.name, 'remote_side'
             #include = prop.remote_side      #-> pu_employee.db_id, Employee.db_id
             o_self_table = OnDemand( self_table)
-            sqlalchemy.sql_util.ClauseAdapter(
+            ClauseAdapter(
                 o_self_table, include=prop.remote_side, equivalents= self_colequivalents
             ).traverse(c)
             if not o_self_table.use:
                 if _debug: print '>>', self_table.name, 'foreignkey'
-                sqlalchemy.sql_util.ClauseAdapter(
+                ClauseAdapter(
                     o_self_table, include=forkey, equivalents= self_colequivalents
                 ).traverse(c)
 
@@ -124,7 +129,7 @@ def join_via( keys, mapper, must_alias =None):
         if _debug: print '>>>', c
         if mapper in xmappers or base_mapper(mapper) in ymappers:
             if parent_table:
-                sqlalchemy.sql_util.ClauseAdapter(
+                ClauseAdapter(
                     parent_table, include=forkey, equivalents= parent_colequivalents
                 ).traverse(c)
         if _debug: print '>>>>', c
