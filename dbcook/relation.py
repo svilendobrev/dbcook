@@ -43,11 +43,14 @@ import sqlalchemy
 import sqlalchemy.orm
 import warnings
 
+_v03 = hasattr( sqlalchemy, 'mapper')   #v0.3
+
 class _Relation: pass
 
 def setkargs( me, **kargs):
     for k,v in kargs.iteritems():
         setattr( me, k,v)
+
 
 class Association:
     ''' serve as description of the assoc.table and
@@ -95,11 +98,13 @@ class Association:
 
     class MyCollection( list):
         factory = None
+#        @collection.appender
         def append( me, obj =_Relation, **kargs):
             if obj is _Relation:    #marker for notset
                 obj = me.factory( **kargs)
             list.append( me, obj)
             return obj
+        if _v03: append = sqlalchemy.orm.collections.collection.appender( append)
 
     @classmethod
     def myCollectionFactory( klas):
@@ -149,8 +154,7 @@ class Associator:       #used in mapper-builder
 def make_relations( builder):
     ##XXX in builder._make_mapper_polymorphic() ???
 
-    v03 = hasattr( sqlalchemy, 'mapper')   #v0.3
-    if v03*'needed for assoc-object case':  #TODO find how this looks in 0.4 - this way is invalid
+    if _v03*'needed for assoc-object case':  #TODO find how this looks in 0.4 - this way is invalid
         def append( self, *args, **kwargs):
             item = self._data_appender( *args,**kwargs)
             self._InstrumentedList__setrecord( item)    #private __setrecord; was _before_ _data_appender
