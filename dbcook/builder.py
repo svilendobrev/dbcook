@@ -287,8 +287,6 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
     if dbg: print 'make_table_columns', klas, name_prefix
     columns = []
 
-    assoc = relation.Associator()
-
     reflector = mapcontext.reflector
     base_klas, inheritype = mapcontext.base4table_inheritance( klas)
     is_joined_table = (inheritype == table_inheritance_types.JOINED)
@@ -308,7 +306,7 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
             if not is_substruct[ 'as_value']:
                 if dbg: print '  as_reference', k,typ
 #                print klas.__name__, k, typ
-                assoc_kargs, assoc_columner= assoc.is_assoc_attr( klas, typ, attrklas)
+                assoc_kargs, assoc_columner= relation.is_association_reference( klas, typ, attrklas)
                 c = make_table_column4struct_reference( klas, k, attrklas, mapcontext, **assoc_kargs)
                 if assoc_columner: assoc_columner(c)
                 columns.append( c)
