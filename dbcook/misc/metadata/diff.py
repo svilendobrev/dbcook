@@ -14,7 +14,7 @@ def getprivate( c, name):
     return getattr( c, '_'+c.__class__.__name__+'__'+name)
 
 def diff( a1, a2):
-    if isinstance( a1, sqlalchemy.TypeEngine):
+    if isinstance( a1, sqlalchemy.types.TypeEngine):
         return a1.__dict__ != a2.__dict__
     if isinstance( a1, (sqlalchemy.PrimaryKeyConstraint, sqlalchemy.UniqueConstraint) ):
         return getprivate( a1, 'colnames') != getprivate( a2, 'colnames')

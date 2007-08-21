@@ -93,7 +93,6 @@ class dict_via_attr( object):
         except AttributeError,e:    #attribute declared but not set
             if dbg: print ' not found, KeyError'
             raise KeyError,k
-            #no convert1: return _static_type.StaticType._NONE # = notSetYet
         except KeyError,e:  #extra attribute
             try: d = src._my_sa_stuff
             except AttributeError: d = src._my_sa_stuff = dict()
@@ -106,7 +105,6 @@ class dict_via_attr( object):
         SET = delete and 'DEL' or 'SET'
         if dbg: print 'dict', SET, me.src.__class__, k, repr(v)
         vv = v
-        #no convert2: if v is None: vv = _static_type.StaticType._NONE
         try: return src.StaticType[ k].__set__( src, vv)
 #        except AttributeError,e:    #attribute declared but readonly
 #            raise KeyError,k
@@ -118,15 +116,6 @@ class dict_via_attr( object):
             return d.__setitem__( k,v)
     def __delitem__( me, k):
         return me.__setitem__( k, None, True)
-
-if 0:
-    #this as well as above None<->_NONE replacements to convert _NONE/notSetYet to/from None
-    def _typeprocess( self, value, *a, **k):
-        if value is _static_type.StaticType._NONE: value = None
-        return self._typeprocess( value, *a,**k)
-    import sqlalchemy
-    sqlalchemy.sql._BindParamClause._typeprocess = sqlalchemy.sql._BindParamClause.typeprocess
-    sqlalchemy.sql._BindParamClause.typeprocess = _typeprocess
 
 ######################
 

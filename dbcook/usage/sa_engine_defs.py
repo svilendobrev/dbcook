@@ -76,7 +76,6 @@ class Dpostgres( Dengine):
             parms += [ parm, url_attr ]
         parms.append( ourl.database )
         print '<', parms, '>'
-        #assert 0
         if 'subprocess':
             from subprocess import Popen, PIPE
             try:

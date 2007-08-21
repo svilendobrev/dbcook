@@ -171,8 +171,11 @@ if __name__ == '__main__':
             +[ 'unique= ' + repr(index.unique)]
         ) + ' )'
 
-
-    sqlalchemy.sql._TextClause.__repr__ = textclause_repr
+    try:
+        _TextClause = sqlalchemy.sql.expression._TextClause
+    except AttributeError:
+        _TextClause = sqlalchemy.sql._TextClause
+    _TextClause.__repr__ = textclause_repr
     sqlalchemy.schema.Table.__repr__ = table_repr
     sqlalchemy.schema.Column.__repr__ = column_repr
     sqlalchemy.schema.ForeignKeyConstraint.__repr__ = foreignkeyconstraint_repr

@@ -22,7 +22,7 @@ metadata.bind = dst_engine
 metadata.create_all()
 copydata.copy( metadata,
         src_engine= src_engine,
-        dst_engine= sqlalchemy.create_engine( dbdst)
+        dst_engine= dst_engine, #sqlalchemy.create_engine( dbdst)
     )
 
 # vim:ts=4:sw=4:expandtab

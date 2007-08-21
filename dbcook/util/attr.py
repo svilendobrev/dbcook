@@ -104,11 +104,24 @@ def issubclass( obj, klas):
 ########
 # util/module.py
 
-def import_fullname( name, **kargs):
+def import_fullname( name, last_non_modules =0, **kargs):
     'replacement of __import__ returning the leaf module'
+    subnames = name.split('.')
+    if last_non_modules:
+        name = '.'.join( subnames[:-last_non_modules])
     m = __import__( name, **kargs)
-    subnames = name.split('.')[1:]
-    for k in subnames: m = getattr(m,k)
+    for k in subnames[1:]: m = getattr(m,k)
     return m
+
+def find_valid_fullname_import( paths, last_non_modules =1):
+    'search for a valid attribute path, importing them if needed'
+    if isinstance( paths, str): paths = paths.split()
+    for p in paths:
+        try:
+            return import_fullname( p, last_non_modules=last_non_modules)
+        except Exception,e:
+#            print e
+            pass
+    assert 0, 'cant find any of ' + str(paths)
 
 # vim:ts=4:sw=4:expandtab

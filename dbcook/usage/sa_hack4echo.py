@@ -73,13 +73,11 @@ if _v03:
 )
 
 else:   #v04
-
-    try:
-        import sqlalchemy.ansisql
-        compiler = sqlalchemy.ansisql.ANSICompiler
-    except :    #after 3362
-        import sqlalchemy.sql.compiler
-        compiler = sqlalchemy.sql.compiler.DefaultCompiler
+    from dbcook.util.attr import find_valid_fullname_import
+    compiler = find_valid_fullname_import( '''
+        sqlalchemy.sql.compiler.DefaultCompiler
+        sqlalchemy.ansisql.ANSICompiler
+    ''')
 
     for func in compiler.visit_select, compiler.visit_compound_select:
         hacksrc( func,

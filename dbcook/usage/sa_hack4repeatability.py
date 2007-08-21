@@ -126,43 +126,4 @@ def hack4repeat():
         sqlalchemy.Table.constraints  = property( lambda me: me._constraints, _set_constraints)
         sqlalchemy.Column.constraints = property( lambda me: me._constraints, _set_constraints)
 
-### these are some fixes/hacks for this or that ###
-if 0:   #orm.query.Query
-    def _locate_prop(self, key, start=None):
-        '''the original func searches down the reference hierarchy for the key attribute,
-            e.g. q(A).select_by(age=44} will find A.b.c.d.age (if no .age is found above that);
-        use this instead to also search for multilevel keys/references,
-            e.g. q(A).select_by(**{'c.d.age': 134}'''
-        import properties
-        keys = []
-        seen = util.Set()
-        def search_for_prop(mapper_, fullkey):
-            if mapper_ in seen:
-                return None
-            seen.add(mapper_)
-            key = fullkey[0]
-            if mapper_.props.has_key(key):
-                prop = mapper_.props[key]
-                if len(fullkey)==1:
-                    if isinstance(prop, properties.SynonymProperty):
-                        prop = mapper_.props[prop.name]
-                    if isinstance(prop, properties.PropertyLoader):
-                        keys.insert(0, prop.key)
-                    return prop
-                else:
-                    props = [prop]
-                    fullkey = fullkey[1:]
-            for prop in mapper_.props.values():
-                if not isinstance(prop, properties.PropertyLoader):
-                    continue
-                x = search_for_prop(prop.mapper, fullkey)
-                if x:
-                    keys.insert(0, prop.key)
-                    return x
-
-            return None
-        p = search_for_prop(start or self.mapper, key.split('.') )
-        if p is None:
-            raise exceptions.InvalidRequestError("Cant locate property named '%s'" % key)
-        return [keys, p]
 # vim:ts=4:sw=4:expandtab

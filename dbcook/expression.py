@@ -16,11 +16,26 @@ else:
         return parent._get_equivalent_columns()
     def joincopy( c): return c._clone()
 
-try:
-    ClauseAdapter = sqlalchemy.sql_util.ClauseAdapter
-except:
-    import sqlalchemy.sql.util
-    ClauseAdapter = sqlalchemy.sql.util.ClauseAdapter
+
+from dbcook.util.attr import find_valid_fullname_import
+
+ClauseAdapter = find_valid_fullname_import( '''
+    sqlalchemy.sql.util.ClauseAdapter
+    sqlalchemy.sql_util.ClauseAdapter
+''',1 )
+
+_COMPOUNDexpr = find_valid_fullname_import( '''
+    sqlalchemy.sql.expression.ClauseList
+    sqlalchemy.sql.ClauseList
+    sqlalchemy.sql._CompoundClause
+''',1 )
+
+_BinaryExpression = find_valid_fullname_import( '''
+    sqlalchemy.sql.expression._BinaryExpression
+    sqlalchemy.sql._BinaryExpression
+''',1 )
+
+
 
 def prop_get_join( self, parent, primary=True, secondary=True):
     ''' from PropertyLoader.get_join(), no cache, no polymorphic joins '''
@@ -203,7 +218,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
                     lastcol = lc
                     break
             else:
-                raise exceptions.AssertionError(str(self) + ": Could not find corresponding column for " + str(c) + " in selectable "  + str(self.mapper.select_table))
+                assert 0, str(self) + ": Could not find corresponding column for " + str(c) + " in selectable "  + str(self.mapper.select_table)
 
         if _debug: print '>>>>>', lastcol
 
@@ -274,13 +289,6 @@ class Translator( expr.Expr.Visitor):
 
     aggregates = [ 'max', 'min', 'avg', 'sum', 'count' ]
 
-    try: _COMPOUNDexpr = sql._CompoundClause
-    except:
-        try:
-            _COMPOUNDexpr = sql.ClauseList
-        except: #after v3362
-            import sqlalchemy.sql.expression
-            _COMPOUNDexpr = sqlalchemy.sql.expression.ClauseList
         #? maybe also DESC,ASC,DISTINCT -> now UnaryExpr
 
     def __call__( me, level, op, *args, **kargs):
@@ -309,14 +317,11 @@ class Translator( expr.Expr.Visitor):
                 e = operator( obj, *args, **kargs)
 
         gather_joins = False
-        if not level or isinstance(e, me._COMPOUNDexpr):
+        if not level or isinstance(e, _COMPOUNDexpr):
             gather_joins = True
         else:
-            try:    #old versions ~ 3.6
-                if isinstance(e, sql._BooleanExpression): gather_joins=True
-            except AttributeError:
-                if isinstance(e, sql._BinaryExpression) and e.op in 'AND,OR,NOT,BETWEEN,IS,IS NOT'.split(','):     #maybe also EXISTS -> now Unary...?
-                    gather_joins=True
+            if isinstance(e, _BinaryExpression) and e.op in 'AND,OR,NOT,BETWEEN,IS,IS NOT'.split(','):     #maybe also EXISTS -> now Unary...?
+                gather_joins=True
         if gather_joins:
             e = me.gather_joins( e)
         if not level: assert not me.join_clauses        #nothing should have left

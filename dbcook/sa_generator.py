@@ -4,14 +4,14 @@
 import sqlalchemy
 import sqlalchemy.orm
 import operator
-from dbcook.util.attr import issubclass
+from dbcook.util.attr import issubclass, find_valid_fullname_import
 
 def traverse( visitor, obj):
     try: f = visitor.traverse
     except: return obj.accept_visitor( visitor)
     else: return f( obj)
 
-class CV( sqlalchemy.ClauseVisitor):
+class CV( sqlalchemy.sql.ClauseVisitor):
     ops = {
         '=':'==',
         operator.eq: '==',
@@ -42,13 +42,11 @@ class CV( sqlalchemy.ClauseVisitor):
 class _state:
     do_columns = False
 
-try:
-    _BinaryThing = sqlalchemy.sql.expression._BinaryExpression
-except AttributeError:  #old pre 3362
-    try:
-        _BinaryThing = sqlalchemy.sql._BinaryExpression
-    except AttributeError:  #old pre ..??
-        _BinaryThing = sqlalchemy.sql._BinaryClause
+_BinaryThing = find_valid_fullname_import( '''
+    sqlalchemy.sql.expression._BinaryExpression
+    sqlalchemy.sql._BinaryExpression
+    sqlalchemy.sql._BinaryClause
+''')
 
 level = 0
 def tstr(o):
@@ -70,7 +68,7 @@ def tstr(o):
     else:
         try: r = str( o.tstr)
         except AttributeError:
-            if isinstance( o, sqlalchemy.Alias):
+            if isinstance( o, sqlalchemy.sql.Alias):
                 r = repr2alias(o)
             else:
                 r = str(o)
@@ -378,14 +376,14 @@ Table = sqlalchemy.Table
 
 repr2tstr( sqlalchemy.Column, tstr)
 
-jdup = duper( sqlalchemy.Join.select)
+jdup = duper( sqlalchemy.sql.Join.select)
 def select4join( me, *args, **kargs):
     return jdup.dup( me, *args, **kargs)
-sqlalchemy.Join.select = select4join
+sqlalchemy.sql.Join.select = select4join
 
 def repr2alias(me):
     baseselectable= me
-    while isinstance( baseselectable, sqlalchemy.Alias):
+    while isinstance( baseselectable, sqlalchemy.sql.Alias):
         baseselectable = baseselectable.selectable
         try:
             r = str( baseselectable.tstr )
@@ -395,9 +393,9 @@ def repr2alias(me):
         r = tstr2(me)
     return r + '.alias( '+ repr(me.name) +' )'
 
-repr2tstr( sqlalchemy.Alias, repr2alias)
-repr2tstr( sqlalchemy.Select)
-repr2tstr( sqlalchemy.Join)
+repr2tstr( sqlalchemy.sql.Alias, repr2alias)
+repr2tstr( sqlalchemy.sql.Select)
+repr2tstr( sqlalchemy.sql.Join)
 
 select = duper( sqlalchemy.select)
 
