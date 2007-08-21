@@ -14,7 +14,7 @@ The directory-structure is still in flux - to use the framework,
 the internal dbcook/ has to be accessible somehow (PYTHONPATH or else).
 Licensed under MIT-license. Dependencies:
  * kjbuckets (from gadfly) for graph-arithmetics
- * SQLAlchemy, 0.3.6+?
+ * SQLAlchemy, v0.4 series or v0.3.6+? series (auto-guessing)
 
 
 
@@ -65,12 +65,14 @@ Example declarations:
 
 import dbcook.usage.plainwrap as o2r
 class Text( o2r.Type): pass
+class Int( o2r.Type): pass
 
 class Address( o2r.Base):
 	place = Text()
 
 class Person( o2r.Base):
 	name = Text()
+	age  = Int()
 	address = o2r.Type4Reference( Address)
 	friend  = o2r.Type4Reference( 'Person')
 
@@ -79,6 +81,12 @@ class Employee( Person):
 
 #build it
 o2r.Builder( metadata, locals(), { Text: sqlalchemy.String } )
+
+...
+for p in expression.query1(
+            lambda self: self.friend.friend.friend.age > 24,
+            klas=Person, session=session) ):
+	print p
 
 ..... and no mentioning of tables, columns etc whatsoever .....
 
@@ -96,11 +104,10 @@ SA is used in dbcook is correct/working, and mapper/other which check whether
 the cooker does right thing as result. It still uses makefile to run all stuff.
 
 Some todo's, long- or short- term:
- - a way of declaring collections 
-     (using or not SQLAlchemy: relation(.. use_list=True))
- - upgrate to SA 0.4 - expressions.joins must be rethinked
+ - a way of declaring collections (one2many: work in progress)
  - some documentation, translate all in both languages
  - tests for all the stuff, systematically in most of combinations
+ - expressions.joins need rethinking (upgraded to SA 0.4 ok)
  - generate sql-server-side functions, triggers etc
  - single-table inheritance
  - concrete-polymorphism: polymunion of (type,id) key
