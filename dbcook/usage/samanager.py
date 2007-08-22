@@ -77,17 +77,17 @@ class SAdb:
 
     def make_metadata( me):
         metadata = sqlalchemy.MetaData( me.db)
-        if me.echo or 'sql' in me.log_sa:
-            me.db.echo = True
         me.metadata = metadata
         return metadata
 
 
-    def _open( me, url, **kargs):
+    def _open( me, url, echo =None, **kargs):
         if 'open' in config.debug:  print '_open db:', url
+        if echo is None:
+            echo = me.echo or 'sql' in me.log_sa
         echo_pool= ('connect' in me.log_sa) or ('all' in me.log_sa)
     #    dict( echo_pool= echo_pool, max_overflow= -1)
-        db = me.db = sqlalchemy.create_engine( url, echo_pool=echo_pool, **kargs)
+        db = me.db = sqlalchemy.create_engine( url, echo_pool=echo_pool, echo=echo, **kargs)
         return db
 
     def open( me, recreate =False, **engine_kargs):
@@ -128,11 +128,6 @@ class SAdb:
     def detach_instances( me, namespace_or_iterable):
         detach_instances( namespace_or_iterable, idname= builder.column4ID.name)
 
-
-    def echo_sql( me, x):       #show SQL statements
-        old = me.db.echo
-        me.db.echo = x
-        return old
 
     def iterklasi( me): return me.klasi.itervalues()
 
