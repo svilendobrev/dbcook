@@ -7,15 +7,17 @@ TODO:
 връзки:
       * към 1:
         x = Reference( struct) = has_one(struct) = SubStruct(struct) = struct.Instance()
-+       * самостоятелна
--       * или с backref: Reference( struct, backrefCollection =име_отсреща)
-            име_отсреща e колекция
++       * самостоятелна (1-посочна)
+-       * 2-посочна 1към1: Reference( struct, other_side =име_отсреща, singular=True)
+-       * 2-посочна с 1-към-много: Reference( struct, other_side =име_отсреща, singular=False)
+            име_отсреща става колекция ??
 
 -     1 към много:
-        x = Collection( struct, име_отсреща ='') = has_many( struct, име_отсреща ='')
+        x = Collection( struct, other_side =име_отсреща) = has_many
             име_отсреща e указател( Reference)
         * име_отсреща миже да липсва, т.е. неявно/служебно
-        * Collection в Entity трябва да става автоматично Association
+        * Collection в 2временно Entity трябва да става автоматично Association
+-       * 2-посочна с много-към-1:
 
       много към много:
 -       = неявна
@@ -27,15 +29,17 @@ TODO:
 -           трябва да може да се обявява съвсем служебно:
                 x = Association.Hidden( otherstruct, име_отсреща ='')
                     име_отсреща е на асоциацията от другата страна
-                с възможно служебно име_отсреща
+                    с възможно служебно име_отсреща
 
-    = явна
-+       class myAssocAB( Association):
-            DBCOOK_hidden=False
-            ... .Links
-        x = Association.Relation( myAssocAB, име_в_асоциацията='')
-            име_в_асоциацията е на Reference/Association.Link
--       * възможно служебно име_в_асоциацията
+        = явна
++           class myAssocAB( Association):
+                DBCOOK_hidden=False
+                ... .Links
+            x = Association.Relation( myAssocAB, име_в_асоциацията='')
+                име_в_асоциацията е на Reference/Association.Link
+-           * възможно служебно име_в_асоциацията
++       * 2-посочна
+-       * еднопосочна
 
 '''
 
