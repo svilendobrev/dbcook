@@ -51,10 +51,8 @@ class Director( director_base):
 
 import sqlalchemy
 import sqlalchemy.orm
-meta = sqlalchemy.MetaData( 'sqlite:///')
-meta.bind.echo= 'echo' in sys.argv
-
-
+meta = sqlalchemy.MetaData( sqlalchemy.create_engine('sqlite:///', echo= 'echo' in sys.argv ))
+v03 = hasattr( sqlalchemy, 'mapper')
 
 
 # map attr-types to sql-column-types
@@ -70,7 +68,7 @@ mybuild = o2r.Builder( meta,
         generator =True     #lets see how this would look in plain sqlalchemy
     )
 
-#### that was it. lets use it... ########3
+#### that was it. lets use it... ####
 
 #see how this should look in plain SA calls
 if mybuild.generator:
@@ -135,33 +133,35 @@ def test_klas_tree_structure():
     for klas in [Employee, Manager, Engineer, Director]:
         print '== query_ALL_under', klas.__name__
         q1 = session.query( klas).all()
-        print  '\n'.join( '  '+str(x) for x in q1)
+        for x in q1: print ' ', x
 
         mapper = mybuild.mappers[ klas]
         print '== query_BASE_only', klas.__name__
         if mapper.plain:
             q2 = session.query( mapper.plain).all()
-            print  '\n'.join( '  '+str(x) for x in q2)
+            for x in q2: print ' ', x
             for a in q2: assert a.__class__ == klas
         else: q2 = []
 
         print '== query_SUB_classes_only', klas.__name__
         if mapper.polymorphic_sub_only:
-            q3 = list( session.query( klas)
+            q3 = session.query( klas)
             flt = mapper.polymorphic_sub_only
-            if isinstance( flt, sqlalchemy.sql.Selectable):
-                q3 = q3.from_statement( flt)
+            if v03: q3 = q3.select( flt)
             else:
-                q3 = q3.filter( flt)
-            q3 = q3.all()
-            print  '\n'.join( '  '+str(x) for x in q3)
+                if isinstance( flt, sqlalchemy.sql.Selectable):
+                    q3 = q3.from_statement( flt)
+                else:
+                    q3 = q3.filter( flt)
+                q3 = q3.all()
+            for x in q3: print ' ', x
             for a in q3: assert a.__class__ != klas and isinstance( a, klas)
         else: q3 = []
 
         assert len(q2)+len(q3)==len(q1)
 
 def prn(q):
-    print  '\n'.join( '  '+str(x) for x in q)
+    for x in q: print ' ', x
 
 def test_selects():
     from dbcook import expression
@@ -171,7 +171,7 @@ def test_selects():
     ######## simple
     age = 40
     print '====== all Employee with age<=', age, ', plain SA'
-    prn( session.query( Employee).all( empl_table.c.age <= age) )
+    prn( session.query( Employee).filter( empl_table.c.age <= age).all() )
 
     print '       --- same, via expression'
     prn( expression.query1( lambda self: self.age <= age, klas=Employee, session=session) )
@@ -183,9 +183,9 @@ def test_selects():
     age = 40
     print '====== all Employee with manager of age<=', age, ', plain SA'
     mgr = empl_table.alias()
-    prn( session.query( Employee).all(
+    prn( session.query( Employee).filter(
             (mgr.c.age <= age)
-            & (empl_table.c.manager_id == mgr.c.db_id) ) )
+            & (empl_table.c.manager_id == mgr.c.db_id) ).all() )
 
     print '       --- same, via expression/equivalent'
     prn( expression.query1(
@@ -201,10 +201,10 @@ def test_selects():
     ######## multilevel self-ref
     mgr2 = empl_table.alias()
     print '====== multilevel: all Employee with manager with manager of age >', age, 'plain SA'
-    prn( session.query( Employee).all(
+    prn( session.query( Employee).filter(
             (mgr2.c.age > age)
             & (mgr.c.manager_id == mgr2.c.db_id)
-            & (empl_table.c.manager_id == mgr.c.db_id) ) )
+            & (empl_table.c.manager_id == mgr.c.db_id) ).all() )
 
     print '       --- same, via expression/automatic'
     prn( expression.query1(
