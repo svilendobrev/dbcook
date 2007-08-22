@@ -20,8 +20,8 @@ else:
 from dbcook.util.attr import find_valid_fullname_import
 
 ClauseAdapter = find_valid_fullname_import( '''
-    sqlalchemy.sql.util.ClauseAdapter
     sqlalchemy.sql_util.ClauseAdapter
+    sqlalchemy.sql.util.ClauseAdapter
 ''',1 )
 
 _COMPOUNDexpr = find_valid_fullname_import( '''
