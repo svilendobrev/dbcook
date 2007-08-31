@@ -119,8 +119,24 @@ class dict_via_attr( object):
 
 ######################
 
+class _Meta2check_dict( _Base.__metaclass__):
+    @staticmethod
+    def convert( mklas, name, bases, adict):
+        for b in bases:
+            for c in b.mro():
+                d = c.__dict__.get( '__dict__', None)
+                if d and not isinstance( d, property):
+                    bb = b is not c and '(via %(b)s)' % locals() or ''
+                    assert 0, '''cannot create class `%(name)s`, because
+ a base class %(c)s %(bb)s
+ contains/allows dynamic __dict__;
+ setup __slots__ = () (or something) on that base class (and do not put "__dict__")''' % locals()
+        _Base.__metaclass__.convert( mklas, name, bases, adict)
+
+
 def modelBaser( model_base_klas ):
     class _ModelBase( model_base_klas):
+        __metaclass__ = _Meta2check_dict
         __slots__ = [ '__weakref__',
                 '_sa_session_id',
                 '_sa_insert_order',
@@ -148,11 +164,8 @@ def modelBaser( model_base_klas ):
         plain attributes:   go where they should, in the object via get/set attr
 
     this exercise would be a lot easier if:
-        - _state didn't use/make a privately-named __sa_attr_state
-            but just plain name (just _sa_attr_state)
-            (and the attribute_manager.init_attr() is redundant - one
-                func-call is ALOT slower than AttributeError exception)
-        - plain attributes didn't access directly obj,__dict__, but have proper getattr/setattr
+        - _state didn't use another privately-named __sa_attr_state
+        - plain attributes didn't access directly obj.__dict__, but have proper getattr/setattr
         - extra columns and extra system attributes went all into the above _state,
             or anywhere but in ONE place.
     '''
