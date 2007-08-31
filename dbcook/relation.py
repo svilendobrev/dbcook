@@ -57,6 +57,7 @@ class Association( object):
     the resulting subclasses may or may not be mixable.
     Keep namespace clean - do not pollute with non-dependent stuff
     '''
+    __slots__ = ()
     DBCOOK_no_mapping = True
     #DB_NO_ID = True    #XXX db_id is a must only if table is referred
     #DBCOOK_unique_keys= ...  #primary key consist of which fields; all by default
@@ -160,7 +161,7 @@ class _AssocDetails:
             'return relation_klas, actual_relation_klas, relation_kargs'
 
             assoc_klas = me.assoc_klas
-            print '?', name, assoc_klas
+            #print '?', name, assoc_klas
             if isinstance( assoc_klas, str):
                 try: assoc_klas = builder.klasi[ assoc_klas]
                 except KeyError: raise KeyError, '''undefined association class %(assoc_klas)r in %(klas)s.%(name)s''' % locals()
@@ -193,7 +194,7 @@ Check for double-declaration with different names''' % locals()
 
             if assoc_klas.DBCOOK_hidden:
                 if len(fks)==2:     #2 diff links to same klas
-                    print 'same klas x2'
+                    #print 'same klas x2'
                     assert len(foreign_keys) == 1
                     for k in fks:
                         if k != key: break
@@ -203,7 +204,7 @@ Check for double-declaration with different names''' % locals()
                     otherfk = fks[k]
                     otherklas = klas
                 else:   #2 diff klasi
-                    print '2diff', foreign_keys
+                    #print '2diff', foreign_keys
                     assert len(foreign_keys) == 2, 'internal error, wrong .foreign_keys on %(assoc_klas)s' % locals()
                     for otherklas in foreign_keys:
                         if otherklas is not klas: break
@@ -243,7 +244,7 @@ class Collection( object):
         'return relation_klas, actual_relation_klas, relation_kargs'
 
         rel_klas = me.rel_klas
-        print '?', name, rel_klas
+        #print '?', name, rel_klas
         if isinstance( rel_klas, str):
             try:
                 rel_klas = builder.klasi[ rel_klas]
@@ -280,7 +281,7 @@ def make_relations( builder):
         if issubclass( klas, Association):
             primary_key = m.local_table.primary_key.columns
             m.allow_null_pks = bool( primary_key and [c for c in primary_key if c.nullable] )
-            print ' allow_null_pks:', m.allow_null_pks
+            #print ' allow_null_pks:', m.allow_null_pks
             continue
 
         relations = {}
@@ -294,8 +295,8 @@ def make_relations( builder):
                 continue
 
             if not rel_klas_actual: rel_klas_actual = rel_klas
-            print ' property', name, 'on', klas, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
-            print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
+            #print ' property', name, 'on', klas, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
+            #print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
             m.add_property( name, sqlalchemy.orm.relation( rel_klas_actual, **rel_kargs) )
             relations[ name ] = rel_klas
 

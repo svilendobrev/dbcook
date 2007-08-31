@@ -180,6 +180,7 @@ def Type4Reference( klas, lazy =False, **kargs):
     return r
 
 class Association( builder.relation.Association):
+    __slots__ = ()
     Type4Reference = staticmethod( Type4Reference)
 
 Type = _static_type.StaticType
