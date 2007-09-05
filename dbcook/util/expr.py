@@ -373,8 +373,7 @@ if __name__ == '__main__':
 ######
 
     class Test:
-        from engine.testutils import HorTestCase
-        from engine.testbase import Case, SUBSEP
+        from engine.testbase import Case
         VERBOSE = 1
 
         class A( object):
