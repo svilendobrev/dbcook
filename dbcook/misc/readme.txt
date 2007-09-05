@@ -31,6 +31,7 @@ cache_results/: (dbcook/SA)
         #e.g.
         #age    = cache_agregators.Average( Person.age, FilterCriteria1 )
         #salary = cache_agregators.Sum( Person.salary, FilterCriteria2 )
+  note: check http://www.mr-pc.kiev.ua/en/projects/SQLAlchemyAggregator, python-side 
 
 may be invented or may not:
 
