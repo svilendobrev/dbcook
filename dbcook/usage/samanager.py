@@ -131,6 +131,10 @@ class SAdb:
 
     def iterklasi( me): return me.klasi.itervalues()
 
+    def rootTable( me, klas):
+        mostBaseMappableKlas = me.mapcontext.root( klas)
+        return me.tables[ mostBaseMappableKlas]
+
     def session( me):
         return sqlalchemy.orm.create_session( echo_uow= 'transact' in me.log_sa)
 
