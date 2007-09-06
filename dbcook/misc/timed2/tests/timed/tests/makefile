@@ -1,0 +1,19 @@
+#$Id$
+
+nw: line now
+line:
+	@echo -e '\n\n\n=================================\n'
+%.test: %.py
+	@echo ===============
+	PYTHONPATH=.:..:../../.. python $*.py -v
+
+now: ../timed1.test
+now: ../timed2.test
+now: ../module_timed.test
+
+now: test.test
+now: ../timecontext.test
+now: ../objects.test
+now: ../setup.test
+
+# vim:ts=4:sw=4:noexpandtab

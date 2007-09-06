@@ -1,0 +1,228 @@
+#$Id$
+# -*- coding: cp1251 -*-
+
+'''
+TimeContext: времеви контекст на дадена операция/промяна - дву-временен (bi-temporal).
+    trans_time: време на извършване на Транзакцията/промяната
+    valid_time: за/от кога е валидна операцията/промяната (вальор)
+изисквания:
+ - да се ползва като подреждаем обект (наредена двойка?) в Timed*
+ - да се ползват атрибутите му поотделно: t.trans, t.valid
+ - да се ползва навсякъде ВМЕСТО време - _това_ е времето
+т.е. макс. скорост/удобство и мин.място
+
+Всички време-зависими данни/алгоритми се извличат по такъв времеви-контекст.
+    напр. за x = a+b, където а и b са времеви, трябва да изглежда така:
+    x = a.get( time) + b.get( time)
+
+За улеснение при изчисления има следните възможности за автоматизация/скриване на употребата му:
+
+ - Translator* - замества атрибутен достъп с търсене на атрибута по време:
+      x=a+b->
+        t = Translator( time, locals() )
+        x = t.a + t.b
+    Translator1 е прост, но не работи с йерархичен достъп, т.е. b.c.d трябва да се сплеска предварително:
+      x=a+b.c.d->
+        t = Translator1( time, a=a, bcd=b.c.d )
+        x = t.a + t.bcd
+    Translator2 е работи с йерархичен достъп, но може да не работи във всички случаи:
+      x=a+b.c.d->
+        t = Translator2( time, locals() )
+        x = t.a + t.b.c.d
+
+ - Глобален контекст на нишката:
+    да се ползва от всички операции без явен собствен контекст (т.е. по подразбиране/default)
+    - трябва да не се забравя да се възстановява !!
+    - изисква вътрешна поддръжка от самите TimedObj обекти (!), което може да не е елементарно
+    употреба:
+        tmp = newDefaultTimeContext( time)
+        x = a + b + c.get( time -1)
+        tmp.restoreTimeContext()    #ако няма автоматичен деструктор
+
+'''
+
+class TimeContext( tuple):
+    '''
+    Това е наредена двойка, НО САМО за ускоряване на работата.
+    НИКОГА не разчитай на подредбата вътре!
+        - четене: ползвай .trans, .valid, .as_trans_valid() и .as_valid_trans().
+        - създаване: само чрез keyword аргументи (trans=,valid=),
+            или от копие на друг такъв.
+    (Навсякъде вместо valid и trans може да се ползват valid_time и trans_time)
+
+    Всички времена трябва да са от тип TimeContext.Time (променяемо);
+    (ако има отделно TransTime, trans трябва да е TransTime,
+
+    добре е също така точността на записаните версии и на контекста,
+    с който се търси да е еднаква (трудно е да се форсира това, обаче)!!!
+    '''
+
+    Time = object
+#    TransTime = None
+    @classmethod
+    def isTime( klas, time): return isinstance( time, klas.Time)
+    _isTime = isTime    #save it
+    @classmethod
+    def isTransTime( klas, time): return isinstance( time, getattr( klas, 'TransTime', klas.Time))
+    _isTransTime = isTransTime #save it
+
+    def __new__( klas, **kargs):
+        'ctor( trans=, valid=)'
+        return klas._ctor1( **kargs)
+    @classmethod
+    def time( klas, **kargs):
+        'ctor( trans_time=, valid_time=)'
+        return klas._ctor2( **kargs)
+    @classmethod
+    def copy( klas, tm):
+        'copy_ctor( another_TimeContext_of_SAME_type)'
+        assert isinstance( tm, klas)
+        return tuple.__new__( klas, tm)
+
+    @classmethod
+    def _ctor1( klas, valid, trans):
+        assert klas.isTime( valid), `valid`
+        assert klas.isTransTime( trans), `trans`
+        return tuple.__new__( klas, (valid,trans))
+    @classmethod
+    def _ctor2( klas, valid_time, trans_time):
+        return klas._ctor1( valid_time,trans_time)
+
+    class _Pickler(object):
+        def __new__( klas, valid,trans):
+            return TimeContext._ctor1( valid,trans)
+    def __reduce__( me):
+        return _Pickler, me.as_trans_valid()
+
+    valid = valid_time = property( lambda me: tuple.__getitem__(me,0) ) #me[0] )
+    trans = trans_time = property( lambda me: tuple.__getitem__(me,1) ) #me[1] )
+    def as_trans_valid( me): return me.trans,me.valid   #tuple.__getitem__(me,1)],me[0] ,me[0]
+    def as_valid_trans( me): return tuple(me)
+    def __str__( me): return 'TimeContext( trans=%r, valid=%r)' % me.as_trans_valid()
+    __repr__ = __str__
+    def __getitem__( me,*a):
+        raise NotImplementedError, 'DO NOT use direct indexes!'
+
+####
+    if 0:
+        class DefaultTimeContext( object):
+            #XXX
+            ''' ВНИМАНИЕ!:
+                a = DefaultTimeContext( xx)
+                b = DefaultTimeContext( yy)
+               работи както се очаква (последно е yy), докато
+                d = DefaultTimeContext( xx)
+                d = DefaultTimeContext( yy)     #същото d!
+               може да не направи каквото се очаква - остава xx !!??
+            '''#XXX
+
+            import threading
+            _thread_default = threading.local()
+            _thread_default.timeContexts = []
+            pushDefaultTimeContext = _thread_default.timeContexts.append
+            popDefaultTimeContext  = _thread_default.timeContexts.pop
+
+            def last( me): return me._thread_default.timeContexts[-1]
+            __slots__ = ( 'any',)
+            def __init__( me, tm):
+                assert isinstance( tm, TimeContext)
+                me.pushDefaultTimeContext( tm)
+                me.any = True
+                print 'push'
+            def restore( me):
+                if (me.any): me.popDefaultTimeContext()
+                me.any = False
+                print 'restore'
+            __del__ = restore
+
+        def default(): return DefaultTimeContext.last()
+
+
+TM = TimeContext
+_Pickler = TimeContext._Pickler
+
+import timed2 as _timed2
+class _Timed2overTimeContext( _timed2.Timed2):
+    __slots__ = ()
+    TimeContext = TimeContext
+
+    #to Timed2 internal protocol
+    def time2key_valid_trans( me, time):
+        assert isinstance( time, me.TimeContext)
+        return time
+
+    #from Timed2 internal protocol
+    def key_valid_trans2time( me, (valid, trans) ):
+        return me.TimeContext( trans=trans, valid=valid)
+
+
+class _Test( _timed2.Test):
+    timekey2input = staticmethod(
+        lambda timed, k: k.as_trans_valid() )
+    input2time = staticmethod(
+        lambda (t,v): TimeContext( trans=t,valid=v) )
+
+if __name__ == '__main__':
+    try: c = TimeContext( 1,2)
+    except TypeError: pass
+    try: c = TimeContext( trans=1)
+    except TypeError: pass
+    try: c = TimeContext( valid=1)
+    except TypeError: pass
+    c = TimeContext( trans=1,valid=2)
+
+    test2 = _Test()
+    t = _Timed2overTimeContext()
+    objects = test2.fill( t, [1,3,2,4]  )
+    err = test2.test_db( t,)
+#    if not err: print t
+    test2.test_get( t, objects,)
+    test2.exit()
+
+    import module_timed
+    from datetime import datetime, timedelta
+
+    class Timed2dict( Timed2):
+        def time2key_valid_trans( me, time):                #to Timed2 protocol
+            return (time['valid'],time['trans'])
+        def key_valid_trans2time( me, (trans, valid)):      #from Timed2 protocol
+            return dict( trans=trans, valid=valid)
+
+    class Customer:
+        def __init__( me):
+            me.name = Timed2dict()
+            me.salary = Timed2dict()
+        def get( me, time):
+            return dict(
+                name   = me.name.get( time),
+                salary = me.salary.get( time),
+            )
+    from translator import Translator
+    def dod_calculate( customer, dod, time):
+        t = Translator( time, salary=customer.salary, dod=dod, )
+        print t.dod
+        return t.dod and t.dod.dod(t.salary) or 0
+
+######
+    Converter = module_timed.mod2time__all_in_fname___trans_valid
+    class mod2time__converter( Converter):
+        str2time1 = staticmethod( module_timed.dateYYYYMMDD2datetime)
+        def maketime( me, trans, valid):
+            return dict( trans=trans, valid=valid)
+
+    DOD = module_timed.Module( 'dod2', Timed2dict,
+                mod2time__converter
+            )
+    print DOD
+    c = Customer()
+    c.name.put( 'alex yosifov', dict( trans=datetime(2006,1,2), valid=datetime(2006,1,2)))
+    c.salary.put( 333,          dict( trans=datetime(2006,2,2), valid=datetime(2006,2,2)))
+    c.salary.put( 500,          dict( trans=datetime(2006,5,2), valid=datetime(2006,5,2)))
+    c.salary.put( 2000,         dict( trans=datetime(2006,5,22),valid=datetime(2006,6,2)))
+    c.name.put( 'A. Yosifov',   dict( trans=datetime(2006,8,2), valid=datetime(2006,9,2)))
+    one_u = timedelta(microseconds=1)
+    for i in range(1, 13):
+        dt = datetime(2006, i, 1) - one_u
+        print dt, dod_calculate( c, DOD, dict( trans=dt, valid=dt) )    #Timed2 used by module_timed above
+
+# vim:ts=4:sw=4:expandtab
