@@ -566,7 +566,7 @@ class Builder:
         klasi = me.DICT()
         for typ in itervalues:      #for k in getattr( namespace, '_order', itervalues):
             if me.mapcontext.mappable( typ):
-                k = getattr( typ, '__name__', None)
+                k = typ.__name__
                 assert k and not k.startswith('__')
                 klasi[ k] = typ     #aliases are ignored; same-name items are overwritten
         me.klasi = klasi

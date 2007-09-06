@@ -36,9 +36,11 @@ def walker( namespace, reflector, baseklas):
 
     for (kname,kmod),(klas,isnamespace) in klasi.items(): #copy
         add_bases( klas, klasi, baseklas)
-    if _debug: print 'walk: end'
 
-    return dict( (kname,klas) for (kname,kmod),(klas,isnamespace) in klasi.iteritems() )
+    r = dict( (kname,klas) for (kname,kmod),(klas,isnamespace) in klasi.iteritems() )
+    if _debug: print r
+    if _debug: print 'walk: end'
+    return r
 
 
 def add_bases( klas, klasi, baseklas):
