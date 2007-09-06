@@ -133,6 +133,14 @@ class _Meta2check_dict( _Base.__metaclass__):
  setup __slots__ = () (or something) on that base class (and do not put "__dict__")''' % locals()
         _Base.__metaclass__.convert( mklas, name, bases, adict)
 
+    def __delattr__( klas, attrname):
+        'deleting attributes of the klas comes here - try restore the StaticType'
+        try:
+            st = klas.StaticType[ attrname]
+        except KeyError:
+            _Base.__metaclass__.__delattr__( klas, attrname)
+        else:
+            setattr( klas, attrname, st)
 
 def modelBaser( model_base_klas ):
     class _ModelBase( model_base_klas):
