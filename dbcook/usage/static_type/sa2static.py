@@ -142,42 +142,40 @@ class _Meta2check_dict( _Base.__metaclass__):
         else:
             setattr( klas, attrname, st)
 
-def modelBaser( model_base_klas ):
-    class _ModelBase( model_base_klas):
-        __metaclass__ = _Meta2check_dict
-        __slots__ = [ '__weakref__',
-                '_sa_session_id',
-                '_sa_insert_order',
-                '_instance_key',
-                '_entity_name',
+class Base( _Base):
+    __metaclass__ = _Meta2check_dict
+    __slots__ = [ '__weakref__',
+            '_sa_session_id',
+            '_sa_insert_order',
+            '_instance_key',
+            '_entity_name',
 
-                '_my_state',
-                '_my_sa_stuff',
-        ]
-        def _lazy_mystate( me):
-            try: return me._my_state
-            except AttributeError:
-                m = me._my_state = {}
-                return m
-        _state = property( _lazy_mystate)
-        __dict__ = property( dict_via_attr )
+            '_my_state',
+            '_my_sa_stuff',
+    ]
+    def _lazy_mystate( me):
+        try: return me._my_state
+        except AttributeError:
+            m = me._my_state = {}
+            return m
+    _state = property( _lazy_mystate)
+    __dict__ = property( dict_via_attr )
 
-        __doc__ = '''
-    SA uses obj.__dict__ directly  - expects to be able to add any stuff to it!
-    NO __dict__ here - all is done to avoid it, as it shades the object
-            and makes all the StaticTypeing meaningless.
-    SA-mapper-related attributes are hence split into these categories:
-        system:     __sa_attr_state and others in the __slots__ above
-        extra columns (foreign keys etc):      go in _my_sa_stuff
-        plain attributes:   go where they should, in the object via get/set attr
+    __doc__ = '''
+SA uses obj.__dict__ directly  - expects to be able to add any stuff to it!
+NO __dict__ here - all is done to avoid it, as it shades the object
+        and makes all the StaticTypeing meaningless.
+SA-mapper-related attributes are hence split into these categories:
+    system:     __sa_attr_state and others in the __slots__ above
+    extra columns (foreign keys etc):      go in _my_sa_stuff
+    plain attributes:   go where they should, in the object via get/set attr
 
-    this exercise would be a lot easier if:
-        - _state didn't use another privately-named __sa_attr_state
-        - plain attributes didn't access directly obj.__dict__, but have proper getattr/setattr
-        - extra columns and extra system attributes went all into the above _state,
-            or anywhere but in ONE place.
-    '''
-    return _ModelBase
+this exercise would be a lot easier if:
+    - _state didn't use another privately-named __sa_attr_state
+    - plain attributes didn't access directly obj.__dict__, but have proper getattr/setattr
+    - extra columns and extra system attributes went all into the above _state,
+        or anywhere but in ONE place.
+'''
 
 def Type4Reference( klas, lazy =False, **kargs):
     if isinstance( klas, str):
@@ -192,7 +190,6 @@ class Association( builder.relation.Association):
     Type4Reference = staticmethod( Type4Reference)
 
 Type = _static_type.StaticType
-Base = modelBaser( _Base)
 reflector = Reflector4StaticType()
 
 def setup( s):
