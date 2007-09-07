@@ -47,16 +47,18 @@ def get_populate_namespace( namespace, base_klas, popreflector, generator):
     if not populate: return {}
     if generator:
         #make a separate population for the generator only
-        # hide the __init__ ctor's (SA-made) to avoid mapper-construction-errors
+
+            # hide the __init__ ctor's (SA-made) to avoid mapper-construction-errors
         inits = {}
-        for k in namespace.itervalues():
-            if issubclass( k, base_klas):
-                try:
-                    r = k.__dict__[ '__init__' ]
-                except KeyError: pass
-                else:
-                    inits[k] = r
-                    k.__init__ = base_klas.__init__
+        if 0:       #dont after v3463
+            for k in namespace.itervalues():
+                if issubclass( k, base_klas):
+                    try:
+                        r = k.__dict__[ '__init__' ]
+                    except KeyError: pass
+                    else:
+                        inits[k] = r
+                        k.__init__ = base_klas.__init__
 
         from dbcook import builder
         generator.populate( populate(), reflector= popreflector, idname= builder.column4ID.name)

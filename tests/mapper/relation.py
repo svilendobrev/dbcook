@@ -83,7 +83,7 @@ s.flush()
 s.clear()
 sa.query_all_tables()
 s= sa.session()
-aa = s.query( A ).select_by(name='a1')[0]
+aa = s.query( A ).filter_by(name='a1').first()
 print aa
 print 'xxxxxxx'
 l = [i.b_boza for i in aa.all_ab]
