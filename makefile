@@ -3,8 +3,13 @@
 #PYTHONPATH := $(PYTHONPATH):$(shell pwd)/..
 #export PYTHONPATH
 
+now: test misc
 test:
 	$(MAKE) -C tests/
+
+misc:
+	$(MAKE) -C dbcook/misc/timed2/tests/
+	$(MAKE) -C dbcook/misc/aggregator/
 
 %.test: %.py
 	@echo ===============
