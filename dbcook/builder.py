@@ -642,6 +642,7 @@ class Builder:
                 make_mapper_props( klas, me.mapcontext, me.mappers[ klas], me.tables )
 
             relation.make_relations( me)
+            sqlalchemy.orm.compile_mappers()
         finally:
             if me.generator:
                 me.generator.pmapi( m.polymorphic_all for m in me.mappers.itervalues() )
@@ -748,8 +749,12 @@ class Builder:
             #also, explicitly list all properties to be included/excluded from base_klas
 
         inherits= base_mapper and base_mapper.polymorphic_all or None
-
         is_pm = inherits and inherits.polymorphic_on or pjoin_key
+
+        has_no_instances = not me.mapcontext.has_instances( klas)
+        if has_no_instances:
+            if dbg: print ' load-only - disable mapper.save/.delete'
+
         #primary, eventualy polymorphic_all if pjoin
         pm = make_mapper( klas, table,
                     polymorphic_identity= is_pm and name or None,
@@ -758,6 +763,7 @@ class Builder:
                     polymorphic_on= pjoin_key,
                     inherits= inherits,
                     inherit_condition= inherit_condition,
+                    extension = has_no_instances and _mapext or None
                 )
         m.polymorphic_all = pm
 
@@ -768,11 +774,6 @@ class Builder:
                 warnings.warn( 'polymorphism over concrete inheritance not supported/SA - queries may not work' )
 
 
-        has_instances = me.mapcontext.has_instances( klas)
-        if not has_instances:
-            if dbg: print ' load-only - disable mapper.save/.delete'
-            pm.extension = _mapext
-
         if pjoin:
             #non-primary, plain
             t = me.klas_only_selectables[ klas]['filtered']
@@ -781,8 +782,9 @@ class Builder:
 #                    polymorphic_identity= is_pm and name or None,
                     concrete= is_concrete,
                     non_primary= True,
+                    extension = has_no_instances and _mapext or None
                 )
-            if not has_instances: pm.extension = _mapext
+
         m.plain = pm
 
         if pjoin:
