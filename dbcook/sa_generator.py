@@ -246,7 +246,9 @@ meta.create_all()
         me.done.append( 'ptabli')
 
     def punion( me, pu, mapper):
-        pu_tstr = pu.tstr2
+        try:
+            pu_tstr = pu.tstr2
+        except AttributeError: return
         if 'HACK4inhtype':
             items = pu_tstr.split("':") #n_items+1
             n =0
