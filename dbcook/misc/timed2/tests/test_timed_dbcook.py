@@ -70,6 +70,7 @@ class PolymBase( orm.Base, timed2.Timed2Mixin):
     #defaultTimeContext = .. not needed
     @classmethod
     def rootTable( klas ): return DB.sa.rootTable( klas)
+    db_id_name = orm.builder.column4ID.name
     #eo Timed2Mixin
 
     DBCOOK_has_instances = True

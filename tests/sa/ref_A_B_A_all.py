@@ -45,7 +45,7 @@ def test( session, klas, aid, single, expect, **kargs_ignore):
     if config.session_clear: session.clear()
     klasname = klas.__name__
     if single:
-        s = session.query( klas).get_by( id=aid)
+        s = session.query( klas).filter_by( id=aid).first()
         x = str(s)
         r = 'single %(klasname)s %(aid)s \t%(x)s \n   expect: \t%(expect)s' % locals()
     else:

@@ -1,15 +1,11 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
-from sqlalchemy.orm import class_mapper
 from sqlalchemy import select, func
-fmax = func.max
+from sqlalchemy.orm import class_mapper
+_fmax = func.max
 
 _debug = 0
-
-#class Timed2_objid_dicriminator_mixin( object):
-    #_DB = ...          #expected
-
 
 def _get_discriminating_clause( klas, aliased_table):
     'needed if polymorphic'
@@ -36,13 +32,15 @@ def _timed_clause( klas, table, timeTrans, timeValid):
             & _get_discriminating_clause( klas, t) )     #seems needed but not proven by test
 
 def get_time_clause( klas,  time,
-            basemost_table, time2key_valid_trans ):
+            basemost_table, time2key_valid_trans,
+            db_id_name ='id'
+        ):
     timeValid, timeTrans = time2key_valid_trans( time)
 
     tbl = basemost_table
     t = tbl.alias('t')
     s = select( [
-                fmax( t.c.time_valid).label('time_valid'),
+                _fmax( t.c.time_valid).label('time_valid'),
                 t.c.obj_id
             ],
             _timed_clause( klas, t, timeTrans, timeValid),
@@ -54,7 +52,7 @@ def get_time_clause( klas,  time,
 
     tt = tbl.alias('tt')
     s1 = select( [
-                fmax( tt.c.time_trans).label('time_trans'),
+                _fmax( tt.c.time_trans).label('time_trans'),
                 tt.c.time_valid.label('time_valid'),
                 tt.c.obj_id.label('obj_id')
             ],
@@ -73,7 +71,7 @@ object(s) from other klas with same obj_id and time_valid > blake.time_valid
 
     ttt = tbl   #.alias('ttt')
     s2 = select( [
-            fmax( ttt.c.db_id).label('db_id'),
+            _fmax( getattr( ttt.c, db_id_name )).label( db_id_name),
             ] + _debug * [
                 ttt.c.time_trans.label('time_trans'),
                 ttt.c.time_valid.label('time_valid'),
@@ -91,12 +89,13 @@ object(s) from other klas with same obj_id and time_valid > blake.time_valid
     if _debug: klas.debug_statement( s2)
 
     timed_clause = s2.alias('timed')
-    clause = (tbl.c.db_id == timed_clause.c.db_id)
+    clause = (getattr( tbl.c, db_id_name) == getattr( timed_clause.c, db_id_name) )
     return clause   #s2
 
 def get_time_range_clause( klas, obj_id, timeFrom, timeTo,
             basemost_table, time2key_valid_trans,
-            group =True ):
+            group =True, db_id_name ='id'
+        ):
     timeValidFrom, timeTrans = time2key_valid_trans( timeFrom)
     timeValidTo, timeTrans   = time2key_valid_trans( timeTo)
     if _debug: print '\n\nIN_TIMES:', timeTrans, timeValidFrom, timeValidTo
@@ -114,7 +113,7 @@ def get_time_range_clause( klas, obj_id, timeFrom, timeTo,
         return where_clause
 
     s = select( [
-                fmax( t.c.time_trans).label('time_trans'),
+                _fmax( t.c.time_trans).label('time_trans'),
                 t.c.time_valid
             ],
             where_clause,
@@ -124,7 +123,7 @@ def get_time_range_clause( klas, obj_id, timeFrom, timeTo,
     if _debug: klas.debug_statement( s)
 
     s1 = select( [
-                fmax( t.c.db_id).label('db_id'),
+                _fmax( getattr( t.c, db_id_name )).label( db_id_name),
                 t.c.time_trans.label('time_trans'),
                 t.c.time_valid.label('time_valid')
             ],
@@ -138,7 +137,7 @@ def get_time_range_clause( klas, obj_id, timeFrom, timeTo,
 
     #print 'S1:', s1
     timed_clause = s1.alias('timedr')
-    clause = (tbl.c.db_id == timed_clause.c.db_id)
+    clause = (getattr(tbl.c, db_id_name) == getattr( timed_clause.c, db_id_name) )
     #print 'ST:', clause
     return clause
 

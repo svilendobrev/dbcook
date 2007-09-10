@@ -26,6 +26,7 @@ class Timed2Mixin( object):
     def defaultTimeContext( klas):
         raise NotImplementedError
         return bitemporal_tuple
+    db_id_name = 'dbid'    #dbcook.config.column4ID.name
     #eo config
 
     @classmethod
@@ -37,7 +38,9 @@ class Timed2Mixin( object):
                         time,
                         with_disabled= with_disabled,
                         basemost_table= klas.rootTable(),
-                        time2key_valid_trans= klas.time2key_valid_trans )
+                        time2key_valid_trans= klas.time2key_valid_trans,
+                        db_id_name = klas.db_id_name
+                )
 
     @classmethod
     def get_time_clause( klas, time= None):
@@ -48,7 +51,9 @@ class Timed2Mixin( object):
         return timed2.get_time_clause( klas,
                         time,
                         basemost_table= klas.rootTable(),
-                        time2key_valid_trans= klas.time2key_valid_trans )
+                        time2key_valid_trans= klas.time2key_valid_trans,
+                        db_id_name = klas.db_id_name
+                    )
 
     @classmethod
     def get_obj_history_in_range( klas, obj_id, timeFrom= None, timeTo= None, group =True):
@@ -62,6 +67,7 @@ class Timed2Mixin( object):
                         group= group,
                         basemost_table= klas.rootTable(),
                         time2key_valid_trans= klas.time2key_valid_trans,
+                        db_id_name = klas.db_id_name
                 )
 
     def key_valid_trans2time( tkey):

@@ -1,7 +1,7 @@
 #$Id$
 now: test_timed_dbcook.test
 
-PP=..:../../../..:../../..
+PP=..:../../../..:../../..:$(PYTHONPATH)
 %.test: %.py
 	@echo ===============
 	PYTHONPATH=$(PP) python $*.py -v $(ARGS)

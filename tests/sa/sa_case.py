@@ -29,7 +29,7 @@ class SACase( sa_gentestbase.Test_SA):
         for typ,items in me.expect_typid.items():
             #single
             for (id,expect) in items:
-                s = me.session.query( typ).get_by( id=id)
+                s = me.session.query( typ).filter_by( id=id).first()
                 result = str(s)
                 me.assertEqual( result, expect)
             #all
