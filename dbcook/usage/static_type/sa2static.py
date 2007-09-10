@@ -63,7 +63,8 @@ class _Base( _static_type.StaticStruct):
 ###########################
 'адаптиране на StaticStruct за пред sqlAlchemy'
 
-if 'AVOID having privately-named __sa_attr_state':      #not needed for v04?
+from dbcook.config import _v03
+if _v03: #'AVOID having privately-named __sa_attr_state':      #not needed for v04?
     from sqlalchemy.orm import mapperlib
     mapperlib.attribute_manager.init_attr = lambda me: None
 
@@ -150,15 +151,16 @@ class Base( _Base):
             '_instance_key',
             '_entity_name',
 
-            '_my_state',
+            _v03 and '_my_state' or '_state',
             '_my_sa_stuff',
     ]
-    def _lazy_mystate( me):
-        try: return me._my_state
-        except AttributeError:
-            m = me._my_state = {}
-            return m
-    _state = property( _lazy_mystate)
+    if _v03:
+        def _lazy_mystate( me):
+            try: return me._my_state
+            except AttributeError:
+                m = me._my_state = {}
+                return m
+        _state = property( _lazy_mystate)
     __dict__ = property( dict_via_attr )
 
     __doc__ = '''
