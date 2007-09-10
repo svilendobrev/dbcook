@@ -6,6 +6,11 @@ import sqlalchemy
 import sqlalchemy.orm
 _v03 = hasattr( sqlalchemy, 'mapper')
 
+try:
+    from sqlalchemy.orm.attributes import InstanceState    #>v3463
+except:
+    InstanceState = None
+
 from sa_engine_defs import Dengine
 
 class Config( builder.config.Config):
@@ -100,6 +105,7 @@ class SAdb:
         return me._open( url, **kargs)
 
     def destroy( me, full =True):
+        if 'open' in config.debug: print 'destroy:', full and 'full' or ''
         #my caches
         for a in 'mappers tables klas_only_selectables'.split():
             try: getattr( me, a).clear()
@@ -158,6 +164,7 @@ class SAdb:
             if isinstance( x, me.mapcontext.base_klas) and me.mapcontext.has_instances( x.__class__):
                 if InstanceState and not hasattr( x, '_state'):
                     x._state = InstanceState(x)
+                    #sqlalchemy.attribute_manager.manage(obj) does above
                 try: pre = x.pre_save
                 except AttributeError: pass
                 else: pre()
@@ -167,7 +174,7 @@ class SAdb:
     def query_all_tables( sadb, **kargs_ignore):
         print '=== whole database:'
         for k,t in sadb.tables.iteritems():
-            print k,':',[r for r in t.select().execute()]
+            print k,':', [r for r in t.select().execute()]
 
     ####### klasifier querys
     if _v03:
@@ -223,13 +230,9 @@ def setup_logging( log_sa, log2stream =None):
         if 'orm' in log_sa:
             logging.getLogger( 'sqlalchemy.orm').setLevel( logging.DEBUG)
 
-try:
-    from sqlalchemy.orm.attributes import InstanceState    #>v3463
-except:
-    InstanceState = None
-
 def detach_instances( namespace_or_iterable, idname, resetup =False ):
-    print 'detach_instances', resetup
+    debug = 'open' in config.debug
+    if debug: print 'detach_instances:', resetup and 'resetup' or ''
     try: itervalues = namespace_or_iterable.itervalues()        #if dict-like
     except AttributeError: itervalues = namespace_or_iterable   #or iterable
     assert idname
@@ -239,8 +242,9 @@ def detach_instances( namespace_or_iterable, idname, resetup =False ):
             except AttributeError: pass
         setattr( e, idname, None)       #or delattr ??
         if resetup and InstanceState:
-            print 'resetup', e.__class__
+            if debug: print 'resetup', e.__class__, id(e)
             e._state = InstanceState(e)
+            #sqlalchemy.attribute_manager.manage(obj) does above
 
 if 0*'inline_inside_table/embedded_struct':
     _level_delimiter4embedded_name = '_' #( parent,child): return '_'.join( (parent,child) )
