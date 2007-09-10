@@ -5,6 +5,7 @@ from dbcook import builder
 import sqlalchemy
 import sqlalchemy.orm
 _v03 = hasattr( sqlalchemy, 'mapper')
+
 from sa_engine_defs import Dengine
 
 class Config( builder.config.Config):
@@ -125,8 +126,9 @@ class SAdb:
     def create_tables( me):
         me.metadata.create_all()
 
-    def detach_instances( me, namespace_or_iterable):
-        detach_instances( namespace_or_iterable, idname= builder.column4ID.name)
+    @staticmethod
+    def detach_instances( namespace_or_iterable, **kargs):
+        detach_instances( namespace_or_iterable, idname= builder.column4ID.name, **kargs)
 
 
     def iterklasi( me): return me.klasi.itervalues()
@@ -154,6 +156,8 @@ class SAdb:
             except AttributeError: pass #itervalues = namespace_or_iterable   #or iterable
         for x in itervalues:
             if isinstance( x, me.mapcontext.base_klas) and me.mapcontext.has_instances( x.__class__):
+                if InstanceState and not hasattr( x, '_state'):
+                    x._state = InstanceState(x)
                 try: pre = x.pre_save
                 except AttributeError: pass
                 else: pre()
@@ -219,15 +223,24 @@ def setup_logging( log_sa, log2stream =None):
         if 'orm' in log_sa:
             logging.getLogger( 'sqlalchemy.orm').setLevel( logging.DEBUG)
 
-def detach_instances( namespace_or_iterable, idname ):
+try:
+    from sqlalchemy.orm.attributes import InstanceState    #>v3463
+except:
+    InstanceState = None
+
+def detach_instances( namespace_or_iterable, idname, resetup =False ):
+    print 'detach_instances', resetup
     try: itervalues = namespace_or_iterable.itervalues()        #if dict-like
     except AttributeError: itervalues = namespace_or_iterable   #or iterable
     assert idname
     for e in itervalues:
-        try: del e._instance_key
-        except AttributeError: pass
+        for k in '_instance_key _state'.split():
+            try: delattr( e, k)
+            except AttributeError: pass
         setattr( e, idname, None)       #or delattr ??
-
+        if resetup and InstanceState:
+            print 'resetup', e.__class__
+            e._state = InstanceState(e)
 
 if 0*'inline_inside_table/embedded_struct':
     _level_delimiter4embedded_name = '_' #( parent,child): return '_'.join( (parent,child) )
