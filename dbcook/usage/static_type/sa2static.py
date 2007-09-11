@@ -143,6 +143,9 @@ class _Meta2check_dict( _Base.__metaclass__):
         else:
             setattr( klas, attrname, st)
 
+import sqlalchemy.orm.attributes
+_noInstanceState = not hasattr( sqlalchemy.orm.attributes, 'InstanceState')    #>v3463
+
 class Base( _Base):
     __metaclass__ = _Meta2check_dict
     __slots__ = [ '__weakref__',
@@ -151,10 +154,10 @@ class Base( _Base):
             '_instance_key',
             '_entity_name',
 
-            _v03 and '_my_state' or '_state',
+            _noInstanceState and '_my_state' or '_state',
             '_my_sa_stuff',
     ]
-    if _v03:
+    if _noInstanceState:
         def _lazy_mystate( me):
             try: return me._my_state
             except AttributeError:
