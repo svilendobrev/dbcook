@@ -35,97 +35,39 @@ SAdb.fieldtypemap = { Number: dict( type= sqlalchemy.Integer, ), }
 class Config( sam.config.Config):
     repeat      = 1
     notimed     = False
-    timevalid   = ''
-    timetrans   = ''
-    forced_trans= False
     _help = '''
 test_timed:
   repeat= :: number of times to test each sample
   notimed :: not used here
-  timevalid= :: set time_valid in default time context (format:YYYYMMDD)
-  timetrans= :: set time_trans in default time context (format:YYYYMMDD)
-  forced_trans :: use the set by timetrans time if True
 '''
 config = Config( sam.config )
 sam.config = config
 
-NUM_OF_OBJID = 3
-class DB_( object):
-    session = None #have flush()
-    def reset( me, namespace, counterBase= None, recreate =True, get_config =False):
-        me.sa = SAdb()
-        me.sa.open( recreate=True)
-        me.sa.bind( namespace, base_klas=orm.Base) #, force_ordered= True)
-        me.session = me.sa.session()
-        if counterBase: counterBase.fill( *me.sa.klasi.iterkeys() )
-    def save( me, *args):
-        assert args
-        me.sa.saveall( me.session, *args)
-        me.session.flush()
-
-DB = DB_()
-class PolymBase( orm.Base, timed2.Timed2Mixin):
-    #Timed2Mixin setup
-    #BaseClas =
-    #defaultTimeContext = .. not needed
-    @classmethod
-    def rootTable( klas ): return DB.sa.rootTable( klas)
-    db_id_name = orm.builder.column4ID.name
-    #eo Timed2Mixin
-
-    DBCOOK_has_instances = True
-    DBCOOK_inheritance = 'joined_table'
-    N_TIMES = 2
-    class NOT_FOUND: pass
-
-    # bitemporal-required fields
-    obj_id = Number()
-    time_valid = Number()
-    time_trans = Number()
-    disabled = Number()
-    # eo
-
-    val = Number()
-    OBJ_ID = 1  #for multiple obj testing
-
-    @classmethod
-    def allInstances_basic( klas):
-        return DB.session.query( klas)
-    def put( me, obj, time ):
-        tn = me.__class__()
-        timeValid, timeTrans = me.time2key_valid_trans( time)
-        tn.time_valid, tn.time_trans = timeValid.day, timeTrans.day
-        #print "put times:", tn.time_trans, tn.time_valid
-        if not isinstance( obj, int): obj = None
-        #print 'OBJ_ID: %s:%s' % ( me.OBJ_ID, me.__class__.OBJ_ID)
-        tn.obj_id = me.OBJ_ID
-        tn.val = obj
-        tn.disabled = (obj is None)
-        #print 'OBJ:', obj, tn.disabled
-        DB.save( tn)
-        return tn
-
-class PolymLeaf( PolymBase): pass
-
-namespace = locals()
 
 class TEST:
-    PolymBase = PolymBase        #must be set before usage
-    PolymLeaf = PolymLeaf        #must be set before usage, if needed
-    ObjectCounter = None         #must be set before usage
-    config = None
     only_days = True
-    namespace = namespace       #must be set before usage
+    Time = only_days and Number or Date
+    @classmethod
+    def _timeconvert1( klas, time):
+        if klas.only_days: return time.day
+        return time.date()
+    PolymBase = None            #must be set before run
+    PolymLeaf = None            #must be set before run
+    ObjectCounter = None        #must be set before run
+    config = config             #XXX
+    namespace = None            #must be set before run
+    NUM_OF_OBJID = 3
+    DB = None
 
 
 def setupBase( me):
-    if getattr( DB, 'sa', None): DB.sa.destroy()
-    me.db = DB.reset( TEST.namespace, counterBase= TEST.ObjectCounter, recreate= True, get_config= False) #XXX DBCookTest
+    if getattr( TEST.DB, 'sa', None): TEST.DB.sa.destroy()
+    me.db = TEST.DB.reset( TEST.namespace, counterBase= TEST.ObjectCounter, recreate= True, get_config= False) #XXX DBCookTest
 
 def setupSimple( me):
     setupBase( me)
     satest.Case.setup( me)
-    DB.session.flush()
+    TEST.DB.session.flush()
 
 def setupEach_diff_klas( me, f):
     me.oldSetupEach( f)
@@ -135,25 +77,25 @@ def setupEach_diff_klas( me, f):
 
 def setupSimple_objid( me):
     setupBase( me)
-    for i in range( 1, NUM_OF_OBJID+1): #obj_id 0 means autoinc
+    for i in range( 1, TEST.NUM_OF_OBJID+1): #obj_id 0 means autoinc
         me.obj.age.timed.val.__class__.OBJ_ID = i #Ooh poor Demeter, Demeter.....
         satest.Case.setup( me)
         #print 'SETUP: %s' % me.obj.age.timed.val.__class__.OBJ_ID
     me.obj.age.timed.val.__class__.OBJ_ID = 1
-    DB.session.flush()
+    TEST.DB.session.flush()
 
 def setupCombination( me):
     setupBase( me)
     me.oldSetup()
-    DB.session.flush()
+    TEST.DB.session.flush()
 
 def setupCombination_objid( me):
     setupBase( me)
-    for i in range( 1, NUM_OF_OBJID+1):
+    for i in range( 1, TEST.NUM_OF_OBJID+1):
         me.obj.age.timed.val.__class__.OBJ_ID = i
         me.oldSetup()
     me.obj.age.timed.val.__class__.OBJ_ID = 1
-    DB.session.flush()
+    TEST.DB.session.flush()
 
 def testEach_timed_base( me, t):
     for i in range( int( TEST.config.repeat)):
@@ -165,7 +107,7 @@ def singleObjId( t):
     if t.expected: t.expected = [ t.expected]
     return t
 def multyObjId( t):
-    if t.expected: t.expected = [ t.expected for i in range( NUM_OF_OBJID)]
+    if t.expected: t.expected = [ t.expected for i in range( TEST.NUM_OF_OBJID)]
     return t
 
 def testEach_timed( me, t): return testEach_timed_base( me, singleObjId( t))
@@ -188,8 +130,11 @@ class Timed_Wrapper( Timed_Wrapper4Disabled):
     '''testing purposes only'''
     def __init__( me, timed =TEST.PolymBase):
         Timed_Wrapper4Disabled.__init__( me, timed)
+    def _timeconvert( me, time):
+        return tuple( TEST._timeconvert1(t) for t in time )
+
     def _get_val( me, time, **kargs):
-        if TEST.only_days: time = (time[0].day, time[1].day)
+        time = me._timeconvert( time)
         q = me.val.allInstances( time, **kargs )
         res = [ getattr( each, 'val', each) for each in q ] or None
         return res
@@ -199,9 +144,7 @@ class Timed_Wrapper( Timed_Wrapper4Disabled):
     def _put_val( me, value, time):
         return me.val.put( value, time)
     def getRange( me, trans, validFrom, validTo, include_deleted =False):
-        if TEST.only_days: times = trans.day, validFrom.day, validTo.day
-        else: times = trans.date(), validFrom.date(), validTo.date()
-        trans, validFrom, validTo = times
+        trans, validFrom, validTo = me._timeconvert( (trans, validFrom, validTo) )
         return Timed_Wrapper4Disabled._getRange( me, (trans, validFrom), (trans, validTo), include_disabled=include_deleted)
 
 
@@ -211,7 +154,8 @@ def tm2_poly( ):             return Timed_Wrapper( TEST.PolymBase)
 def run( config):
     TEST.config = config
     config.getopt()
-    config.forced_trans = True
+    TEST.PolymBase.config.forced_trans = True
+    TEST.PolymBase.config.notimed = config.notimed
     print config
 
     #single OBJ_ID suites
@@ -243,7 +187,70 @@ def run( config):
 
 
 if __name__ == '__main__':
-    TEST.config = config
-    run( sam.config)
+
+    class DB_( object):
+        session = None #have flush()
+        def reset( me, namespace, counterBase= None, recreate =True, get_config =False):
+            me.sa = SAdb()
+            me.sa.open( recreate=True)
+            me.sa.bind( namespace, base_klas=orm.Base) #, force_ordered= True)
+            me.session = me.sa.session()
+            if counterBase: counterBase.fill( *me.sa.klasi.iterkeys() )
+        def save( me, *args):
+            assert args
+            me.sa.saveall( me.session, *args)
+            me.session.flush()
+
+    TEST.DB = DB_()
+    class PolymBase( orm.Base, timed2.Timed2Mixin):
+        #Timed2Mixin setup
+        #BaseClass4check = object   #default ok
+        @classmethod
+        def rootTable( klas ): return TEST.DB.sa.rootTable( klas)
+        #defaultTimeContext = .. not needed
+        def now( me): return TEST._timeconvert1( datatime.now() )
+        #forced_trans = False   #defaults ok
+        #validAsTrans = False
+        db_id_name = orm.builder.column4ID.name
+        #eo Timed2Mixin
+        def pre_save( me): pass     #stub
+
+        DBCOOK_has_instances = True
+        DBCOOK_inheritance = 'joined_table'
+        N_TIMES = 2
+        class NOT_FOUND: pass
+
+        # bitemporal-required fields
+        obj_id      = Number()
+        time_valid  = TEST.Time()
+        time_trans  = TEST.Time()
+        disabled    = Number()
+        # eo
+
+        val = Number()
+        OBJ_ID = 1  #for multiple obj testing
+
+        @classmethod
+        def allInstances_basic( klas):
+            return TEST.DB.session.query( klas)
+        def put( me, obj, time ):
+            tn = me.__class__()
+            timeValid, timeTrans = me.time2key_valid_trans( time)
+            tn.time_valid, tn.time_trans = timeValid.day, timeTrans.day
+            #print "put times:", tn.time_trans, tn.time_valid
+            if not isinstance( obj, int): obj = None
+            #print 'OBJ_ID: %s:%s' % ( me.OBJ_ID, me.__class__.OBJ_ID)
+            tn.obj_id = me.OBJ_ID
+            tn.val = obj
+            tn.disabled = (obj is None)
+            #print 'OBJ:', obj, tn.disabled
+            TEST.DB.save( tn)
+            return tn
+
+    class PolymLeaf( PolymBase): pass
+    TEST.namespace = locals()
+    TEST.PolymBase = PolymBase
+    TEST.PolymLeaf = PolymLeaf
+    run( config)
 
 # vim:ts=4:sw=4:expandtab

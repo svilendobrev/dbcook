@@ -4,8 +4,6 @@
 
 import timed2_sa_objid_discriminator as timed2
 
-_debug_notimed = False
-
 class Timed2Mixin( object):
     ''' requires the following fields in the database model object:
         db_id: uniq
@@ -17,7 +15,7 @@ class Timed2Mixin( object):
     __slots__ = ()
 
     #config
-    BaseClas = object   #only subclasses of this are allowed to be bitemporal
+    BaseClass4check = object   #only subclasses of this are allowed to be bitemporal
     @classmethod
     def rootTable( klas ):
         raise NotImplementedError
@@ -25,15 +23,22 @@ class Timed2Mixin( object):
     @classmethod
     def defaultTimeContext( klas):
         raise NotImplementedError
-        return bitemporal_tuple
+        return bitemporal_tuple     #type,order XXX ???
+    def now( me):
+        raise NotImplementedError
+        return transaction_time     #type same as me.time_valid and me.time_trans
+    class config:
+        forced_trans = False
+        validAsTrans = False
+        notimed = False
     db_id_name = 'dbid'    #dbcook.config.column4ID.name
     #eo config
 
     @classmethod
     def allInstances( klas, time= None, with_disabled =False):
-        if not time: time = klas.defaultTimeContext()
+        if time is None: time = klas.defaultTimeContext()
         query4klas = klas.allInstances_basic()
-        if _debug_notimed: return query4klas    #shunt4testing
+        if klas.config.notimed: return query4klas    #shunt4testing
         return timed2.get_all_objects_by_time( klas, query4klas,
                         time,
                         with_disabled= with_disabled,
@@ -44,9 +49,9 @@ class Timed2Mixin( object):
 
     @classmethod
     def get_time_clause( klas, time= None):
-        if not time: time = klas.defaultTimeContext()
-        if _debug_notimed: return None    #shunt4testing
-        assert issubclass( klas, klas.BaseClas), klas
+        if time is None: time = klas.defaultTimeContext()
+        if klas.config.notimed: return None    #shunt4testing
+        assert issubclass( klas, klas.BaseClass4check), klas
         query4klas = klas.allInstances_basic()
         return timed2.get_time_clause( klas,
                         time,
@@ -57,10 +62,10 @@ class Timed2Mixin( object):
 
     @classmethod
     def get_obj_history_in_range( klas, obj_id, timeFrom= None, timeTo= None, group =True):
-        if not timeFrom:
+        if timeFrom is None:
             timeTo = timeFrom = klas.defaultTimeContext()
-        if _debug_notimed: return None    #shunt4testing
-        assert issubclass( klas, klas.BaseClas), klas
+        if klas.config.notimed: return None    #shunt4testing
+        assert issubclass( klas, klas.BaseClass4check), klas
         query4klas = klas.allInstances_basic()
         return timed2.get_obj_history_in_timerange( klas, query4klas,
                         obj_id, timeFrom, timeTo,
@@ -78,6 +83,15 @@ class Timed2Mixin( object):
         timeTrans, timeValid = time
         return timeValid,timeTrans
     time2key_valid_trans = staticmethod( time2key_valid_trans)
+
+    def pre_save( me):
+        trans = me.now()
+        if not me.config.forced_trans:
+            me.time_trans = trans
+        if me.config.validAsTrans:
+            me.time_valid = me.time_trans
+        elif not me.time_valid:
+            me.time_valid = trans
 
 #### end of Timed2 aspect
 
