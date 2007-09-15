@@ -72,6 +72,16 @@ def prop_get_join( self, parent, primary=True, secondary=True):
         j = primaryjoin
     return j
 
+
+class _OnDemand:
+    def __init__( me, self_table):
+        me.self_table = self_table
+        me.use = 0
+    def corresponding_column( me, *a, **k):
+        r = me.self_table.corresponding_column( *a, **k)
+        me.use += (r is not None)
+        return r
+
 def join_via( keys, mapper, must_alias =None):
     '''from Query.join_via, input root mapper, return last mapper/table
         alias and link properly recursive /self-referential joins
@@ -118,18 +128,10 @@ def join_via( keys, mapper, must_alias =None):
             print '>', c
 #        ymappers = [ base_mapper(x) for x in xmappers]
         if prop.mapper in xmappers or base_mapper(prop.mapper) in ymappers:
-            class OnDemand:
-                def __init__( me, self_table):
-                    me.self_table = self_table
-                    me.use = 0
-                def corresponding_column( me, *a, **k):
-                    r = me.self_table.corresponding_column( *a, **k)
-                    me.use += (r is not None)
-                    return r
             self_table = self_table.alias()
             if _debug: print '>>', self_table.name, 'remote_side'
             #include = prop.remote_side      #-> pu_employee.db_id, Employee.db_id
-            o_self_table = OnDemand( self_table)
+            o_self_table = _OnDemand( self_table)
             ClauseAdapter(
                 o_self_table, include=prop.remote_side, equivalents= self_colequivalents
             ).traverse(c)
@@ -190,7 +192,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
     clause, mapper, lasttable = join_via( via_names, mapper0, must_alias= must_alias4root.get( root_name,None) )
 #    prop = mapper.props[ attr_name]
     prop = mapper.get_property( attr_name)
-    if _debug: print 'cols/joins:', mapper, prop, lasttable, 'clause:', clause
+    if _debug: print 'cols/joins:', mapper, prop, 'lasttable:', lasttable, 'clause:', clause
 
         #hope for the first if many...
     if isinstance( prop, sqlalchemy.orm.properties.ColumnProperty):
