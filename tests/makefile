@@ -23,6 +23,8 @@ mapper: other/expression.test
 mapper: mapper/freegen/main.test
 
 #abc: ARGS= zno_sisters Binhs=A Cinhs=B Clinks=None doC zdummy
+GG= generate=failed,one
+abc: override ARGS+=$(GG)
 abc: mapper/test_ABC_inh_ref_all.test
 
 AA= doC inhs=j generate=failed,one

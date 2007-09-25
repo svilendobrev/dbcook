@@ -45,7 +45,7 @@ import sqlalchemy.orm
 import warnings
 
 
-from config import config_components, config,  column4type, column4ID, table_namer
+from config import config_components, config,  column4type, column4ID, table_namer, _v03
 
 if not config_components.polymunion_from_SA:
     from polymunion import polymorphic_union
@@ -797,7 +797,8 @@ class Builder:
             else:
                 #non-mapper - primary over sub-union-select
                 subtables.pop( name, None)  #all but this
-                m.polymorphic_sub_only = _polymorphic_union( subtables, column4type.name,
+                m.polymorphic_sub_only = _polymorphic_union( subtables,
+                                            _v03 and column4type.name or m.polymorphic_all.polymorphic_on._label,
                                             'psub_'+name,
                                             inheritype
                                         )

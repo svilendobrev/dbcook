@@ -36,6 +36,6 @@ tag tags:
 	-test -L dbcook && ctags -R -a --exclude=_t\*.py dbcook/
 
 rmpyc:
-	rm -f `find . -name \*.pyc `
+	rm -f `find . -follow -name \*.pyc `
 
 # vim:ts=4:sw=4:noexpandtab
