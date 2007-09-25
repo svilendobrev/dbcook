@@ -648,6 +648,8 @@ class Builder:
                 me.generator.pmapi( m.polymorphic_all for m in me.mappers.itervalues() )
                 me.generator.pmapi( m.plain for m in me.mappers.itervalues()
                                             if m.plain is not m.polymorphic_all)
+                me.generator.psubs( (m.polymorphic_sub_only, m.polymorphic_all) for m in me.mappers.itervalues()
+                                            if m.polymorphic_sub_only)
 
     def _outerjoin_polymorphism( me, klas, subklasi, dbg):
         ss = me.klas_only_selectables[ klas ]

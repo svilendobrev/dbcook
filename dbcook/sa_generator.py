@@ -15,6 +15,7 @@ class CV( sqlalchemy.sql.ClauseVisitor):
     ops = {
         '=':'==',
         operator.eq: '==',
+        operator.ne: '!=',
     }
     def __init__(me):
         me.stack = []
@@ -245,7 +246,7 @@ meta.create_all()
         _state.do_columns=True
         me.done.append( 'ptabli')
 
-    def punion( me, pu, mapper):
+    def punion( me, pu):
         try:
             pu_tstr = pu.tstr2
         except AttributeError: return
@@ -267,15 +268,13 @@ meta.create_all()
         me.out += punion_varname(pu)+ ' = ' + pu_tstr
         me.nl()
 
-    def pmapi( me, namespace):
-        try: iterm = namespace.itervalues()
-        except AttributeError: iterm = namespace
+    def pmapi( me, iterm):
         maps = [ m for m in iterm if isinstance( m, sqlalchemy.orm.Mapper)]
-        maps.sort( key=lambda m:m.class_.__name__)
+        maps.sort( key= lambda m: m.class_.__name__)
         for m in maps:
             pu = m.select_table
             if isinstance( pu, sqlalchemy.sql.Alias):  #CompoundSelect
-                me.punion( pu, m)
+                me.punion( pu)
 
             varname = mapper_varname( m)
             t2 = m.tstr2
@@ -287,6 +286,20 @@ meta.create_all()
             me.nl()
         me.nl()
         me.done.append( 'pmapi')
+
+    def psubs( me, iterm):
+        maps = list( iterm)
+        maps.sort( key= lambda (pu,m): m.class_.__name__)
+        for pu,m in maps:
+            if isinstance( pu, sqlalchemy.sql.Alias):  #CompoundSelect
+                me.punion( pu)
+            else:
+                varname = 'psub_'+m.class_.__name__
+                t2 = tstr(pu)
+                me.out += varname + ' = ( ' + t2 + ' )'
+                me.nl()
+        me.done.append( 'psubs')
+
 
     _head = '''
 from sa_gentestbase import *
