@@ -798,7 +798,8 @@ class Builder:
                 #non-mapper - primary over sub-union-select
                 subtables.pop( name, None)  #all but this
                 m.polymorphic_sub_only = _polymorphic_union( subtables,
-                                            _v03 and column4type.name or m.polymorphic_all.polymorphic_on._label,
+                                            #v04/r3515: m.polymorphic_all.polymorphic_on._label
+                                            column4type.name,
                                             'psub_'+name,
                                             inheritype
                                         )
