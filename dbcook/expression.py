@@ -151,6 +151,11 @@ def join_via( keys, mapper, must_alias =None):
                 ).traverse(c)
         if _debug: print '>>>>', c
 
+        #XXX stefanb
+        inh_onclause = getattr( self_table, 'onclause', None)
+        if inh_onclause:  #if SA Join must add onclause (i.e. inheritance-join happen)
+            c &= inh_onclause
+
         if clause is None:
             clause = c
         else:

@@ -91,17 +91,21 @@ def model(  address_inh ='', #'','c','j'
         return r
     return locals()
 
-def tests( person_pesho):
+def tests( person_pesho, do_friend_adr =True):
     # XXX XXX XXX XXX
     # be careful with possible NULLs - anyop(NULL) is NUL except true | NUL, false & NUL; bool(NUL) is False;
     # http://firebird.sourceforge.net/manual/nullguide-dealing-with-nulls.html
     # XXX XXX XXX XXX
 
+    do_plain  = 1
     do_nested = 1
     do_method = 1
+    do_funcs  = 1
     do_recursive = 1
+    do_rec_plain = 1
+    do_rec_ideq  = 1
 
-    plains = [
+    plains = do_plain * [
     ####plain
     #1level
         lambda person: (person.name == 'pesho'),    #simple value eq
@@ -139,22 +143,26 @@ def tests( person_pesho):
 
      #nested with joins
         lambda person: ((person.adr.street + 'o') == 'str.1o'),
-    ] + do_recursive *[
+    ] + do_recursive *(
+        do_rec_plain * [
      #multilevel self-referential/recursive
         lambda person: (person.friend != None),
         lambda person: (person.friend.age >35),
         lambda person: (person.friend.age >35),
         lambda person: (person.friend.name == 'pesho'),
         lambda person: (person.friend.friend.friend.name == 'pesho'),
+    ] + do_friend_adr * [
+        lambda person: (person.friend.adr.street == 'str.22'),
         lambda person: (person.friend.adr.owner.friend.name == 'pesho'),
+    ] + do_rec_ideq * [
      #db_id comparison - precalculated ("const")
         lambda person : (person.friend.db_id == 2),         #ok
         lambda person : (person.friend.db_id == p2.db_id),  #ok
         lambda person : (person.friend == p2),              #means "is"; needs op.__eq @python-test
         lambda person : (person.friend == p2.db_id),        #same as above; fails @python
-    ]
+    ] )
 
-    funcs = [
+    funcs = do_funcs * [
      #plain func
         lambda person, f: f.substr( person.name, 4,1) == 'h',
      #method-operator-func
@@ -170,7 +178,7 @@ def tests( person_pesho):
 
         lambda person, f: f.in_( person.name, 'pesho', 'mencho' ),
         lambda person, f: f.in_( person.alias, 'peshoali', 'b-'+person.name ),
-    ] + [
+    ] + do_funcs * [
         lambda person, f: (f.between( person.age, 10, 45) & f.like( person.adr.street, 'str%')),
     ] + do_method * [
         lambda person: person.name.endswith( 'sho'),
@@ -292,23 +300,21 @@ class AttrWrap:
 ######## use model
 
 import sys
+#sys.setrecursionlimit( 100)
 DBCOOK_inheritance = 'joined' in sys.argv and JOINED or CONCRETE
 
 SAdb.config.getopt()
 inhs = ['', CONCRETE, JOINED ]
 
 def combinator():   #no polymorphic
-#    for person_inh in inhs:
-#        for person_ref_person in [True] + bool( person_inh)*[ False]:
-#            for address_inh in inhs:
     for person_ref_person in [True, False]:
         for address_inh in inhs:
             for person_inh in inhs:
                 if not person_ref_person and not person_inh: continue
                 yield dict(
-                        person_inh=person_inh,
-                        person_ref_person=person_ref_person,
-                        address_inh=address_inh
+                        person_inh= person_inh,
+                        person_ref_person= person_ref_person,
+                        address_inh= address_inh
                     )
 
 
@@ -323,6 +329,7 @@ from dbcook import expression
 expression._debug = 'dbg' in sys.argv
 expr = expression.expr
 
+x=0
 errors = []
 for combina in combinator():
     err = []
@@ -330,12 +337,32 @@ for combina in combinator():
     namespace = model( **combina)
     sa = SAdb()
     sa.open( recreate=True)
-    sa.bind( namespace, base_klas= Base)
+    b= sa.bind( namespace, base_klas= Base, print_srcgenerator= 0)
     populate = namespace[ 'populate']
     popu= populate()
     session = sa.session()
     sa.saveall( session, popu)
     session.flush()
+    printer = b.generator
+    if printer:
+        x+=1
+        fname = '_t'+str(x)+'.py'
+        header =''
+        p = printer.testcase( 'test1' )#me.config.funcname + me.str_params( parameters), error ))
+        p+= '''
+        session = create_session()
+        session.save( Person( name= 'pesho') )
+        session.flush()
+        session.clear()
+        p2 = session.query( Person).filter_by( name= 'pesho').first()
+
+        #combina = %(combina)r
+
+    import sys
+    sys.setrecursionlimit(100)
+
+''' % locals()
+        file( fname, 'w').write( printer._head + header + printer.classdef + p + printer.tail )
 
     #print ' ----objects:'
     objects = '\n'.join( str(p) for p in popu.itervalues() )
@@ -351,7 +378,9 @@ for combina in combinator():
     #print p2
     #session.clear()
 
-    allfuncs = tests( p2)
+    allfuncs = tests( p2,
+        do_friend_adr = (combina['person_ref_person'] or not combina['person_inh'] )
+    )
 
     try:
         for func in allfuncs:
@@ -422,8 +451,10 @@ for combina in combinator():
                 assert sres==sexp, '\n%(sres1)s \n !=\n%(sexp1)s' % locals()
             except Exception, e:
                 print 'expr:', etxt
-                print 'err:', e.__class__, e
-                err.append( (combina, etxt, str(e)) )
+                import traceback
+                exc = traceback.format_exc()# ''.join( traceback.format_exception(inf[0], inf[1], None))
+                print 'err:', e.__class__, exc
+                err.append( (combina, etxt, exc) )
                 #TODO: use MultiTester or mix.myTestCase4Function
 
         if not err: print 'OK'
