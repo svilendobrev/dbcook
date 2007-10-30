@@ -19,6 +19,7 @@ mapper: mapper/test4mapper.test
 mapper: mapper/test_inh_types.test
 mapper: abc
 mapper: mapper/relation.test
+mapper: mapper/collection.test
 mapper: other/expression.test
 mapper: mapper/freegen/main.test
 

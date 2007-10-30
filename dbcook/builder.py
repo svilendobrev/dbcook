@@ -375,6 +375,42 @@ def make_table( klas, metadata, mapcontext, **kargs):
     if dbg: print repr(t)
     return t
 
+def fix_one2many_relations( klas, tables, mapcontext):
+    dbg = 'table' in config.debug or 'relation' in config.debug
+
+    #from make_table_columns
+#    reflector = mapcontext.reflector
+    base_klas, inheritype = mapcontext.base4table_inheritance( klas)
+    is_joined_table = (inheritype == table_inheritance_types.JOINED)
+    assert base_klas or not is_joined_table
+
+    for k in dir( klas):    #because Collection is not Type -canot use iterattr()
+        k_attr = getattr( klas, k)
+        if not isinstance( k_attr, relation.Collection): continue
+
+        if dbg: print 'make_one2many_table_columns', klas
+        if is_joined_table:
+            #joined_table: subclass' tables consist of extra attributes -> joins
+            if k in dir( base_klas):
+                if dbg: print '  inherited:', k
+                continue
+
+        child_klas = k_attr.assoc_klas
+        #one2many rels can be >1 between 2 tables
+        #and many classes can relate to one child klas with relation with same name
+        fk_column_name = column4ID.backref_make_name( klas, k)
+        fk_column = make_table_column4struct_reference( klas, fk_column_name, klas, mapcontext)
+        child_tbl = tables[ child_klas]
+        child_tbl.append_column( fk_column)
+        if dbg: print '  attr:', k, 'child_klas:', child_klas, 'fk_column:', repr(fk_column)
+
+        class assoc_details:
+            primary_key= True
+            nullable= True
+            relation_attr= k
+        relation._associate( child_klas, klas, assoc_details, fk_column)
+
+
 def make_mapper( klas, table, **kargs):
     dbg = 'mapper' in config.debug
     if dbg:
@@ -593,6 +629,9 @@ class Builder:
         me.tables = me.DICT()
         for klas in me.iterklasi():
              me.tables[ klas] = make_table( klas, metadata, me.mapcontext, **kargs)
+        for klas in me.iterklasi(): #to be sure all tables exists already
+             fix_one2many_relations( klas, me.tables, me.mapcontext)
+
 
         from table_circular_deps import fix_table_circular_deps
         cut_fkeys = fix_table_circular_deps(

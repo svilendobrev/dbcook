@@ -72,6 +72,7 @@ class column4ID( _column4):
     typemap = dict( type= sqlalchemy.Integer, primary_key =True)
 
     special_reference_ext = '_id'
+    special_back_reference_ext = '_back'
     @classmethod
     def ref_make_name( klas, name): return name + klas.special_reference_ext
     #@classmethod
@@ -81,6 +82,9 @@ class column4ID( _column4):
         ext = klas.special_reference_ext
         assert name.endswith( ext)
         return name[: -len( ext)]
+    @classmethod
+    def backref_make_name( klas, parent_klas, name):
+        return name + '_' + parent_klas.__name__ + klas.special_back_reference_ext
 
 class column4type( _column4):
     'use as column4type( selectable)'

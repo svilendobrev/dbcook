@@ -46,8 +46,27 @@ TODO:
 import sqlalchemy
 import sqlalchemy.orm
 import warnings
+from config import config, _v03
 
-_v03 = hasattr( sqlalchemy, 'mapper')
+def _associate( klas, attrklas, assoc_details, column):
+    dbg = 'relation' in config.debug
+    if not assoc_details.primary_key: return
+    if dbg:
+        print 'relate parent:', attrklas, 'to child:', klas
+        print '  attrname:', assoc_details.relation_attr, 'column:', column
+
+    try: foreign_keys = klas.foreign_keys
+    except AttributeError: foreign_keys = klas.foreign_keys = {}
+
+    kk = foreign_keys.setdefault( attrklas, {} )
+    key = assoc_details.relation_attr
+
+    if key is not None:
+        assert key not in kk, '''duplicate/ambigious association to %(attrklas)s in %(klas)s; specify attr=<assoc_relation_attr> explicitly''' % locals()
+    else:
+        if key in kk:
+            warnings.warn( '''duplicate/ambigious/empty association to %(attrklas)s in %(klas)s; specify attr=>assoc_relation_attr> explicitly''' % locals() )
+    kk[ key ] = column
 
 class Association( object):
     ''' serve as description of the association table and
@@ -98,32 +117,16 @@ class Association( object):
         m.factory = klas
         return m
 
-    @classmethod
-    def _associate( klas, attrklas, assoc_details, column):
-        if not assoc_details.primary_key: return
-
-        try: foreign_keys = klas.foreign_keys
-        except AttributeError: foreign_keys = klas.foreign_keys = {}
-
-        kk = foreign_keys.setdefault( attrklas, {} )
-        key = assoc_details.relation_attr
-##        print 'pas 1:', klas, attrklas, key, ' >>', column
-
-        if key is not None:
-            assert key not in kk, '''duplicate/ambigious association to %(attrklas)s in %(klas)s; specify attr=<assoc_relation_attr> explicitly''' % locals()
-        else:
-            if key in kk:
-                warnings.warn( '''duplicate/ambigious/empty association to %(attrklas)s in %(klas)s; specify attr=>assoc_relation_attr> explicitly''' % locals() )
-        kk[ key ] = column
 
 def is_association_reference( klas, attrtyp, attrklas):
     'used in table-maker'
     column_kargs = {}
     column_func = None
-    assoc_details = issubclass( klas, Association) and getattr( attrtyp, 'assoc', None)
-    if assoc_details and assoc_details.primary_key:
-        column_kargs = dict( primary_key= True, nullable= assoc_details.nullable )
-        column_func = lambda column: klas._associate( attrklas, assoc_details, column)
+    if issubclass( klas, Association):
+        assoc_details = getattr( attrtyp, 'assoc', None)
+        if assoc_details and assoc_details.primary_key:
+            column_kargs = dict( primary_key= True, nullable= assoc_details.nullable )
+            column_func = lambda column: _associate( klas, attrklas, assoc_details, column)
     return column_kargs, column_func
 
 
@@ -159,7 +162,7 @@ class _AssocDetails:
 
         def make( me, builder, klas, name ):
             'return relation_klas, actual_relation_klas, relation_kargs'
-
+            dbg = 'relation' in config.debug
             assoc_klas = me.assoc_klas
             #print '?', name, assoc_klas
             if isinstance( assoc_klas, str):
@@ -177,9 +180,10 @@ class _AssocDetails:
                     break
                 except KeyError: pass
             else:
-                raise KeyError, '''missing/wrong relation for association
-%(klas)s.%(name)s <- %(assoc_klas)s, available: %(fks)s;
-(all foreign_keys: %(foreign_keys)s).
+                assert 0, '''missing/wrong relation for association %(klas)s.%(name)s <- %(assoc_klas)s
+attrname: %(name)s;
+available: %(fks)s;
+all foreign_keys: %(foreign_keys)s.
 Check for double-declaration with different names''' % locals()
 
 
@@ -187,12 +191,12 @@ Check for double-declaration with different names''' % locals()
                     lazy    =   True,
         #           cascade = 'all, delete-orphan',    #DB_hidden-relation does FlushError with this
                     uselist = True,
-                    collection_class = assoc_klas._CollectionFactory,      #needed if InstrumentedList.append is replaced
+                    collection_class = getattr( assoc_klas, '_CollectionFactory', None),      #needed if InstrumentedList.append is replaced
                 )
 
             colid = builder.column4ID( klas )
 
-            if assoc_klas.DBCOOK_hidden:
+            if getattr( assoc_klas, 'DBCOOK_hidden', None):
                 if len(fks)==2:     #2 diff links to same klas
                     #print 'same klas x2'
                     assert len(foreign_keys) == 1
@@ -226,14 +230,19 @@ Check for double-declaration with different names''' % locals()
                         primaryjoin = (fk == colid),
                         remote_side = fk,
                     )
+            if dbg: print me, 'make:', assoc_klas, assoc_klas_actual, rel_kargs
             return assoc_klas, assoc_klas_actual, rel_kargs
 
 
 ##############################
 
-class Collection( object):
-    'one2many'
+class Collection( _AssocDetails._Relation):
+    ''' used to define one2many relations - in 'one' side of 'one2many' relation
+    (parent 2 child relations in terms of relational DBMS).
+    '''
+    __slots__ = ()
 
+if 0:
     def __init__( me, klas, other_side =None, unique =False, **rel_kargs):   #order_by =None, etc
         me.rel_klas  = klas
         me.rel_kargs = rel_kargs
@@ -288,9 +297,7 @@ def make_relations( builder):
         for name in dir( klas):
             typ = getattr( klas, name)
             if isinstance( typ, _AssocDetails._Relation):
-                rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #many2many
-            elif isinstance( typ, Collection):
-                rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #one2many
+                rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #any2many
             else:
                 continue
 
