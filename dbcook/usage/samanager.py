@@ -168,7 +168,7 @@ class SAdb:
                 try: pre = x.pre_save
                 except AttributeError: pass
                 else: pre()
-                session.save( x)
+                session.save_or_update( x)
 
     ####### querys
     def query_all_tables( sadb, **kargs_ignore):
