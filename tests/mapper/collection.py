@@ -11,42 +11,65 @@ class Base( orm.Base):
 SAdb.config.getopt()
 print 'config:', SAdb.config
 
-class PeroVKlon( Base):
+class Kid( Base):
     name = Text()
 
-class BudgetRow( Base):
-    perokloni  = orm.Collection( PeroVKlon)
-    silikoni   = orm.Collection( PeroVKlon)
+def tsingle():
+    class Parent( Base):
+        things  = orm.Collection( Kid)
+    return locals()
 
-sa = SAdb()
-sa.open( recreate=True)
-types = locals()
-sa.bind( types, base_klas= Base )
+def t2collects():
+    class Parent( Base):
+        things  = orm.Collection( Kid)
+        mings   = orm.Collection( Kid)
+    return locals()
 
-s= sa.session()
+def t3inheritparent():
+    class Parent( Base):
+        things  = orm.Collection( Kid)
+    class Parent2( Parent):
+        DBCOOK_inheritance = 'joined'
+        a = Text()
+    return locals()
 
-br1 = BudgetRow()
-for i in range(3):
-    p = PeroVKlon( name= 'a'+str(i) )
-    br1.perokloni.append( p)
-    if 10:
-        p = PeroVKlon( name= 'b'+str(i) )
-        br1.silikoni.append( p)
+for namespacer in tsingle, t2collects, t3inheritparent:
+    sa = SAdb()
+    sa.open( recreate=True)
+    types = namespacer()
+    types.update( Kid=Kid)
+    sa.bind( types, base_klas= Base )
 
-op = ['a'+str(i) for i in range(3) ]
-os = ['b'+str(i) for i in range(3) ]
+    s= sa.session()
 
-sa.saveall( s, br1)
-s.flush()
-assert [ k.name for k in br1.perokloni ] == op
-assert [ k.name for k in br1.silikoni  ] == os
+    parentklas = types.get( 'Parent2', types[ 'Parent'] )
+    use_mings = 'mings' in dir( parentklas)
 
-s.clear()
-br1 = s.query( BudgetRow).first()
-assert [ k.name for k in br1.perokloni ] == op
-assert [ k.name for k in br1.silikoni  ] == os
+    parent = parentklas()
+    for i in range(3):
+        p = Kid( name= 'a'+str(i) )
+        parent.things.append( p)
+        if use_mings:
+            p = Kid( name= 'b'+str(i) )
+            parent.mings.append( p)
 
-print 'br1 PK:', br1.perokloni
-print 'br1 sK:', br1.silikoni
+    op = ['a'+str(i) for i in range(3) ]
+    os = ['b'+str(i) for i in range(3) ]
+
+    sa.saveall( s, parent)
+    s.flush()
+    assert [ k.name for k in parent.things ] == op
+    if use_mings:
+        assert [ k.name for k in parent.mings  ] == os
+
+    s.clear()
+    print list( s.query( parentklas) )
+    parent = s.query( parentklas).first()
+    assert [ k.name for k in parent.things ] == op
+    if use_mings: assert [ k.name for k in parent.mings  ] == os
+
+    print ' collection:', parent.things
+    if use_mings: print ' collect2:', parent.mings
+    sa.destroy()
 
 # vim:ts=4:sw=4:expandtab

@@ -147,12 +147,12 @@ class _Relation( object):
         #print '?', name, assoc_klas
         if isinstance( assoc_klas, str):
             try: assoc_klas = builder.klasi[ assoc_klas]
-            except KeyError: raise KeyError, '''undefined relation/association class %(assoc_klas)r in %(klas)s.%(name)s''' % locals()
+            except KeyError: assert 0, '''undefined relation/association class %(assoc_klas)r in %(klas)s.%(name)s''' % locals()
 
         foreign_keys = assoc_klas.foreign_keys
 
         try: fks = foreign_keys[ klas ]
-        except KeyError: raise KeyError, '''missing declaration of link in association %(klas)s.%(name)s <- %(assoc_klas)s''' % locals()
+        except KeyError: assert 0, '''missing declaration of link in association %(klas)s.%(name)s <- %(assoc_klas)s''' % locals()
 
         for key in (name, None):
             try:
@@ -276,10 +276,7 @@ def make_relations( builder):
             continue
 
         relations = {}
-        for name in dir( klas):
-            typ = getattr( klas, name)
-            if not isinstance( typ, _Relation):
-                continue
+        for name,typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation, dbg=dbg ):
             rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #any2many
             if not rel_klas_actual: rel_klas_actual = rel_klas
             #print ' property', name, 'on', klas, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',

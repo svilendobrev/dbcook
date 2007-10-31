@@ -377,24 +377,9 @@ def make_table( klas, metadata, mapcontext, **kargs):
 
 def fix_one2many_relations( klas, tables, mapcontext):
     dbg = 'table' in config.debug or 'relation' in config.debug
+    if dbg: print 'make_one2many_table_columns', klas
 
-    #from make_table_columns
-#    reflector = mapcontext.reflector
-    base_klas, inheritype = mapcontext.base4table_inheritance( klas)
-    is_joined_table = (inheritype == table_inheritance_types.JOINED)
-    assert base_klas or not is_joined_table
-
-    for k in dir( klas):    #because Collection is not Type -canot use iterattr()
-        k_attr = getattr( klas, k)
-        if not isinstance( k_attr, relation.Collection): continue
-
-        if dbg: print 'make_one2many_table_columns', klas
-        if is_joined_table:
-            #joined_table: subclass' tables consist of extra attributes -> joins
-            if k in dir( base_klas):
-                if dbg: print '  inherited:', k
-                continue
-
+    for k,k_attr in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
         child_klas = k_attr.assoc_klas
         #one2many rels can be >1 between 2 tables
         #and many classes can relate to one child klas with relation with same name
