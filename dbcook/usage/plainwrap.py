@@ -90,11 +90,16 @@ class Base( object):
 class Association( builder.relation.Association):
     Type4Reference = Type4Reference
 
+class Collection( builder.relation.Collection):
+    Type4Reference = Type4Reference
+
+
 def setup( s):
     s.reflector = reflector
     s.Type4Reference = Type4Reference
     s.Base = Base
     s.Association = Association
+    s.Collection = Collection
 
 class Builder( builder.Builder): pass
 setup( Builder)

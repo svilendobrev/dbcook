@@ -8,16 +8,15 @@ TODO:
       * към 1:
         x = Reference( struct) = has_one(struct) = SubStruct(struct) = struct.Instance()
 +       * самостоятелна (1-посочна)
--       * 2-посочна 1към1: Reference( struct, other_side =име_отсреща, singular=True)
--       * 2-посочна с 1-към-много: Reference( struct, other_side =име_отсреща, singular=False)
+-?      * 2-посочна 1към1: Reference( struct, backref =име_отсреща, singular=True)
+-       * 2-посочна с 1-към-много: Reference( struct, backref =име_отсреща, singular=False)
             име_отсреща става колекция ??
 
--     1 към много:
-        x = Collection( struct, other_side =име_отсреща) = has_many
-            име_отсреща e указател( Reference)
-        * име_отсреща миже да липсва, т.е. неявно/служебно
++     1 към много:
+        x = Collection( struct, backref =име_отсреща) = has_many
+        * име_отсреща може да липсва, т.е. неявно/служебно; става указател( Reference)
         * Collection в 2временно Entity трябва да става автоматично Association
--       * 2-посочна с много-към-1:
++       * 2-посочна с много-към-1: backref е указано
 
       много към много:
 -       = неявна
@@ -109,7 +108,7 @@ class Association( object):
         if not isinstance( klas, str):
             assert issubclass( klas, Association)
             assert klas._is_valid(), '''empty Association %(klas)r - specify .Relation argument, or add .Links of this''' % locals()
-        return _AssocDetails._Relation( klas)
+        return _Relation( klas)
 
     @classmethod
     def _CollectionFactory( klas):
@@ -136,6 +135,86 @@ def setkargs( me, **kargs):
     for k,v in kargs.iteritems():
         setattr( me, k,v)
 
+class _Relation( object):
+    rel_kargs = {}
+    def __init__( me, assoc_klas):
+        me.assoc_klas = assoc_klas
+
+    def make( me, builder, klas, name ):
+        'return relation_klas, actual_relation_klas, relation_kargs'
+        dbg = 'relation' in config.debug
+        assoc_klas = me.assoc_klas
+        #print '?', name, assoc_klas
+        if isinstance( assoc_klas, str):
+            try: assoc_klas = builder.klasi[ assoc_klas]
+            except KeyError: raise KeyError, '''undefined relation/association class %(assoc_klas)r in %(klas)s.%(name)s''' % locals()
+
+        foreign_keys = assoc_klas.foreign_keys
+
+        try: fks = foreign_keys[ klas ]
+        except KeyError: raise KeyError, '''missing declaration of link in association %(klas)s.%(name)s <- %(assoc_klas)s''' % locals()
+
+        for key in (name, None):
+            try:
+                fk = fks[ key]
+                break
+            except KeyError: pass
+        else:
+            assert 0, '''missing/wrong relation for association %(klas)s.%(name)s <- %(assoc_klas)s
+attrname: %(name)s;
+available: %(fks)s;
+all foreign_keys: %(foreign_keys)s.
+Check for double-declaration with different names''' % locals()
+
+
+        rel_kargs = dict(
+                lazy    = True,
+    #           cascade = 'all, delete-orphan',    #DB_hidden-relation does FlushError with this
+                uselist = True,
+                collection_class = getattr( assoc_klas, '_CollectionFactory', None),      #needed if InstrumentedList.append is replaced
+            )
+        rel_kargs.update( me.rel_kargs)
+
+        colid = builder.column4ID( klas )
+
+        if getattr( assoc_klas, 'DBCOOK_hidden', None):
+            if len(fks)==2:     #2 diff links to same klas
+                #print 'same klas x2'
+                assert len(foreign_keys) == 1
+                for k in fks:
+                    if k != key: break
+                else:
+                    assert 0, 'internal error, wrong .foreign_keys[%(klas)s] on %(assoc_klas)s' % locals()
+                othername = k
+                otherfk = fks[k]
+                otherklas = klas
+            else:   #2 diff klasi
+                #print '2diff', foreign_keys
+                assert len(foreign_keys) == 2, 'internal error, wrong .foreign_keys on %(assoc_klas)s' % locals()
+                for otherklas in foreign_keys:
+                    if otherklas is not klas: break
+                #else:  cannot happen because of above assert
+                otherfks = foreign_keys[ otherklas]
+                assert len(otherfks) == 1
+                othername, otherfk = otherfks.items()[0]
+                #assert othername
+
+            assoc_klas_actual = otherklas
+            rel_kargs.update(
+                    secondary   = builder.tables[ assoc_klas],
+                    primaryjoin = (fk == colid),
+                    secondaryjoin = (otherfk == builder.column4ID( otherklas)),
+                )
+        else:
+            assoc_klas_actual = assoc_klas
+            rel_kargs.update(
+                    primaryjoin = (fk == colid),
+                    remote_side = fk,
+                )
+        if dbg: print me, 'make:', assoc_klas, assoc_klas_actual, rel_kargs
+        return assoc_klas, assoc_klas_actual, rel_kargs
+
+
 class _AssocDetails:
     __init__ = setkargs
 
@@ -156,135 +235,38 @@ class _AssocDetails:
             @sqlalchemy.orm.collections.collection.appender
             def _append( me, *a,**k): return list.append( me, *a, **k)
 
-    class _Relation( object):
-        def __init__( me, assoc_klas):
-            me.assoc_klas = assoc_klas
-
-        def make( me, builder, klas, name ):
-            'return relation_klas, actual_relation_klas, relation_kargs'
-            dbg = 'relation' in config.debug
-            assoc_klas = me.assoc_klas
-            #print '?', name, assoc_klas
-            if isinstance( assoc_klas, str):
-                try: assoc_klas = builder.klasi[ assoc_klas]
-                except KeyError: raise KeyError, '''undefined association class %(assoc_klas)r in %(klas)s.%(name)s''' % locals()
-
-            foreign_keys = assoc_klas.foreign_keys
-
-            try: fks = foreign_keys[ klas ]
-            except KeyError: raise KeyError, '''missing declaration of link in association %(klas)s.%(name)s <- %(assoc_klas)s''' % locals()
-
-            for key in (name, None):
-                try:
-                    fk = fks[ key]
-                    break
-                except KeyError: pass
-            else:
-                assert 0, '''missing/wrong relation for association %(klas)s.%(name)s <- %(assoc_klas)s
-attrname: %(name)s;
-available: %(fks)s;
-all foreign_keys: %(foreign_keys)s.
-Check for double-declaration with different names''' % locals()
-
-
-            rel_kargs = dict(
-                    lazy    =   True,
-        #           cascade = 'all, delete-orphan',    #DB_hidden-relation does FlushError with this
-                    uselist = True,
-                    collection_class = getattr( assoc_klas, '_CollectionFactory', None),      #needed if InstrumentedList.append is replaced
-                )
-
-            colid = builder.column4ID( klas )
-
-            if getattr( assoc_klas, 'DBCOOK_hidden', None):
-                if len(fks)==2:     #2 diff links to same klas
-                    #print 'same klas x2'
-                    assert len(foreign_keys) == 1
-                    for k in fks:
-                        if k != key: break
-                    else:
-                        assert 0, 'internal error, wrong .foreign_keys[%(klas)s] on %(assoc_klas)s' % locals()
-                    othername = k
-                    otherfk = fks[k]
-                    otherklas = klas
-                else:   #2 diff klasi
-                    #print '2diff', foreign_keys
-                    assert len(foreign_keys) == 2, 'internal error, wrong .foreign_keys on %(assoc_klas)s' % locals()
-                    for otherklas in foreign_keys:
-                        if otherklas is not klas: break
-                    #else:  cannot happen because of above assert
-                    otherfks = foreign_keys[ otherklas]
-                    assert len(otherfks) == 1
-                    othername, otherfk = otherfks.items()[0]
-                    #assert othername
-
-                assoc_klas_actual = otherklas
-                rel_kargs.update(
-                        secondary   = builder.tables[ assoc_klas],
-                        primaryjoin = (fk == colid),
-                        secondaryjoin = (otherfk == builder.column4ID( otherklas)),
-                    )
-            else:
-                assoc_klas_actual = assoc_klas
-                rel_kargs.update(
-                        primaryjoin = (fk == colid),
-                        remote_side = fk,
-                    )
-            if dbg: print me, 'make:', assoc_klas, assoc_klas_actual, rel_kargs
-            return assoc_klas, assoc_klas_actual, rel_kargs
-
 
 ##############################
 
-class Collection( _AssocDetails._Relation):
-    ''' used to define one2many relations - in 'one' side of 'one2many' relation
-    (parent 2 child relations in terms of relational DBMS).
+class Collection( _Relation):
+    '''define one2many relations - in the 'one' side of the relation
+    (parent-to-child/ren relations in terms of R-DBMS).
     '''
     __slots__ = ()
 
-if 0:
-    def __init__( me, klas, other_side =None, unique =False, **rel_kargs):   #order_by =None, etc
-        me.rel_klas  = klas
+    def __init__( me, child_klas,
+                    backref =None,   #backref name or dict(**rel_kargs)
+                    #unique =False,
+                    **rel_kargs):   #order_by =None, etc
+        _Relation.__init__( me, child_klas)
+#        me.backref = backref
+        if backref:
+            if isinstance( backref, dict):
+                backref = sqlalchemy.orm.backref( **backref)
+            rel_kargs[ 'backref'] = backref
         me.rel_kargs = rel_kargs
-        me.other_side = other_side    #backref ? name or dict( **rel_kargs)
-        me.unique = unique
-
-    def make( me, builder, klas, name ):
-        'return relation_klas, actual_relation_klas, relation_kargs'
-
-        rel_klas = me.rel_klas
-        #print '?', name, rel_klas
-        if isinstance( rel_klas, str):
-            try:
-                rel_klas = builder.klasi[ rel_klas]
-            except KeyError:
-                raise KeyError, 'undefined relating class %(rel_klas)r in %(klas)s.%(name)s' % locals()
-
-        raise NotImplementedError
-
-        #foreign_key guessing?
-
-        #whatever... TODO
-
-        rel_kargs = me.rel_kargs.copy()
-
-        other_side = me.other_side
-        if other_side:
-            if isinstance( other_side, dict):
-                other_side = sqlalchemy.orm.backref( **other_side)
-            rel_kargs[ 'backref'] = other_side
-
-        return rel_klas, None, rel_kargs
-
+#        me.unique = unique      #??
 
 def make_relations( builder):
+    dbg = 'relation' in config.debug
+    if dbg: print 'make_relations'
+
     if _v03:
         def append( self, *args, **kwargs):
             item = self._data_appender( *args,**kwargs)
             self._InstrumentedList__setrecord( item)    #private __setrecord; was _before_ _data_appender
         sqlalchemy.orm.attributes.InstrumentedList.append = append
 
-##    print '\n pas 2'
     for m in builder.itermapi( primary_only =True):
         klas = m.class_
         if issubclass( klas, Association):
@@ -296,11 +278,9 @@ def make_relations( builder):
         relations = {}
         for name in dir( klas):
             typ = getattr( klas, name)
-            if isinstance( typ, _AssocDetails._Relation):
-                rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #any2many
-            else:
+            if not isinstance( typ, _Relation):
                 continue
-
+            rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #any2many
             if not rel_klas_actual: rel_klas_actual = rel_klas
             #print ' property', name, 'on', klas, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
             #print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )

@@ -194,6 +194,10 @@ class Association( builder.relation.Association):
     __slots__ = ()
     Type4Reference = staticmethod( Type4Reference)
 
+class Collection( builder.relation.Collection):
+    __slots__ = ()
+    Type4Reference = staticmethod( Type4Reference)
+
 Type = _static_type.StaticType
 reflector = Reflector4StaticType()
 
@@ -202,6 +206,7 @@ def setup( s):
     s.Type4Reference = staticmethod( Type4Reference)
     s.Base = Base
     s.Association = Association
+    s.Collection = Collection
 
 class Builder( builder.Builder): pass
 setup( Builder)
