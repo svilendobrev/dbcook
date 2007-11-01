@@ -9,26 +9,23 @@ class FieldTypeMapper:
         me.typemap_lower = typemap_lower
 
     def __call__( me, typ):
-        '''опит за (йерархично) съответсвие  тип-поле -> тип-колона.
-
+        '''опит за (йерархично) съответствие  тип-поле -> тип-колона.
 първо се търси на ниво StaticType, пряко и обхождане по йерархията на класовете.
 (филтър в typemap по isinstance не може да направи правилен ред на обхождане)
-
 после, се търси на ниво тип-на-стойността, пряко и филтър в typemap по isinstance
-
 съответно, StaticType-огъвки с разни тип-на-стойността (като Number) не трябва да
 се слагат като StaticType в typemap_upper, а в typemap_lower !
 '''
-    #    print '--', typ#, typemap_upper
-    #    for k,v in me.typemap_upper.iteritems(): print k, id(k), v
         assert isinstance( typ, StaticType)
 
         t = typ.__class__
         while t is not StaticType:
-    #        print t,'?', id(t)
             try:
-                return me.typemap_upper[ t]
+                r = me.typemap_upper[ t]
             except KeyError: pass
+            else:
+                if callable(r): r = r( typ)
+                return r
             for t in t.__bases__:
                 if issubclass( t, StaticType):
                     break
@@ -45,7 +42,11 @@ class FieldTypeMapper:
 if __name__ == '__main__':
 
     from static_type.types.atomary import Text, Bool, AKeyFromDict, Number
-    import datetime
+    import datetime, decimal
+    class Decimal( Number):
+        def __init__( me, precision =3, **kargs):
+            me.precision = precision
+            Number.__init__( me, typ=decimal.Decimal, **kargs)
 
     import sqlalchemy
 
@@ -56,7 +57,9 @@ if __name__ == '__main__':
      #    Number: dict( type= sqlalchemy.Integer), - dont! rely on typ.typ/lower-level
         AKeyFromDict: dict( type= sqlalchemy.String),
      #    Date: dict( type= sqlalchemy.Date ),
+        Decimal: lambda intype: dict( type= sqlalchemy.Numeric( length = intype.precision) )
     }
+    import decimal
     typemap_lower= {
         str:    dict( type= sqlalchemy.String ),
         float:  dict( type= sqlalchemy.Float ),
@@ -82,6 +85,8 @@ if __name__ == '__main__':
             a_bool2= Bool()
             enum   = AKeyFromDict( dict( a=1, b=12, c=444) )
             enum2  = AKeyFromDict( dict( a=1, b=12, c=444) )
+            d_dec  = Decimal()
+            d_dec2 = Decimal( 5)
 
         def populate():
             a = A()
@@ -98,7 +103,7 @@ if __name__ == '__main__':
         return locals()
 
     namespace = test_types()
-
+    SAdb.config.getopt()
     sa = SAdb()
     sa.open()
     sa.bind( namespace, fieldtype_mapper, builder=Builder, base_klas= Base, )
