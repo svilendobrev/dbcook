@@ -20,7 +20,7 @@ class IntermediateAB( Base4Association):    #color
     color = Text()
     a_link = Base4Association.Link( 'A')
     b_boza = Base4Association.Link( 'B', attr= 'all_ba')
-    a = orm.Type4Reference('A')     #plain reference - nothing to do with the AB association
+#    a = orm.Type4Reference('A')     #plain reference - nothing to do with the AB association
     a2_link = Base4Association.Link( 'A', attr= 'alla2', nullable= True)
 
 if 0:
@@ -39,7 +39,7 @@ class A( Base):
     all_ab  = IntermediateAB.Relation()
 #    all_abc = IntermediateABC2.Relation()
 #    all_ade = IntermedADE.Relation()
-    x = orm.Type4Reference( 'A')
+#    x = orm.Type4Reference( 'A')
 
 class B( Base):
     name    = Text()
