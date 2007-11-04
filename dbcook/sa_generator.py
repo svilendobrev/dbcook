@@ -421,6 +421,8 @@ mapper= duper( sqlalchemy.orm.mapper, otherstr=mapper_varname, nl='\n'+12*' ', n
                 inherits= None,
                 polymorphic_on= None,
                 select_table= None,
+                polymorphic_identity= None,
+                extension= None,
             ) )
 join  = duper( sqlalchemy.join)
 outerjoin  = duper( sqlalchemy.outerjoin)
