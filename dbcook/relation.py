@@ -257,7 +257,7 @@ class Collection( _Relation):
         me.rel_kargs = rel_kargs
 #        me.unique = unique      #??
 
-def make_relations( builder):
+def make_relations( builder, sa_relation_factory ):
     dbg = 'relation' in config.debug
     if dbg: print 'make_relations'
 
@@ -281,7 +281,7 @@ def make_relations( builder):
             if not rel_klas_actual: rel_klas_actual = rel_klas
             #print ' property', name, 'on', klas, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
             #print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
-            m.add_property( name, sqlalchemy.orm.relation( rel_klas_actual, **rel_kargs) )
+            m.add_property( name, sa_relation_factory( rel_klas_actual, **rel_kargs) )
             relations[ name ] = rel_klas
 
         if relations:       #винаги ли е нужно? май тр€бва само при изрично поискване

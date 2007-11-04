@@ -665,7 +665,7 @@ class Builder:
             for klas in me.iterklasi():    #table=me.tables[ klas],
                 make_mapper_props( klas, me.mapcontext, me.mappers[ klas], me.tables )
 
-            relation.make_relations( me)
+            relation.make_relations( me, sa.relation)
             sqlalchemy.orm.compile_mappers()
         finally:
             if me.generator:
