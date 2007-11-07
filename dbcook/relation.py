@@ -301,6 +301,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                 backref = sa_backref_factory(
                             #explicit - as SA does if backref is str
                             primaryjoin= rel_kargs[ 'primaryjoin'],
+                            uselist= False, #??? goes wrong if selfref - both sides become lists
                             **backref)
                 rel_kargs[ 'backref'] = backref
 
