@@ -136,10 +136,13 @@ def setkargs( me, **kargs):
         setattr( me, k,v)
 
 class _Relation( object):
-    rel_kargs = {}
-    def __init__( me, assoc_klas):
+    __slots__ = [ 'rel_kargs', 'assoc_klas', 'backref' ]
+    def __init__( me, assoc_klas, backref =None, rel_kargs ={}):
         me.assoc_klas = assoc_klas
-
+        me.rel_kargs = rel_kargs
+        me.backref = backref
+    def __str__( me):
+        return me.__class__.__name__+'/'+str(me.assoc_klas)
     def make( me, builder, klas, name ):
         'return relation_klas, actual_relation_klas, relation_kargs'
         dbg = 'relation' in config.debug
@@ -242,22 +245,18 @@ class Collection( _Relation):
     '''define one2many relations - in the 'one' side of the relation
     (parent-to-child/ren relations in terms of R-DBMS).
     '''
-    __slots__ = ()
+    __slots__ = [ 'backref', 'backrefname' ]
 
     def __init__( me, child_klas,
-                    backref =None,   #backref name or dict(**rel_kargs)
-                    #unique =False,
-                    **rel_kargs):   #order_by =None, etc
-        _Relation.__init__( me, child_klas)
-#        me.backref = backref
-        if backref:
-            if isinstance( backref, dict):
-                backref = sqlalchemy.orm.backref( **backref)
-            rel_kargs[ 'backref'] = backref
-        me.rel_kargs = rel_kargs
-#        me.unique = unique      #??
+                    backref =None,   #backref name or dict( name, **rel_kargs)
+                    #unique =False,  #   ??
+                    **rel_kargs ):   #order_by =None, etc
+        if backref and not isinstance( backref, dict):
+            backref = dict( name= backref)
+        _Relation.__init__( me, child_klas, backref, rel_kargs)
+        me.backrefname = None   #decided later
 
-def make_relations( builder, sa_relation_factory ):
+def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtractor ):
     dbg = 'relation' in config.debug
     if dbg: print 'make_relations'
 
@@ -267,6 +266,8 @@ def make_relations( builder, sa_relation_factory ):
             self._InstrumentedList__setrecord( item)    #private __setrecord; was _before_ _data_appender
         sqlalchemy.orm.attributes.InstrumentedList.append = append
 
+    #XXX TODO move all this into make_mapper_props ??
+
     for m in builder.itermapi( primary_only =True):
         klas = m.class_
         if issubclass( klas, Association):
@@ -275,10 +276,34 @@ def make_relations( builder, sa_relation_factory ):
             if dbg: print ' allow_null_pks:', m, m.allow_null_pks   #XXX add to m.tstr???
             continue
 
+        fkeys = FKeyExtractor( klas, m.local_table, builder.mapcontext, builder.tables)
+
         relations = {}
         for name,typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation, dbg=dbg ):
             rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #any2many
             if not rel_klas_actual: rel_klas_actual = rel_klas
+
+            #forward link
+            r = fkeys.get_relation_kargs( name)
+            if dbg: print ' ', m, name, r, fkeys
+            rel_kargs.update( r)
+
+            #backward link
+            backref = typ.backref
+            if backref:
+                r = fkeys.get_relation_kargs( typ.backrefname)
+                if dbg: print ' BACKREF ', m, typ.backrefname, r
+                if 0:
+                    backref.update( r)
+                else:   #only this one
+                    try: backref[ 'post_update'] = r[ 'post_update' ]
+                    except KeyError: pass
+                backref = sa_backref_factory(
+                            #explicit - as SA does if backref is str
+                            primaryjoin= rel_kargs[ 'primaryjoin'],
+                            **backref)
+                rel_kargs[ 'backref'] = backref
+
             #print ' property', name, 'on', klas, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
             #print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
             m.add_property( name, sa_relation_factory( rel_klas_actual, **rel_kargs) )

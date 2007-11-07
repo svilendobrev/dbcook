@@ -441,6 +441,7 @@ relation = duper( sqlalchemy.orm.relation, nl='\n'+12*' ', nl4args='',
                 remote_side=None,
                 post_update= False,
             ) )  #lazy=True,
+backref = duper( sqlalchemy.orm.backref)
 polymorphic_union= duper4polymorphic_union( sqlalchemy.orm.polymorphic_union )
 
 # vim:ts=4:sw=4:expandtab

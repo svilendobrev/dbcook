@@ -379,14 +379,23 @@ def fix_one2many_relations( klas, builder, mapcontext):
     dbg = 'table' in config.debug or 'relation' in config.debug
     if dbg: print 'make_one2many_table_columns', klas
 
-    for k,k_attr in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
-        child_klas = k_attr.assoc_klas
+    for k,collect_klas in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
+        child_klas = collect_klas.assoc_klas
         if isinstance( child_klas, str):
             try: child_klas = builder.klasi[ child_klas]
             except KeyError: assert 0, '''undefined relation/association class %(child_klas)r in %(klas)s.%(name)s''' % locals()
         #one2many rels can be >1 between 2 tables
         #and many classes can relate to one child klas with relation with same name
-        fk_column_name = column4ID.backref_make_name( klas, k)
+
+        backref = collect_klas.backref
+        if backref:
+            #if isinstance( backref, dict):
+            backrefname = backref[ 'name']
+            #else: backrefname = backref
+        else:
+            backrefname = column4ID.backref_make_name( klas, k)
+        collect_klas.backrefname = backrefname
+        fk_column_name = backrefname
         fk_column = make_table_column4struct_reference( klas, fk_column_name, klas, mapcontext)
         if dbg: print '  attr:', k, 'child_klas:', repr(child_klas), 'fk_column:', repr(fk_column)
         child_tbl = builder.tables[ child_klas]
@@ -408,29 +417,12 @@ def make_mapper( klas, table, **kargs):
     m = sa.mapper( klas, table, **kargs)
     return m
 
-
-def _add_fkeys( tbl, fkeys):
-    for fk in tbl.foreign_keys:
-        c = fk.parent   #this-table column
-        attr = column4ID.ref_strip_name( c.name)
-        fkeys.setdefault( attr, []).append( fk)
-
-def make_mapper_props( klas, mapcontext, mapper, tables ):
-    'as second round - refs can be cyclic'
-    dbg = 'mapper' in config.debug or 'prop' in config.debug
-    subklasi = mapcontext.subklasi[ klas]
-    reflector = mapcontext.reflector
-
-    need_mplain = bool( not config_components.non_primary_mappers_dont_need_props
-                    and mapper.plain is not mapper.polymorphic_all)
-    for m in [mapper.polymorphic_all] + need_mplain*[ mapper.plain]:
-        if dbg: print 'make_mapper_props for:', klas.__name__, m
-        table = m.local_table
-
-        fkeys = {}
-
-        _add_fkeys( table, fkeys)
-
+class FKeyExtractor( dict):
+    def __init__( me, klas, table, mapcontext, tables):
+        dict.__init__( me)
+        me.table = table
+        me._add_fkeys( table)
+        subklasi = mapcontext.subklasi[ klas]
         if '''this is to propagate post_update of a link to concrete-inherited bases AND subklasi,
             because of the required relink'ing of concrete-inherited references in SA 0.3.4
             ''':
@@ -440,7 +432,7 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                 base_klas, inheritype = mapcontext.base4table_inheritance( kl)
                 if base_klas and inheritype == table_inheritance_types.CONCRETE:
                     kl = base_klas
-                    _add_fkeys( tables[ kl], fkeys )
+                    me._add_fkeys( tables[ kl])
                 else: break
             #subklasi
             for kl in subklasi:
@@ -448,7 +440,45 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                 base_klas, inheritype = mapcontext.base4table_inheritance( kl)
                 assert base_klas
                 if inheritype == table_inheritance_types.CONCRETE:
-                    _add_fkeys( tables[ kl], fkeys )
+                    me._add_fkeys( tables[ kl])
+
+    def _add_fkeys( me, table ):
+        for fk in table.foreign_keys:
+            c = fk.parent   #this-table column
+            attr = column4ID.ref_strip_name( c.name)
+            me.setdefault( attr, []).append( fk)
+
+    def get_relation_kargs( me, k):
+        fks = me.get( k, None)
+        if not fks: return {}
+        post_update = 0
+        fk = None
+        for f in fks:
+            if f.parent.table is me.table:
+                fk = f
+            post_update += f.use_alter
+        assert fk
+            #|= the respective fk on any of concrete inherited/inheriting relation because of relinking
+        rel_kargs = dict(
+                post_update = bool(post_update),
+                primaryjoin = (fk.parent == fk.column),
+                foreign_keys = fk.parent,
+                remote_side = fk.column,
+            )
+        return rel_kargs
+
+def make_mapper_props( klas, mapcontext, mapper, tables ):
+    'as second round - refs can be cyclic'
+    dbg = 'mapper' in config.debug or 'prop' in config.debug
+    reflector = mapcontext.reflector
+
+    need_mplain = bool( not config_components.non_primary_mappers_dont_need_props
+                    and mapper.plain is not mapper.polymorphic_all)
+    for m in [mapper.polymorphic_all] + need_mplain*[ mapper.plain]:
+        if dbg: print 'make_mapper_props for:', klas.__name__, m
+        table = m.local_table
+
+        fkeys = FKeyExtractor( klas, table, mapcontext, tables)
 
         base_klas, inheritype = mapcontext.base4table_inheritance( klas)
         for k,typ in reflector.iter_attrtype_all( klas):
@@ -461,31 +491,14 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
             is_substruct = reflector.type_is_substruct( typ)
             if is_substruct:
                 attrklas = is_substruct[ 'klas']
-                #if dbg: print is_substruct
                 if is_substruct[ 'as_value']:
                     raise NotImplementedError
                 else:
                     if m.non_primary:
                         if dbg: print ' non-primary, reference ignored:', k    #comes from primary mapper
                         continue
-                    fks = fkeys.get( k, None)
-                    if fks:
-                        post_update = 0
-                        fk = None
-                        for f in fks:
-                            if f.parent.table is table:
-                                fk = f
-                            post_update += f.use_alter
-                        assert fk
-                            #|= the respective fk on any of concrete inherited/inheriting relation because of relinking
-                        rel_kargs = dict(
-                                post_update = bool(post_update),
-                                primaryjoin = (fk.parent == fk.column),
-                                foreign_keys = fk.parent,
-                                remote_side = fk.column,
-                            )
-                    else:
-                        rel_kargs = {}
+
+                    rel_kargs = fkeys.get_relation_kargs( k)
 
                     if (issubclass( attrklas, klas)         #not supported by SA + raise
                             or issubclass( klas, attrklas)  #seems not supported by SA + crash
@@ -668,7 +681,7 @@ class Builder:
             for klas in me.iterklasi():    #table=me.tables[ klas],
                 make_mapper_props( klas, me.mapcontext, me.mappers[ klas], me.tables )
 
-            relation.make_relations( me, sa.relation)
+            relation.make_relations( me, sa.relation, sa.backref, FKeyExtractor)
             sqlalchemy.orm.compile_mappers()
         finally:
             if me.generator:
