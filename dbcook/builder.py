@@ -375,19 +375,22 @@ def make_table( klas, metadata, mapcontext, **kargs):
     if dbg: print repr(t)
     return t
 
-def fix_one2many_relations( klas, tables, mapcontext):
+def fix_one2many_relations( klas, builder, mapcontext):
     dbg = 'table' in config.debug or 'relation' in config.debug
     if dbg: print 'make_one2many_table_columns', klas
 
     for k,k_attr in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
         child_klas = k_attr.assoc_klas
+        if isinstance( child_klas, str):
+            try: child_klas = builder.klasi[ child_klas]
+            except KeyError: assert 0, '''undefined relation/association class %(child_klas)r in %(klas)s.%(name)s''' % locals()
         #one2many rels can be >1 between 2 tables
         #and many classes can relate to one child klas with relation with same name
         fk_column_name = column4ID.backref_make_name( klas, k)
         fk_column = make_table_column4struct_reference( klas, fk_column_name, klas, mapcontext)
-        child_tbl = tables[ child_klas]
+        if dbg: print '  attr:', k, 'child_klas:', repr(child_klas), 'fk_column:', repr(fk_column)
+        child_tbl = builder.tables[ child_klas]
         child_tbl.append_column( fk_column)
-        if dbg: print '  attr:', k, 'child_klas:', child_klas, 'fk_column:', repr(fk_column)
 
         class assoc_details:
             primary_key= True
@@ -615,7 +618,7 @@ class Builder:
         for klas in me.iterklasi():
              me.tables[ klas] = make_table( klas, metadata, me.mapcontext, **kargs)
         for klas in me.iterklasi(): #to be sure all tables exists already
-             fix_one2many_relations( klas, me.tables, me.mapcontext)
+             fix_one2many_relations( klas, me, me.mapcontext)
 
 
         from table_circular_deps import fix_table_circular_deps
