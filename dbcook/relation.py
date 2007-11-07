@@ -272,7 +272,7 @@ def make_relations( builder, sa_relation_factory ):
         if issubclass( klas, Association):
             primary_key = m.local_table.primary_key.columns
             m.allow_null_pks = bool( primary_key and [c for c in primary_key if c.nullable] )
-            #print ' allow_null_pks:', m.allow_null_pks
+            if dbg: print ' allow_null_pks:', m, m.allow_null_pks   #XXX add to m.tstr???
             continue
 
         relations = {}

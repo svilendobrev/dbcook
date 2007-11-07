@@ -34,6 +34,7 @@ tar:
 tag tags:
 	ctags -R --links=no --exclude=_t\*.py .
 	-test -L dbcook && ctags -R -a --exclude=_t\*.py dbcook/
+	ctags -R -a sqlalchemy
 
 rmpyc:
 	rm -f `find . -follow -name \*.pyc `
