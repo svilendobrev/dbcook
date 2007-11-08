@@ -49,15 +49,24 @@ _BinaryThing = find_valid_fullname_import( '''
     sqlalchemy.sql._BinaryClause
 ''')
 
-def props_iter( mapr, klas =sqlalchemy.orm.PropertyLoader ):
-    try: i = mapr.properties
-    except:     # about r3700
-        for p in mapr.iterate_properties:
-            if isinstance( p, klas):
-                yield p.key, p
-    else:
-        for k,p in i.iteritems():
-            yield k,p
+if 0:
+    def props_iter( mapr, klas =sqlalchemy.orm.PropertyLoader ):
+        try: i = mapr.properties
+        except:     # about r3740
+            for p in mapr.iterate_properties:
+                if isinstance( p, klas):
+                    yield p.key, p
+        else:
+            for k,p in i.iteritems():
+                yield k,p
+
+    def props_get( mapr, key):
+        try:
+            return mapr.properties[ key]
+        except KeyError: raise
+        except:     # about r3740
+            return mapr.get_property( key)
+
 
 level = 0
 def tstr(o):
@@ -290,9 +299,11 @@ meta.create_all()
             t2 = m.tstr2
             me.out += varname + ' = '+ t2
             me.nl()
-            for k,p in props_iter( m):
-                t = tstr(p)
-                me.out += '%(varname)s.add_property( %(k)r, %(t)s )\n' % locals()
+            for p in m.iterate_properties:
+                if isinstance( p, sqlalchemy.orm.PropertyLoader ):
+                    k = p.key
+                    t = tstr(p)
+                    me.out += '%(varname)s.add_property( %(k)r, %(t)s )\n' % locals()
             me.nl()
         me.nl()
         me.done.append( 'pmapi')
