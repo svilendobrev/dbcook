@@ -166,13 +166,13 @@ def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
         print '\nWARNING problem in STMT:', time_stmt, time_stmt.__class__
         return (time_stmt, None)    #unmodified
 
-    id_col = aliased_tbl.corresponding_column( time_stmt.left, keys_ok= True)
+    id_col = aliased_tbl.corresponding_column( time_stmt.left) #, keys_ok= True)
     time_stmt = (id_col==time_stmt.right)
     if not with_disabled:
-        disabled_col = aliased_tbl.corresponding_column( tbl.c.disabled, keys_ok= True)
+        disabled_col = aliased_tbl.corresponding_column( tbl.c.disabled) #, keys_ok= True)
         time_stmt &= (~disabled_col)
     if with_valid:
-        valid_col = aliased_tbl.corresponding_column( tbl.c.time_valid, keys_ok= True)
+        valid_col = aliased_tbl.corresponding_column( tbl.c.time_valid) #, keys_ok= True)
         time_stmt = (time_stmt, valid_col)
     return time_stmt
 
