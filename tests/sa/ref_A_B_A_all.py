@@ -71,6 +71,14 @@ def declarator( klas):
     _dataname = ''' + repr(klas._dataname)
 
 
+def check_concrete_polymorphism(
+        Alink='', Blink='', BAlink='',
+        poly=True, inh='concrete',
+        Alazy=True, Blazy=True,
+        **kargs_ignore
+    ):
+    return inh =='concrete' and 'PM' in str(Alink) + str(Blink)
+
 def test_inh_ref_A_B_A( meta,
         Alink='', Blink='', BAlink='',
         poly=True, inh='concrete',
@@ -298,20 +306,20 @@ output options:
 if __name__ == '__main__':
     config.getopt( help)
     print 'config:', config
-
-    fmt = ', '.join( '%(arg)s=%%(%(arg)s)4s' % locals() for arg in 'poly inh Alink Blink BAlink Alazy Blazy'.split() )
+    argsz = dict( poly=1, inh=1)
+    fmt = ', '.join( arg+'=%('+arg+')'+str(argsz.get(arg,4))+'s'
+                    for arg in 'poly inh Alink Blink BAlink Alazy Blazy'.split() )
 
     from tests.util import multi_tester
     class ABtester( multi_tester.MultiTester):
         Printer = Printer
-#        def any_echo( me): return me.config.debug or me.config.echo
         def _run_one( me, printer, **parameters):
+            if check_concrete_polymorphism( **parameters): return ()
             db = create_engine( config.db, echo= config.echo)
             meta = MetaData( db)
 
             err = test_inh_ref_A_B_A( meta, printer=printer, **parameters)
 
-            #destroy ALL
             meta.drop_all()
             clear_mappers()
             db.dispose()

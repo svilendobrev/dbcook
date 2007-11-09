@@ -610,6 +610,9 @@ all_cases = [
 
 #all_cases = []
 for inh in gen_inh_types( [CONCRETE, JOINED], 2):
+    if inh[0] == CONCRETE and inh[1] == CONCRETE:
+        print 'concrete polymorphism not supported, ignoring user_defined A/B/C concrete'
+        continue
     klasi = dictOrder( ( ('A', [CONCRETE, 'Base']),
                          ('B', [inh[0], 'A']),
                          ('C', [inh[1], 'B']) ) )

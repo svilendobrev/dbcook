@@ -240,7 +240,6 @@ except:
 
 #========= generated SA set-up:
 '''
-
     _tail4standalone_file= '''
 #========= eo generated SA set-up
 '''
@@ -335,6 +334,18 @@ if __name__ == '__main__':
     setup()
     unittest.main()
 '''
+
+    _head4gentestbase_alone = '''
+from sa_gentestbase import *
+setup()
+Base.__repr__ = Base.__str__
+#from polymunion import polymorphic_union
+
+t = Test_SA( 'setUp' )
+t.setUp()
+meta = t.meta
+'''
+
     @staticmethod
     def testcasedef2name( funcdef, stripstart =''):
         return funcdef.strip().replace( 'def '+stripstart,'').replace('( me):','')
