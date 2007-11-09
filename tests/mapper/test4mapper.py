@@ -652,7 +652,7 @@ class MapperCase( case2unittest.Case):
     def save_session( me):
         me.populate_namespace = tester.get_populate_namespace( namespace=me.namespace,
                 base_klas= context.Base,
-                popreflector= tester.popreflector_factory( SAdb),
+                popreflector= tester.popreflector_factory( SAdb.Builder.reflector),
                 generator= me.builder.generator
             )
         me.sadb.saveall( me.session, me.populate_namespace)

@@ -2,7 +2,6 @@
 
 import sqlalchemy
 sql = sqlalchemy.sql
-literal_column = getattr( sql, 'literal_column', sql.column)    #pre v2295
 
 def polymorphic_union( table_map, typecolname, aliasname ='pu',
             allow_empty_typecolname =True,
@@ -39,7 +38,7 @@ def polymorphic_union( table_map, typecolname, aliasname ='pu',
     result = []
     for ctype, table in table_map.iteritems():
         sel = []
-        typecol_as = typecolname and literal_column("'%s'" % ctype).label( typecolname)
+        typecol_as = typecolname and sql.literal_column("'%s'" % ctype).label( typecolname)
         for name in colnames:
             try:
                 c = colnamemaps[ table ][ name]
