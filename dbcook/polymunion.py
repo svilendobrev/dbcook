@@ -31,7 +31,7 @@ def polymorphic_union( table_map, typecolname, aliasname ='pu',
         m = {}
         for c in table.c:
             colnames.add(c.name)
-            m[c.name] = c
+            m[c.name] = c       #for primary-key of joined-inhs in v0.4, this can be replaced with root one???
             types[c.name] = c.type
         colnamemaps[table] = m
 
@@ -53,7 +53,10 @@ def polymorphic_union( table_map, typecolname, aliasname ='pu',
             if typecolname not in colnames:
                 #assert typecolname  #if typecolname is not None and typecolname not in colnamemaps[ table]:
                 sel.append( typecol_as )
+#        r = sql.select( sel, from_obj=[table])
+#$        print 'zzz', ctype, table, r
         result.append( sql.select( sel, from_obj=[table]))
+#    print 'aaaaaaaa', ',\n'.join( str(s) for s in result)
     return sql.union_all(*result).alias(aliasname)
 
 # vim:ts=4:sw=4:expandtab
