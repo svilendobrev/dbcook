@@ -58,7 +58,7 @@ def prop_get_join( self, parent, primary=True, secondary=True):
         elif self.secondaryjoin:
             adapt = dict( exclude=self.foreign_keys)
         if adapt:
-            ClauseAdapter( parent.select_table, equivalents=parent_equivalents,
+            primaryjoin=ClauseAdapter( parent.select_table, equivalents=parent_equivalents,
                             **adapt ).traverse( primaryjoin)
 
     if secondaryjoin is not None:
@@ -105,8 +105,8 @@ def join_via( keys, mapper, must_alias =None):
         self_table = mapper.select_table
 
     self_colequivalents = None
-    xmappers = [mapper]        #mapper === parent
-    ymappers = [base_mapper(mapper) ]
+    xmappers = set([mapper])        #mapper === parent
+    ymappers = set([base_mapper(mapper) ])
     for key in keys:
 #       prop = mapper.props[key]
         prop = mapper.get_property(key)
@@ -123,30 +123,31 @@ def join_via( keys, mapper, must_alias =None):
         if _debug:
             print '--prop:', key
             print '  primaryjoin:', prop.primaryjoin
-            print '  foreignkeys:', forkey
-            print '  remote_side:', prop.remote_side
+            print '  foreignkeys:', ', '.join( str(s) for s in forkey )
+            print '  remote_side:', ', '.join( str(s) for s in prop.remote_side )
             print '>', c
 #        ymappers = [ base_mapper(x) for x in xmappers]
         if prop.mapper in xmappers or base_mapper(prop.mapper) in ymappers:
             self_table = self_table.alias()
-            if _debug: print '>>', self_table.name, 'remote_side'
-            #include = prop.remote_side      #-> pu_employee.db_id, Employee.db_id
+            if _debug: print '>>', self_table.name, self_table.c.db_id == 1, 'equivs={', '; '.join( str(k)+':'+','.join(str(av) for av in v) for k,v in self_colequivalents.iteritems() )
             o_self_table = _OnDemand( self_table)
-            ClauseAdapter(
+            if _debug: print '>>1', c, 'remote_side'
+            c= ClauseAdapter(
                 o_self_table, include=prop.remote_side, equivalents= self_colequivalents
             ).traverse(c)
+            if _debug: print '>>2', c
             if not o_self_table.use:
-                if _debug: print '>>', self_table.name, 'foreignkey'
-                ClauseAdapter(
+                if _debug: print '>> foreignkey'
+                c= ClauseAdapter(
                     o_self_table, include=forkey, equivalents= self_colequivalents
                 ).traverse(c)
 
-            xmappers.append( prop.mapper)
-            ymappers.append( base_mapper(prop.mapper) )
+            xmappers.add( prop.mapper)
+            ymappers.add( base_mapper(prop.mapper) )
         if _debug: print '>>>', c
         if mapper in xmappers or base_mapper(mapper) in ymappers:
             if parent_table:
-                ClauseAdapter(
+                c= ClauseAdapter(
                     parent_table, include=forkey, equivalents= parent_colequivalents
                 ).traverse(c)
         if _debug: print '>>>>', c
