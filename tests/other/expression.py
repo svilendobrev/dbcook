@@ -39,11 +39,11 @@ def model(  address_inh ='', #'','c','j'
         owner = Type4Reference( 'Person')
 
     class Human( Base):
-        DBCOOK_no_mapping = not person_inh
+        DBCOOK_no_mapping = person_inh != 'j'
         DBCOOK_has_instances = 1
         name    = Text()
         age     = Int()
-        friend  = Type4Reference( (person_ref_person or not person_inh) and 'Person' or 'Human')
+        friend  = Type4Reference( (person_ref_person or DBCOOK_no_mapping) and 'Person' or 'Human')
 
     class Person( Human):
         if person_inh: DBCOOK_inheritance = person_inh

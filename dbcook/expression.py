@@ -108,7 +108,6 @@ def join_via( keys, mapper, must_alias =None):
     xmappers = set([mapper])        #mapper === parent
     ymappers = set([base_mapper(mapper) ])
     for key in keys:
-#       prop = mapper.props[key]
         prop = mapper.get_property(key)
 
         c = prop_get_join( prop, mapper)
@@ -126,10 +125,10 @@ def join_via( keys, mapper, must_alias =None):
             print '  foreignkeys:', ', '.join( str(s) for s in forkey )
             print '  remote_side:', ', '.join( str(s) for s in prop.remote_side )
             print '>', c
-#        ymappers = [ base_mapper(x) for x in xmappers]
+
         if prop.mapper in xmappers or base_mapper(prop.mapper) in ymappers:
             self_table = self_table.alias()
-            if _debug: print '>>', self_table.name, self_table.c.db_id == 1, 'equivs={', '; '.join( str(k)+':'+','.join(str(av) for av in v) for k,v in self_colequivalents.iteritems() )
+            if _debug: print '>>', self_table.name, self_table.oid_column, 'equivs={', '; '.join( str(k)+':'+','.join(str(av) for av in v) for k,v in self_colequivalents.iteritems() )
             o_self_table = _OnDemand( self_table)
             if _debug: print '>>1', c, 'remote_side'
             c= ClauseAdapter(
