@@ -160,14 +160,15 @@ class SAdb:
         if len(args)==1:
             try: itervalues = args[0].itervalues()        #if dict-like
             except AttributeError: pass #itervalues = namespace_or_iterable   #or iterable
+        mapcontext = me.mapcontext
+        base_klas = mapcontext.base_klas
         for x in itervalues:
-            if isinstance( x, me.mapcontext.base_klas) and me.mapcontext.has_instances( x.__class__):
+            if isinstance( x, base_klas) and mapcontext.has_instances( x.__class__):
                 if InstanceState and not hasattr( x, '_state'):
                     x._state = InstanceState(x)
                     #sqlalchemy.attribute_manager.manage(obj) does above
-                try: pre = x.pre_save
-                except AttributeError: pass
-                else: pre()
+                pre = getattr( x, 'pre_save', None)
+                if pre: pre()
                 session.save_or_update( x)
 
     ####### querys
