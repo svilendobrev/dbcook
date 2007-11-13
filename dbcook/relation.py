@@ -295,9 +295,10 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                 if dbg: print ' BACKREF ', m, typ.backrefname, r
                 if 0:
                     backref.update( r)
-                else:   #only this one
-                    try: backref[ 'post_update'] = r[ 'post_update' ]
-                    except KeyError: pass
+                else:
+                    for p in 'post_update remote_side'.split():
+                        try: backref[ p] = r[p]
+                        except KeyError: pass
                 backref = sa_backref_factory(
                             #explicit - as SA does if backref is str
                             primaryjoin= rel_kargs[ 'primaryjoin'],
