@@ -87,6 +87,8 @@ class dict_via_attr( object):
         src = me.src
         dbg = 'dict' in _debug
         if dbg: print 'dict get', me.src.__class__, k
+        if src._state.trigger:
+            raise KeyError,k
         try:
             r = src.StaticType[ k].__get__( src)    #, #no_defaults=True)
             if 0*dbg: print '  got', repr(r)
