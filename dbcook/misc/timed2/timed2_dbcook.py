@@ -2,9 +2,10 @@
 # -*- coding: cp1251 -*-
 '''Timed2 aspect'''
 
+import config
 import timed2_sa_objid_discriminator as timed2
 
-class Timed2Mixin( object):
+class Timed2Mixin( config.BaseClass4Mixin):
     ''' requires the following fields in the database model object:
         db_id: uniq
         obj_id: distinguishes between different objects
@@ -13,6 +14,9 @@ class Timed2Mixin( object):
        requires allInstances_basic() method
     '''
     __slots__ = ()
+
+    time_valid  = config.ValidTimeType()
+    time_trans  = config.TransTimeType()
 
     #config
     BaseClass4check = object   #only subclasses of this are allowed to be bitemporal

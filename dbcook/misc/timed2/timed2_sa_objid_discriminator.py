@@ -22,7 +22,7 @@ def _get_discriminating_clause( klas, aliased_table):
     #print '\n\nDISC_COL:', discriminator_column, discriminator_column.table
 
     discriminating_clause = discriminator_column.in_(
-        *[m.polymorphic_identity for m in mapper.polymorphic_iterator()])
+        [m.polymorphic_identity for m in mapper.polymorphic_iterator()])
     return discriminating_clause
 
 def _timed_clause( klas, table, timeTrans, timeValid):
@@ -48,7 +48,7 @@ def get_time_clause( klas,  time,
             group_by= [ t.c.obj_id ],
         ).alias('t1')
 
-    if _debug: klas.debug_statement( s)
+    if _debug: klas.debug_statement( s, 'DBG max( time_valid)')
 
     tt = tbl.alias('tt')
     s1 = select( [
@@ -67,7 +67,7 @@ test case for 'disappearing blake' is created blake with time_valid below curren
 object(s) from other klas with same obj_id and time_valid > blake.time_valid
 '''
 
-    if _debug: klas.debug_statement( s1)
+    if _debug: klas.debug_statement( s1, 'DBG max( time_trans)')
 
     ttt = tbl   #.alias('ttt')
     s2 = select( [
@@ -86,7 +86,7 @@ object(s) from other klas with same obj_id and time_valid > blake.time_valid
             group_by= [ ttt.c.obj_id, ttt.c.time_trans, ttt.c.time_valid],
         )
 
-    if _debug: klas.debug_statement( s2)
+    if _debug: klas.debug_statement( s2, 'DBG max( db_id)')
 
     timed_clause = s2.alias('timed')
     clause = (getattr( tbl.c, db_id_name) == getattr( timed_clause.c, db_id_name) )
@@ -178,10 +178,12 @@ def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
 
 def get_all_objects_by_time( klas, query4klas, time, with_disabled =False, **kargs4timeclause):
     time_stmt = get_time_clause( klas, time, **kargs4timeclause)
-    if _debug: klas.debug_statement( time_stmt)
+    if _debug: print 'get_all_objects_by_time clause:', time_stmt
+        #klas.debug_statement( time_stmt)
     q = query4klas
     time_stmt = _hack_columns( q, time_stmt, with_disabled= with_disabled)
     q = q.filter( time_stmt)
+    if _debug: klas.debug_statement( q, 'full2timed stmt')
     #TODO .order_by( ime) if exist ime
     return q
 
