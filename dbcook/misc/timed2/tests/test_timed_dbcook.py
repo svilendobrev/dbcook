@@ -57,10 +57,9 @@ class TEST:
     DB = None
 
 import dbcook.misc.timed2.config as timed2_config
-import dbcook.config
-timed2_config.db_id_name        = dbcook.config.column4ID.name
-timed2_config.ValidTimeType     = TEST.Time
-timed2_config.TransTimeType     = TEST.Time
+timed2_config.db_id_name    = orm.builder.column4ID.name
+timed2_config.ValidTimeType = TEST.Time
+timed2_config.TransTimeType = TEST.Time
 import dbcook.misc.timed2.timed2_dbcook as timed2
 
 
@@ -213,9 +212,6 @@ if __name__ == '__main__':
         def rootTable( klas ): return TEST.DB.sa.rootTable( klas)
         #defaultTimeContext = .. not needed
         def now( me): return TEST._timeconvert1( datatime.now() )
-        #forced_trans = False   #defaults ok
-        #validAsTrans = False
-        db_id_name = orm.builder.column4ID.name
         #eo Timed2Mixin
         def pre_save( me): pass     #stub
 
@@ -224,10 +220,8 @@ if __name__ == '__main__':
         N_TIMES = 2
         class NOT_FOUND: pass
 
-        # bitemporal-required fields
+        # bitemporal-required fields - TODO move in separate mixins
         obj_id      = Number()
-        #time_valid  = TEST.Time()
-        #time_trans  = TEST.Time()
         disabled    = Number()
         # eo
 
