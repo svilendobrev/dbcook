@@ -14,8 +14,6 @@ subject under test:
     def get_obj_history_in_range( klas, obj_id, timeFrom= defaultTimeContext(),
             timeTo= defaultTimeContext(), group =True):
 '''
-import dbcook.misc.timed2.timed2_dbcook as timed2
-
 import timed.tests.test_base as satest
 
 if 0:
@@ -43,7 +41,6 @@ test_timed:
 config = Config( sam.config )
 sam.config = config
 
-
 class TEST:
     only_days = True
     Time = only_days and Number or Date
@@ -58,6 +55,13 @@ class TEST:
     namespace = None            #must be set before run
     NUM_OF_OBJID = 3
     DB = None
+
+import dbcook.misc.timed2.config as timed2_config
+import dbcook.config
+timed2_config.db_id_name        = dbcook.config.column4ID.name
+timed2_config.ValidTimeType     = TEST.Time
+timed2_config.TransTimeType     = TEST.Time
+import dbcook.misc.timed2.timed2_dbcook as timed2
 
 
 def setupBase( me):
@@ -148,14 +152,14 @@ class Timed_Wrapper( Timed_Wrapper4Disabled):
         return Timed_Wrapper4Disabled._getRange( me, (trans, validFrom), (trans, validTo), include_disabled=include_deleted)
 
 
-def tm2_simple( ):           return Timed_Wrapper( TEST.PolymLeaf)
-def tm2_poly( ):             return Timed_Wrapper( TEST.PolymBase)
+def tm2_simple():   return Timed_Wrapper( TEST.PolymLeaf)
+def tm2_poly():     return Timed_Wrapper( TEST.PolymBase)
 
 def run( config):
     TEST.config = config
+    timed2_config.runtime = config
     config.getopt()
-    TEST.PolymBase.config.forced_trans = True
-    TEST.PolymBase.config.notimed = config.notimed
+    timed2_config.runtime.forced_trans = True
     print config
 
     #single OBJ_ID suites
@@ -222,8 +226,8 @@ if __name__ == '__main__':
 
         # bitemporal-required fields
         obj_id      = Number()
-        time_valid  = TEST.Time()
-        time_trans  = TEST.Time()
+        #time_valid  = TEST.Time()
+        #time_trans  = TEST.Time()
         disabled    = Number()
         # eo
 
