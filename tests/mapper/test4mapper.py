@@ -466,7 +466,7 @@ TEST_OUT_ROOT = 'simple/output'
 #else:
 #    print 'usage: ', sys.argv[0], ' path_to_output_dirs'
 
-from dbcook.util.dictOrder import dictOrder
+from tests.util.dictOrder import dictOrder
 
 class Config( SAdb.config.Config):
     session_clear = True

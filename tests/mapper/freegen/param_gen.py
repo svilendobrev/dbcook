@@ -28,12 +28,12 @@ def get_combs( all):
     for i in range( len( rows[ 0])):
         yield [ rows[ j][ i] for j in range( len( rows))]
 
-from dbcook.util.dictOrder import dictOrder
+from tests.util.dictOrder import dictOrder
 def order_dict( d):
     res = dictOrder()
     for k,v in d.iteritems():
         if isinstance( v, dict):
-            res[ k] = order_dict( v)
+            res[k] = order_dict( v)
         else:
             res[k] = v
     return res
@@ -196,9 +196,7 @@ def check_input( classes, links):
     if not isinstance( classes, dict) or not isinstance( links, dict):
         return 'classes and links must be instance of dict'
 
-    err = check_classes( classes)
-    if not err:
-        err = check_links( classes, links)
+    err = check_classes( classes) or check_links( classes, links)
     return err
 
 def gen_case_params( classes, links):

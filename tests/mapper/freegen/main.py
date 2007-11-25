@@ -3,12 +3,11 @@
 
 from tests.util import context
 from case_gen import NamespaceGen
-from param_gen import gen_case_params, str_schema
+from param_gen import gen_case_params, str_schema, dictOrder
 
 
 all_inh = 'joined' # concrete
 
-from dbcook.util.dictOrder import dictOrder
 classes = dictOrder((
            #class  inherits  parent(s)
            ('A', ['concrete', 'Base']),
