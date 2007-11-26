@@ -13,6 +13,7 @@ if USE_STATIC_TYPE:
     if 'one-line-str':
         Base.__str__ = Base.__repr__ = _str
 
+ONLY1 = False
 
 #############
 
@@ -37,6 +38,9 @@ def model(  address_inh ='', #'','c','j'
         if address_inh: DBCOOK_inheritance = address_inh
         kvartal = Text()
         owner = Type4Reference( 'Person')
+    class Adres2( Addr0):
+        if address_inh: DBCOOK_inheritance = address_inh
+        dupka = Int()
 
     class Human( Base):
         DBCOOK_no_mapping = person_inh != 'j'
@@ -49,6 +53,7 @@ def model(  address_inh ='', #'','c','j'
         if person_inh: DBCOOK_inheritance = person_inh
         alias   = Text()
         adr = Type4Reference( Adres)
+        adr2= Type4Reference( Adres2)
 
         def __eq__( me, other):     #for person.friend == otherperson
             if other is None: return False
@@ -79,6 +84,10 @@ def model(  address_inh ='', #'','c','j'
                 person.adr.home     = Home()
                 person.adr.home.num = homenum
                 person.adr.owner = r.get( 'pesho')
+                if person.name == 'pesho':
+                    person.adr2     = Adres2()
+                    person.adr2.dupka  = 1
+                    person.adr2.street = 'dupka'
             person.alias = (person.age % 2) and person.name + 'ali' or 'b-'+person.name
             aa = nn% 5
             if aa==0: person.friend = person            #self
@@ -115,6 +124,9 @@ def tests( person_pesho, do_friend_adr =True):
         lambda person: ( (person.name == 'pencho') & (person.age == 33) ),  #and of 2 simple eq
         lambda person: ( (person.name == 'pencho') | (person.age == 34) ),  #or  of 2 simple eq
         lambda person: ( (person.age > 45) & (person.name != 'mencho') & (person.age < 80) ),   #and of 3 value comparisons
+    #same klas/table multiple times, needs aliasing
+        [ 0*'ONLY1', lambda person, person2: (person.name == 'pesho') & (person2.name == 'gosho'), ],
+        #used as func( self1, self2) or func( p1=klas, p2=klas )
     #multilevel
         lambda person: (person.adr.street == 'str.22'), #value eq
         lambda person: (person.adr.street == None),     #value eq NULL
@@ -131,6 +143,9 @@ def tests( person_pesho, do_friend_adr =True):
                )
                & (person.adr.kvartal >='kv.17')
            ),
+
+    #similar to same klas/table multiple times - different inh-joins via same table, needs internal aliasing
+        ['ONLY1', lambda person: (person.adr.street == 'str.1') & ( person.adr2.street == 'dupka'), ],
 
         #these must raise
         #[AttributeError,    lambda person: (alabala > 45) ],
@@ -327,6 +342,7 @@ def strres( q, title):
 from tests.util.struct import Struct
 from dbcook import expression
 expression._debug = 'dbg' in sys.argv
+dbg = 'what' in sys.argv or expression._debug
 expr = expression.expr
 
 x=0
@@ -388,11 +404,13 @@ for combina in combinator():
             expected_err = None
             if isinstance( func, (tuple,list)):
                 expected_err, func = func
+            if ONLY1 and expected_err != 'ONLY1': continue
+            if expected_err == 'ONLY1': expected_err = None
 
             e = expr.makeExpresion( func)
             #print e
             etxt = e.walk( expr.as_expr)
-            #print 'expr:', etxt
+            if dbg: print 'expr:', etxt
 
             if expected_err:
                 expected = None
@@ -415,22 +433,45 @@ for combina in combinator():
                     f_kargs = {}
                     f_args  = []
                     #print p2.db_id, p.db_id
-                    if kwargs and 'p2' in kwargs or 'p2' in args: f_kargs['p2'] = p2
-                    if kwargs and 'f'  in kwargs or 'f'  in args: f_kargs['f'] = Funcs
-                    try:
-                        rr = bool( func( p, *f_args, **f_kargs))
-                    except AttributeError: rr = None
+                    if 'p2' in args: f_kargs['p2'] = p2
+                    if 'f'  in args: f_kargs['f'] = Funcs
+                    if 'person2' in args:       #decart x product
+                        rr = []
+                        r = []
+                        for pp in popu.itervalues():
+                            f_kargs['person2'] = pp
+                            try:
+                                res = bool( func( p, *f_args, **f_kargs))
+                            except AttributeError: res = None
+                            rr.append( res)
+                            ##simulated python eval
+                            try:
+                                res = bool( e.walk( expr.Eval( AttrWrap( Struct( person=p, **f_kargs)))) )
+                            except AttrWrapError: res = None
+                            r.append( res)
 
-                    ##simulated python eval
-                    try:
-                        r = bool( e.walk( expr.Eval( AttrWrap( Struct( person=p, f=Funcs, p2= p2 )))) )
-                    except AttrWrapError: r = None
+                            if res: expected.append(p)
+                        #print 'ZZZZZZZ',r
+                        assert rr == r, 'pyexec:%(rr)s != pysimeval:%(r)s' % locals()
 
-                    assert rr is r, 'rr:%(rr)s != r:%(r)s' % locals()
+                    else:
+                        try:
+                            rr = bool( func( p, *f_args, **f_kargs))
+                        except AttributeError: rr = None
+                        ##simulated python eval
+                        try:
+                            r = bool( e.walk( expr.Eval( AttrWrap( Struct( person=p, f=Funcs, p2= p2, person2=p2 )))) )
+                        except AttrWrapError: r = None
 
-                    if r: expected.append(p)
-            #print expected
-            eval = expression.Translator( AttrWrap( Struct( person=Person, f=None, p2= p2 )))
+                        assert rr is r, 'pyexec:%(rr)s != pysimeval:%(r)s' % locals()
+
+                        if r: expected.append(p)
+            if dbg: print 'expected:', expected
+            context = AttrWrap( Struct( person=Person, f=None, p2= p2, person2=Person ))
+            eval = expression.Translator( context,
+                    must_alias= expression.Aliaser.must_alias( context,
+                                'person person2'.split()    #XXX order! same as above for p/for pp loops
+                            ) )
             try:
                 try:
                     sae = e.walk( eval)
@@ -453,7 +494,7 @@ for combina in combinator():
                 print 'expr:', etxt
                 import traceback
                 exc = traceback.format_exc()# ''.join( traceback.format_exception(inf[0], inf[1], None))
-                print 'err:', e.__class__, exc
+                print '### ERR:', e.__class__, exc
                 err.append( (combina, etxt, exc) )
                 #TODO: use MultiTester or mix.myTestCase4Function
 
