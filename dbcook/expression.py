@@ -348,8 +348,19 @@ def func2expr( func):
     e = expr.makeExpresion( func)
     return e
 
-class _aliaser:
+class Aliaser( object):
     def __init__(me): me.table = None
+    @staticmethod
+    def must_alias( context, args):
+        #x1=myklas, x2=myklas -> x2 must be x1.alias()
+        aliases = {}
+        counts = {}
+        for k in args:
+            try: v = context[k]
+            except KeyError: continue
+            if v in counts: aliases[k] = Aliaser()
+            counts[v] = 1
+        return aliases
 
 def expr2clause( e, context_in ={}, binders =[], **kargs4Translator):
     context = e.arg_defaults.copy()
@@ -367,13 +378,7 @@ def expr2clause( e, context_in ={}, binders =[], **kargs4Translator):
     if extra_args: print '%(func)s(): extra_args %(extra_args)s' % locals()
 
     #x1=myklas, x2=myklas -> x2 must be x1.alias()
-    aliases = {}
-    counts = {}
-    for k in args:
-        try: v = context[k]
-        except KeyError: continue
-        if v in counts: aliases[k] = _aliaser()
-        counts[v] = 1
+    aliases = Aliaser.must_alias( context, args)
 
     ev = Translator( context, must_alias=aliases, **kargs4Translator)
     sae = e.walk( ev)
