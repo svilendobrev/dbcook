@@ -15,7 +15,6 @@ via Builder.xxxx, or directly from here.
 
 class _static_type:
     from static_type.types.base import StaticStruct, SubStruct, StaticType, config
-    from static_type.types.sequence import Sequence
     from static_type.types.forward import ForwardSubStruct
 
 from dbcook import builder
@@ -24,7 +23,9 @@ table_inheritance_types = builder.table_inheritance_types
 class Reflector4StaticType( builder.Reflector):
     def iter_attrtype_all( me, klas): return klas.StaticType.itertypes()  #name,type
     def owns_attr( me, klas, attr):   return attr in klas.StaticType
-    def type_is_collection( me, typ): return isinstance( typ, _static_type.Sequence)
+    def type_is_collection( me, typ):
+        from static_type.types.sequence import Sequence
+        return isinstance( typ, Sequence)
 
     #checker4substruct_as_value = None
     def type_is_substruct(  me, typ):
@@ -119,6 +120,14 @@ class dict_via_attr( object):
             return d.__setitem__( k,v)
     def __delitem__( me, k):
         return me.__setitem__( k, None, True)
+    def pop( me, k, *vdefault):
+        try:
+            v = me[k]
+        except KeyError:
+            if vdefault: return vdefault[0]
+            raise
+        del me[k]
+        return v
 
 ######################
 
