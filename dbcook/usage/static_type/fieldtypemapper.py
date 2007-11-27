@@ -2,6 +2,7 @@
 # -*- coding: cp1251 -*-
 
 from static_type.types.base import StaticType
+from dbcook.util.attr import issubclass
 
 class FieldTypeMapper:
     def __init__(me, typemap_upper ={}, typemap_lower ={}):
@@ -35,7 +36,7 @@ class FieldTypeMapper:
             return me.typemap_lower[ ttyp]
         except KeyError, e:
             for k,v in me.typemap_lower.iteritems():
-                if isinstance( ttyp, k): return v
+                if issubclass( ttyp, k): return v
             raise
 
 
@@ -81,6 +82,7 @@ if __name__ == '__main__':
             name2 = Text()
             a_int  = Number(int)
             a_int2 = Number(int)
+            a_flt  = Number(float)
             a_bool = Bool()
             a_bool2= Bool()
             enum   = AKeyFromDict( dict( a=1, b=12, c=444) )
@@ -97,6 +99,7 @@ if __name__ == '__main__':
             else: raise ValueError, 'A.enum  allows random values'
             a.enum = 'c'
             a.a_int = 344
+            a.a_flt = 5.67
             a.a_bool = True
             return locals()
 
