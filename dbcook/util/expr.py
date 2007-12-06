@@ -292,6 +292,7 @@ def makeExpresion( functor):
     'преобразува обикновена функция в Expr'
     import inspect
     args,vargs,kwargs,defaults = inspect.getargspec(functor)
+    if inspect.ismethod( functor): args = args[1:]
     assert not vargs
     assert not kwargs
     #assert not defaults
