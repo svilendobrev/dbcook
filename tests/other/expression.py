@@ -145,7 +145,7 @@ def tests( person_pesho, do_friend_adr =True):
            ),
 
     #similar to same klas/table multiple times - different inh-joins via same table, needs internal aliasing
-        ['ONLY1', lambda person: (person.adr.street == 'str.1') & ( person.adr2.street == 'dupka'), ],
+        [0*'ONLY1', lambda person: (person.adr.street == 'str.1') & ( person.adr2.street == 'dupka'), ],
 
         #these must raise
         #[AttributeError,    lambda person: (alabala > 45) ],
@@ -399,6 +399,7 @@ for combina in combinator():
     )
 
     try:
+        n = 0
         for func in allfuncs:
             #print '\n---------'
             expected_err = None
@@ -406,7 +407,7 @@ for combina in combinator():
                 expected_err, func = func
             if ONLY1 and expected_err != 'ONLY1': continue
             if expected_err == 'ONLY1': expected_err = None
-
+            n+=1
             e = expr.makeExpresion( func)
             #print e
             etxt = e.walk( expr.as_expr)
@@ -498,9 +499,9 @@ for combina in combinator():
                 err.append( (combina, etxt, exc) )
                 #TODO: use MultiTester or mix.myTestCase4Function
 
-        if not err: print 'OK'
+        if not err: print 'OK:', n
         else:
-            print 'ERRORS:', len(err)
+            print 'ERRORS:', len(err), '/', n
             print ' ----objects:\n', objects
         errors += err
     finally:
