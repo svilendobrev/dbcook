@@ -87,7 +87,7 @@ i a0 ba cb
                             for Blink,Blazy in config.linklazycomb( 'B', Blinks, bases):
                                 if Blink:
                                     if not Binst or Blink[0] not in insts: continue #XXX PM!
-                                for BAlink in [nolink] + bool(Alink and inh and 'A' in Bbases)*[ Alink]:
+                                for BAlink in [nolink] + bool(Binst and Alink and inh and 'A' in Bbases)*[ Alink]:
 
                                     for Clink,Clazy in config.linklazycomb( 'C', Clinks, bases):
                                         if Clink and Clink[0] not in insts: continue    #XXX PM!
