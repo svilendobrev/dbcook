@@ -86,13 +86,15 @@ class Test_SA( unittest.TestCase):
             import gc
             gc.set_debug( gc.DEBUG_UNCOLLECTABLE | gc.DEBUG_SAVEALL | gc.DEBUG_INSTANCES | gc.DEBUG_STATS ) #OBJECTS
             gc.collect()
-            import sqlalchemy
-            print "MAPPER REG:", len( dict(sqlalchemy.orm.mapperlib.mapper_registry) )
-            print "SESION REG:", len( dict(sqlalchemy.orm.session._sessions) )
-            print "CLASSKEYS:",  len( dict(sqlalchemy.util.ArgSingleton.instances) )
+            from sqlalchemy.orm import mapperlib
+            from sqlalchemy.orm.session import _sessions
+            from sqlalchemy.util import ArgSingleton
+            print "MAPPER REG:", len( dict(getattr( mapperlib, 'mapper_registry', getattr( mapperlib, '_mapper_registry', None)) ))
+            print "SESION REG:", len( dict(_sessions) )
+            print "CLASSKEYS:",  len( dict(ArgSingleton.instances) )
             i = 0
             for x in gc.get_objects():
-                if isinstance(x, sqlalchemy.orm.mapperlib.Mapper) or isinstance(x, MetaData):
+                if isinstance(x, mapperlib.Mapper) or isinstance(x, MetaData):
                     i+=1
                     #print x
             print 'gc/SA objects:', i

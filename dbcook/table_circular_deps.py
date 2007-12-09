@@ -16,7 +16,7 @@ def fix_table_circular_deps( tablelist, dbg =0, **kargs):
         except: return obj.accept_schema_visitor( visitor)
         else: return f( obj)
 
-    alltbl = sql_util.TableCollection( tablelist)
+    alltbl = tablelist#sql_util.TableCollection( tablelist)
     tuples = []
     fkeys = {}
     inheritances = set()
@@ -39,7 +39,7 @@ def fix_table_circular_deps( tablelist, dbg =0, **kargs):
                 warnings.warn( 'foreign_key.column.table (parent) "%(parent_table)s" not in all_tables' % locals() )
 
     vis = TVisitor()
-    for table in alltbl.tables:
+    for table in tablelist:
         traverse( vis, table)
 
     if dbg>1: print ' graph:', [ '%s:%s' % t for t in tuples]

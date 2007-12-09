@@ -36,7 +36,6 @@ _BinaryExpression = find_valid_fullname_import( '''
 ''',1 )
 
 
-
 def prop_get_join( self, parent, primary=True, secondary=True):
     ''' from PropertyLoader.get_join(), no cache, no polymorphic joins '''
     from sqlalchemy.orm import sync
@@ -270,9 +269,12 @@ class Translator( expr.Expr.Visitor):
     def const( me, value):
         if _debug: print '?const', value
         if value is None: return sql.null()
-
-        mapped_klasi = tuple( a.class_ for a in sqlalchemy.orm.mapperlib.mapper_registry)#.keys()
-        if isinstance( value, mapped_klasi):
+        #XXX TODO must be redone; db_id may not be valid; needs primarykey( value)
+        from sqlalchemy.orm import mapperlib
+        try:
+            mapperlib.object_mapper( value)
+        except: pass
+        else:
             return value.db_id
 
         return sql.literal( value)
@@ -432,13 +434,18 @@ def expr2clause2( e, context_in ={}, klas =None, namespace4klasi =None, **kargs 
 
 def query2( e, context_in ={}, klas =None, namespace4klasi =None, **kargs ):
     sae, klas = expr2clause2( e, context_in, klas, namespace4klasi, **kargs)
-#    print sae
     return query3( sae, klas, **kargs)
 
 def query3( sae, klas, session =None):
-#    print sae, klas
     return session.query( klas).filter( sae)
 
+#from dbcook.util.expr import GluerAnd
+#Gluer GlueAnd GlueOR
+
+__all__ = '''
+func2expr expr2clause2
+query1 query2 query3
+'''.split()
 
 
 if 0:
