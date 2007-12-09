@@ -25,7 +25,7 @@ class Base( object):
         return obj2str( me, Base,
                     attrname_iterator= lambda me: me.__class__.props,
                     idname = me.__class__.idname,
-                    pretty_name = me.__class__.refname,
+                    refname = me.__class__.refname,
                 )
 
 # vim:ts=4:sw=4:expandtab
