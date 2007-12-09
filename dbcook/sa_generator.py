@@ -300,9 +300,10 @@ meta.create_all()
             me.nl()
             for p in m.iterate_properties:
                 if isinstance( p, sqlalchemy.orm.PropertyLoader ):
-                    k = p.key
-                    t = tstr(p)
-                    me.out += '%(varname)s.add_property( %(k)r, %(t)s )\n' % locals()
+                    if m is m.base_mapper or p not in m.base_mapper.iterate_properties:
+                        k = p.key
+                        t = tstr(p)
+                        me.out += '%(varname)s.add_property( %(k)r, %(t)s )\n' % locals()
             me.nl()
         me.nl()
         me.done.append( 'pmapi')
