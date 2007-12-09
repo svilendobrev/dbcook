@@ -1,6 +1,8 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
+import operator
+
 class _Expr( object):
     __slots__ = ()
 
@@ -267,11 +269,9 @@ class Eval( Expr.Visitor):
                 'not': 'not_',
             }
     def __call__( me, level, op, *args):
-        import operator
 
         if op in me.arithm_op:
             return getattr( operator, me.arithm_op[op] or op ) ( *args)
-
         if op in me.bool_op:
             return getattr( operator, me.bool_op[op] or op) ( *(bool(a) for a in args))
 
@@ -304,6 +304,32 @@ def makeExpresion( functor):
     else: arg_defaults = _dict
     r.arg_defaults = arg_defaults
     return r
+
+
+###################
+
+class GluerOP( object):
+    '''Слепва подобни функции-филтри (lambda) чрез някакъв оператор &,|,..
+       Glue similar function-filters together via some operator &,|,..
+       resultfunc = GluerXX( *funcs).__call__
+    '''
+    op = None
+    def __init__( me, *selects): me.selects = selects
+    def __call__( me, self, f= None):
+        r = None
+        for s in me.selects:
+            if s is not None:
+                s = s( self,f)
+                if r is None: r = s
+                else: r = me.op( r, s)
+        assert r is not None
+        return r
+
+class GluerAnd( GluerOP):
+    op = operator.__and__
+class GluerOR( GluerOP):
+    op = operator.__or__
+
 
 
 if __name__ == '__main__':
