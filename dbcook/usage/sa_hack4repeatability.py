@@ -18,6 +18,7 @@ XXX DONT forget to make "requests"/calls also repeatable/ordered!!!
 e.g. SAdb( ..force_ordered=True)
 '''
 from dbcook.util.hacksrc import hacksrc
+from dbcook.util.attr import find_valid_fullname_import
 
 def hack4repeat():
     import sqlalchemy
@@ -97,8 +98,12 @@ def hack4repeat():
         init2old( weakref.WeakKeyDictionary, init)
 
     from sqlalchemy.orm import mapperlib
-    assert not  mapperlib.mapper_registry.data
-    mapperlib.mapper_registry.data = DICT()
+    _mapper_registry = find_valid_fullname_import( '''
+        sqlalchemy.orm.mapperlib._mapper_registry
+        sqlalchemy.orm.mapperlib.mapper_registry
+    ''',2 )
+    assert not _mapper_registry.data
+    _mapper_registry.data = DICT()
 
 
     if 10:
