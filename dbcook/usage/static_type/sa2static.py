@@ -84,11 +84,12 @@ class dict_via_attr( object):
         except KeyError: return False
         return True
     __contains__ = has_key
-    def __getitem__( me,k):
+    def __getitem__( me,k, *defaultvalue):
         src = me.src
         dbg = 'dict' in _debug
-        if dbg: print 'dict get', me.src.__class__, k
+        if dbg: print 'dict get', me.src.__class__, k, defaultvalue
         if src._state.trigger:
+            if defaultvalue: return defaultvalue[0]
             raise KeyError,k
         try:
             r = src.StaticType[ k].__get__( src)    #, #no_defaults=True)
@@ -96,13 +97,17 @@ class dict_via_attr( object):
             return r
         except AttributeError,e:    #attribute declared but not set
             if dbg: print ' not found, KeyError'
+            if defaultvalue: return defaultvalue[0]
             raise KeyError,k
         except KeyError,e:  #extra attribute
             try: d = src._my_sa_stuff
             except AttributeError: d = src._my_sa_stuff = dict()
             if dbg: print ' _my_sa_stuff get', k, d.get( k, '<missing>')
             #raise KeyError, a.args
+            if defaultvalue: return d.get(k,*defaultvalue)
             return d[k]
+    def get( me, k, defaultvalue =None): return me.__getitem__( k, defaultvalue)
+
     def __setitem__( me, k,v, delete =False):
         src = me.src
         dbg = 'dict' in _debug
