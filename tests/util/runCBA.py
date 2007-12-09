@@ -60,8 +60,8 @@ i a0 ba cb
         inhsB = inh and Binhs or ['']
         inhsC = doC and inh and Cinhs or ['']
 #        print allinsts, inhsB+inhsC, inhsC
-        for Ainst in     ['A','',][:1+bool( 'A' in allinsts and 'A' in (inhsB + inhsC))]:
-            for Binst in ['B','',][:1+bool( 'B' in allinsts and 'B' in inhsC)]:
+        for Ainst in     ('A' in allinsts and ['A'] + ['']*bool( 'A' in (inhsB + inhsC)) or ['']):
+            for Binst in ('B' in allinsts and ['B'] + ['']*bool( 'B' in inhsC) or ['']):
                 usedinh.clear()
                 insts = Ainst + Binst + bool(doC)*'C'
 #               print 'INST', Ainst,Binst, insts
@@ -82,9 +82,11 @@ i a0 ba cb
                         usedinh[ bcinh2] = 1
                         Cbases = bases['C'] = [inhC] + bases[ inhC ]
                         for Alink,Alazy in config.linklazycomb( 'A', Alinks, bases):
-                            if Alink and Alink[0] not in insts: continue #XXX PM!
+                            if Alink:
+                                if not Ainst or Alink[0] not in insts: continue #XXX PM!
                             for Blink,Blazy in config.linklazycomb( 'B', Blinks, bases):
-                                if Blink and Blink[0] not in insts: continue #XXX PM!
+                                if Blink:
+                                    if not Binst or Blink[0] not in insts: continue #XXX PM!
                                 for BAlink in [nolink] + bool(Alink and inh and 'A' in Bbases)*[ Alink]:
 
                                     for Clink,Clazy in config.linklazycomb( 'C', Clinks, bases):
@@ -144,6 +146,7 @@ def populate(
         inhB ='', inhC ='',
         Alink ='', Blink ='',Clink ='',
         BAlink ='', CAlink ='', CBlink ='',
+        insts = 'ABC',
         **kargs_ignore
     ):
     Alink0 = Alink
@@ -153,12 +156,16 @@ def populate(
     Clink0 = Clink
     if Clink: Clink = Clink[0]
 
-    a = A()
-    b = B()
-    a.name = 'anna'
-    if inhB:
-        b.name = 'ben'
-    b.dataB = 'gun'
+    if 'A' in insts:
+        a = A()
+        a.name = 'anna'
+    else: a = None
+    if 'B' in insts:
+        b = B()
+        if inhB:
+            b.name = 'ben'
+        b.dataB = 'gun'
+    else: b = None
     inhCA = inhC=='A' or inhC=='B' and inhB=='A'
 
     c = None
@@ -171,9 +178,11 @@ def populate(
     a1 = b1 = c1 = None
     ABC0 = [Alink0,Blink0,Clink0]
     if 'A1' in ABC0:
+        assert 'A' in insts
         a1 = A()
         a1.name = 'a1'
     if 'B1' in ABC0:
+        assert 'B' in insts
         b1 = B()
         if inhB:
             b1.name = 'bb1'
