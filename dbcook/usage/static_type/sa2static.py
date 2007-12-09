@@ -88,9 +88,17 @@ class dict_via_attr( object):
         src = me.src
         dbg = 'dict' in _debug
         if dbg: print 'dict get', me.src.__class__, k, defaultvalue
+
         if src._state.trigger:
             if defaultvalue: return defaultvalue[0]
             raise KeyError,k
+
+        if k in Base.__slots__:
+            if hasattr( src, k):
+                return getattr( src, k)
+            if defaultvalue: return defaultvalue[0]
+            raise KeyError, k
+
         try:
             r = src.StaticType[ k].__get__( src)    #, #no_defaults=True)
             if 0*dbg: print '  got', repr(r)
@@ -114,12 +122,19 @@ class dict_via_attr( object):
         SET = delete and 'DEL' or 'SET'
         if dbg: print 'dict', SET, me.src.__class__, k, repr(v)
         vv = v
+
+        #print src.StaticType.keys()
+        if k in Base.__slots__:
+            if delete: return delattr( src, k)
+            return setattr( src, k, v)
+
         try: return src.StaticType[ k].__set__( src, vv)
 #        except AttributeError,e:    #attribute declared but readonly
 #            raise KeyError,k
         except KeyError,e:  #extra attribute
             try: d = src._my_sa_stuff
             except AttributeError: d = src._my_sa_stuff = dict()
+            #assert k != '_instance_key'
             if dbg: print ' _my_sa_stuff', SET, k, repr(v)
             if delete: return d.__delitem__( k)
             return d.__setitem__( k,v)
