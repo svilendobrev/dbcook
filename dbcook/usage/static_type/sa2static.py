@@ -94,10 +94,12 @@ class dict_via_attr( object):
             raise KeyError,k
 
         if k in Base.__slots__:
-            if hasattr( src, k):
+            if defaultvalue:
+                return getattr( src, k, defaultvalue[0])
+            try:
                 return getattr( src, k)
-            if defaultvalue: return defaultvalue[0]
-            raise KeyError, k
+            except AttributeError:
+                raise KeyError, k
 
         try:
             r = src.StaticType[ k].__get__( src)    #, #no_defaults=True)
