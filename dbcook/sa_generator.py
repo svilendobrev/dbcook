@@ -49,6 +49,7 @@ _BinaryThing = find_valid_fullname_import( '''
     sqlalchemy.sql._BinaryClause
 ''')
 
+from sqlalchemy.orm.properties import PropertyLoader
 if 0:
     def props_iter( mapr, klas =sqlalchemy.orm.PropertyLoader ):
         try: i = mapr.properties
@@ -299,7 +300,7 @@ meta.create_all()
             me.out += varname + ' = '+ t2
             me.nl()
             for p in m.iterate_properties:
-                if isinstance( p, sqlalchemy.orm.PropertyLoader ):
+                if isinstance( p, PropertyLoader ):
                     if m is m.base_mapper or p not in m.base_mapper.iterate_properties:
                         k = p.key
                         t = tstr(p)
