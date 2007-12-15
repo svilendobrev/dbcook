@@ -126,7 +126,7 @@ def query_all_klasi( query, sadb, session, klasitems, quiet):
 def popreflector_factory( reflector):
     def popreflector(o):
         #avoid see-through class-level-declarations: if klas.x is obj.x -> x is class-level decl
-        for k,v in reflector.iter_attrtype_all( o.__class__):
+        for k,v in reflector.attrtypes_iteritems( o.__class__):
             try:
                 if v is getattr( o, k): continue
             except AttributeError: pass

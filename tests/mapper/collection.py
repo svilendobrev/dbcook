@@ -36,6 +36,7 @@ def t3inheritparent():
 for namespacer in tsingle, t2collects, t3inheritparent:
     sa = SAdb()
     sa.open( recreate=True)
+    print '---', namespacer.__name__
     types = namespacer()
     types.update( Kid=Kid)
     sa.bind( types, base_klas= Base )

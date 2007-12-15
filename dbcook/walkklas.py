@@ -31,6 +31,7 @@ def walker( namespace, reflector, baseklas):
         if _debug: print 'walk: ------ pass', pas
         new = 0
         for (kname,kmod),(klas,isnamespace) in klasi.items(): #copy
+            if isinstance( klas, str): continue
             new += walk1( klas,isnamespace, kname,kmod, klasi, reflector, namespace)
         if _debug: print 'eopass', '\n       '.join( str(kv) for kv in klasi.iteritems() )
 
@@ -44,13 +45,14 @@ def walker( namespace, reflector, baseklas):
 
 
 def add_bases( klas, klasi, baseklas):
-    b = klas.__bases__[0]
-    while issubclass( b, baseklas):
+    b = klas.__bases__
+    while b and issubclass( b[0], baseklas):
+        b = b[0]
         key = (b.__name__, b.__module__)
         if key not in klasi:
             klasi[ key ] = b,None
             if _debug: print 'walk: add base', b
-        b = b.__bases__[0]
+        b = b.__bases__
 
 def ownerbase( klas, attr, reflector):
     'откъде идва даден атрибут'
@@ -58,8 +60,9 @@ def ownerbase( klas, attr, reflector):
     base = klas
     while base:
         b = base.__bases__[0]    #!!!
-        if not reflector.owns_attr( b, attr) or getattr( b, attr) is not value:
-           break
+        #if not reflector.attrtypes_hasattr( b, attr) or getattr( b, attr) is not value:
+        if getattr( b, attr, None) is not value:
+            break
         base = b
     return base
 
@@ -71,7 +74,7 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
     if _debug: print ind, 'klas:', `klas`
     _level+=1
     ind += '    '
-    for attr,typ in reflector.iter_attrtype_all( klas):
+    for attr,typ in reflector.attrtypes_iteritems( klas):
         is_substruct = reflector.type_is_substruct( typ)
         if not is_substruct:
             if _debug: print ind, attr, 'ignoring non-ref:', typ

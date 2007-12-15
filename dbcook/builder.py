@@ -56,8 +56,9 @@ else:
 
 if config_components.no_generator:
     sa = sqlalchemy
-    sa.mapper = sa.orm.mapper
-    sa.relation = sa.orm.relation
+    sa_mapper   = sa.orm.mapper
+    sa_backref  = sa.orm.backref
+    sa_relation = sa.orm.relation
     SrcGenerator = None
 else:
     import sa_generator
@@ -69,6 +70,9 @@ else:
                             ))
     sa.Column = sa.duper2( sqlalchemy.Column)
     sa.ForeignKey= sa.duper2( sqlalchemy.ForeignKey)
+    sa_mapper   = sa.mapper
+    sa_backref  = sa.backref
+    sa_relation = sa.relation
     SrcGenerator = sa.Printer
 
 if not config_components.polymunion_from_SA:
@@ -291,10 +295,10 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
     base_klas, inheritype = mapcontext.base4table_inheritance( klas)
     is_joined_table = (inheritype == table_inheritance_types.JOINED)
     assert base_klas or not is_joined_table
-    for attr,typ in reflector.iter_attrtype_all( klas):
+    for attr,typ in reflector.attrtypes_iteritems( klas):
         if is_joined_table:
             #joined_table: subclass' tables consist of extra attributes -> joins
-            if reflector.owns_attr( base_klas, attr):
+            if reflector.attrtypes_hasattr( base_klas, attr):
                 if dbg: print '  inherited:', attr
                 continue
 
@@ -414,7 +418,7 @@ def make_mapper( klas, table, **kargs):
         print '\n'+'make_mapper for:', klas.__name__
         print '  table=', table, '\n  '.join( '%s=%s' % kv for kv in kargs.iteritems())
 
-    m = sa.mapper( klas, table, **kargs)
+    m = sa_mapper( klas, table, **kargs)
     return m
 
 class FKeyExtractor( dict):
@@ -481,8 +485,8 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
         fkeys = FKeyExtractor( klas, table, mapcontext, tables)
 
         base_klas, inheritype = mapcontext.base4table_inheritance( klas)
-        for k,typ in reflector.iter_attrtype_all( klas):
-            if base_klas and reflector.owns_attr( base_klas, k):
+        for k,typ in reflector.attrtypes_iteritems( klas):
+            if base_klas and reflector.attrtypes_hasattr( base_klas, k):
                 if inheritype != table_inheritance_types.CONCRETE:
                     if dbg: print '  inherited:', k
                     continue
@@ -512,12 +516,12 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                     rel_kargs[ 'lazy'] = lazy
                     rel_kargs[ 'uselist'] = False
                     if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
-                    m.add_property( k, sa.relation( attrklas, **rel_kargs))
+                    m.add_property( k, sa_relation( attrklas, **rel_kargs))
 
             if reflector.type_is_collection( typ):
                 raise NotImplementedError
                 m.add_property( k+'_multi',
-                    sa.relation( typ.itemtype,
+                    sa_relation( typ.itemtype,
                         uselist=True    #??typ.forward?
                     )
                 )
@@ -648,7 +652,7 @@ class Builder:
                 fkey.tstr.kargs.update( dict( use_alter=True, name=fkey.name))
 
         def getprops( klas):
-            return [ column4ID.name ] + [ k for k,t in me.reflector.iter_attrtype_all( klas) ] #if not k.startswith('link')]
+            return [ column4ID.name ] + list( me.reflector.attrtypes_iterkeys( klas) ) #if not k.startswith('link')]
 
         try:
             if not only_table_defs:
@@ -681,7 +685,7 @@ class Builder:
             for klas in me.iterklasi():    #table=me.tables[ klas],
                 make_mapper_props( klas, me.mapcontext, me.mappers[ klas], me.tables )
 
-            relation.make_relations( me, sa.relation, sa.backref, FKeyExtractor)
+            relation.make_relations( me, sa_relation, sa_backref, FKeyExtractor)
             sqlalchemy.orm.compile_mappers()
         finally:
             if me.generator:

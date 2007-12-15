@@ -6,10 +6,10 @@ class Reflector:
     и други свързани запитвания и операции - оправяне на предварително обявени
     (символични) указатели (forward declared references)'''
 
-    def owns_attr( me, klas, attr):
+    def attrtypes_hasattr( me, klas, attr):
         raise NotImplementedError
         return 'bool( attr belongs to klas+bases)'
-    def iter_attrtype_all( me, klas):
+    def attrtypes_iteritems( me, klas):
         raise NotImplementedError
         return 'iter_over_ all (attr_name, attr_type) of klas+bases'
 #    def iter_attrtype_local( me, klas):
@@ -28,7 +28,7 @@ class Reflector:
         from baseobj import obj2str
         '''nice str(obj), cuts recursion. Uses obj.refname for references (if available)'''
         return obj2str( obj, base_klas,
-                    attrname_iterator= lambda o: (k for k,typ in me.iter_attrtype_all( o.__class__)) ,
+                    attrname_iterator= lambda o: (k for k,typ in me.attrtypes_iteritems( o.__class__)) ,
                     idname = idname,
                     refname= refname,
                 )

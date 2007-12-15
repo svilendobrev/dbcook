@@ -137,7 +137,7 @@ class MappingContext:
 
     def iter_attr_local( me, klas, attr_base_klas =None, **kargs):
         if not attr_base_klas:
-            return me.reflector.iter_attrtype_all( klas)
+            return me.reflector.attrtypes_iteritems( klas)
         return me._iter_attr_local( klas, attr_base_klas, **kargs)
 
     def _iter_attr_local( me, klas, attr_base_klas, dbg =False):
