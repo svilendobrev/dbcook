@@ -28,6 +28,7 @@ class config:
     session_clear = True
     reuse_db = False
     leak = False
+    gc = False
     memory = False
     db = 'sqlite:///:memory:'
     repeat = 1
@@ -82,16 +83,18 @@ class Test_SA( unittest.TestCase):
         if not config.reuse_db:
             me.db.dispose()
         me.db = None
-        if config.leak:
+        if config.gc:
             import gc
             gc.set_debug( gc.DEBUG_UNCOLLECTABLE | gc.DEBUG_SAVEALL | gc.DEBUG_INSTANCES | gc.DEBUG_STATS ) #OBJECTS
             gc.collect()
+        if config.leak:
             from sqlalchemy.orm import mapperlib
             from sqlalchemy.orm.session import _sessions
             from sqlalchemy.util import ArgSingleton
             print "MAPPER REG:", len( dict(getattr( mapperlib, 'mapper_registry', getattr( mapperlib, '_mapper_registry', None)) ))
             print "SESION REG:", len( dict(_sessions) )
             print "CLASSKEYS:",  len( dict(ArgSingleton.instances) )
+        if config.gc:
             i = 0
             for x in gc.get_objects():
                 if isinstance(x, mapperlib.Mapper) or isinstance(x, MetaData):
@@ -135,7 +138,7 @@ class Test_SA( unittest.TestCase):
             unittest.TestCase.run( self, *a,**k)
             if config.memory: memusage()
 
-help = 'echo dump debug log_sa no_session_clear reuse_db leak memory'
+help = 'echo dump debug log_sa no_session_clear reuse_db leak gc memory'
 def setup():
     import sys
 #    sys.setrecursionlimit( 600)
