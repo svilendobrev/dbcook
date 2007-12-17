@@ -5,6 +5,7 @@ import sqlalchemy
 import sqlalchemy.orm
 import operator
 from dbcook.util.attr import issubclass, find_valid_fullname_import
+from dbcook.config import _v03
 
 def traverse( visitor, obj):
     try: f = visitor.traverse
@@ -67,6 +68,12 @@ if 0:
         except KeyError: raise
         except:     # about r3740
             return mapr.get_property( key)
+
+
+if _v03:
+    def base_mapper(m): return m.base_mapper()
+else:
+    def base_mapper(m): return m.base_mapper
 
 
 level = 0
@@ -301,7 +308,7 @@ meta.create_all()
             me.nl()
             for p in m.iterate_properties:
                 if isinstance( p, PropertyLoader ):
-                    if m is m.base_mapper or p not in m.base_mapper.iterate_properties:
+                    if m is base_mapper(m) or p not in base_mapper(m).iterate_properties:
                         k = p.key
                         t = tstr(p)
                         me.out += '%(varname)s.add_property( %(k)r, %(t)s )\n' % locals()

@@ -18,10 +18,10 @@ simple: mapper/mincut.test
 mapper: mapper/test4mapper.test
 mapper: mapper/test_inh_types.test
 mapper: abc
+mapper: mapper/freegen/main.test
 mapper: mapper/relation.test
 mapper: mapper/collection.test
 mapper: other/expression.test
-mapper: mapper/freegen/main.test
 
 #abc: ARGS= zno_sisters Binhs=A Cinhs=B Clinks=None doC zdummy
 GG= generate=failed,one
