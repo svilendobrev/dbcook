@@ -30,7 +30,13 @@ def model(  address_inh ='', #'','c','j'
 
     class Addr0( Base):
         DBCOOK_no_mapping = not address_inh
-        name = property( lambda me: str(getattr( me, 'street','none')) +'#'+str(get_attrib( me, 'home.num', 'none')) )
+        @property
+        def name( me):
+            if dbcook.config._v03:
+                home = 'nohome-v03'
+            else:
+                home = str( get_attrib( me, 'home.num', 'none'))
+            return str( getattr( me, 'street','none')) +'#'+ home
         street = Text()
         home = Type4Reference( Home)
 
@@ -145,7 +151,7 @@ def tests( person_pesho, do_friend_adr =True):
            ),
 
     #similar to same klas/table multiple times - different inh-joins via same table, needs internal aliasing
-        [0*'ONLY1', lambda person: (person.adr.street == 'str.1') & ( person.adr2.street == 'dupka'), ],
+        #XXX TODO [0*'ONLY1', lambda person: (person.adr.street == 'str.1') & ( person.adr2.street == 'dupka'), ],
 
         #these must raise
         #[AttributeError,    lambda person: (alabala > 45) ],
@@ -343,6 +349,7 @@ from tests.util.struct import Struct
 from dbcook import expression
 expression._debug = 'dbg' in sys.argv
 dbg = 'what' in sys.argv or expression._debug
+one_error = 'one' in sys.argv
 expr = expression.expr
 
 x=0
@@ -484,12 +491,11 @@ for combina in combinator():
 
                 q = session.query( Human.DBCOOK_no_mapping and Person or Human)
 
-                q = q.filter(sae)
+                q = q.filter(sae).all()
 
                 sres,sres1 = strres( q, 'result')
                 sexp,sexp1 = strres( expected, 'expect')
                 #print sres1
-
                 assert sres==sexp, '\n%(sres1)s \n !=\n%(sexp1)s' % locals()
             except Exception, e:
                 print 'expr:', etxt
@@ -498,7 +504,7 @@ for combina in combinator():
                 print '### ERR:', e.__class__, exc
                 err.append( (combina, etxt, exc) )
                 #TODO: use MultiTester or mix.myTestCase4Function
-
+                if one_error: break
         if not err: print 'OK:', n
         else:
             print 'ERRORS:', len(err), '/', n
@@ -507,6 +513,7 @@ for combina in combinator():
     finally:
         sa.destroy()
         pass
+    if errors and one_error: break
 
 for e in errors:
     print 40*'=' + '\n' + '\n'.join( str(s) for s in e)
