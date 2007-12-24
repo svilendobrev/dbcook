@@ -35,6 +35,10 @@ _BinaryExpression = find_valid_fullname_import( '''
     sqlalchemy.sql._BinaryExpression
 ''',1 )
 
+if hasattr( sqlalchemy.sql.expression, '_corresponding_column_or_error'):
+    def corresponding_column( tbl, col): return tbl.corresponding_column( col)
+else:
+    def corresponding_column( tbl, col): return tbl.corresponding_column( col, raiseerr=False)
 
 def prop_get_join( self, parent, primary=True, secondary=True):
     ''' from PropertyLoader.get_join(), no cache, no polymorphic joins '''
@@ -218,7 +222,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
             self_colequivalents = equivs( mapper)
             for col in [lastcol] + list( self_colequivalents.get( lastcol, [])):
                 #print col, lasttable.__class__
-                lc = lasttable.corresponding_column( col, raiseerr=False)
+                lc = corresponding_column( lasttable, col)
                 #print '*******', col, lc
                 if lc:
                     lastcol = lc

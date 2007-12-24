@@ -528,10 +528,10 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
 
 
 class _MapExt( sqlalchemy.orm.MapperExtension):
-    def before_insert( self, mapper, connection, instance):
-        assert instance.__class__ is not mapper.class_, 'load_only_object - no save: ' + str( instance.__class__) + ':'+str(mapper)
+    def __init__( me, klas): me.klas = klas
+    def before_insert( me, mapper, connection, instance):
+        assert instance.__class__ is not me.klas, 'load_only_object - no save: ' + str( me.klas)+ ':'+ str( instance.__class__) + ' via ' + str(mapper)
     before_update = before_delete = before_insert
-_mapext = _MapExt()
 
 class Builder:
     reflector = None    #Reflector()    #override - just a default
@@ -797,9 +797,10 @@ class Builder:
         inherits= base_mapper and base_mapper.polymorphic_all or None
         is_pm = inherits and inherits.polymorphic_on or pjoin_key
 
-        has_no_instances = not me.mapcontext.has_instances( klas)
-        if has_no_instances:
+        extension = None
+        if not me.mapcontext.has_instances( klas):
             if dbg: print ' load-only - disable mapper.save/.delete'
+            extension = _MapExt( klas)
 
         #primary, eventualy polymorphic_all if pjoin
         pm = make_mapper( klas, table,
@@ -809,7 +810,7 @@ class Builder:
                     polymorphic_on= pjoin_key,
                     inherits= inherits,
                     inherit_condition= inherit_condition,
-                    extension = has_no_instances and _mapext or None
+                    extension = extension,
                 )
         m.polymorphic_all = pm
 
@@ -828,7 +829,7 @@ class Builder:
 #                    polymorphic_identity= is_pm and name or None,
                     concrete= is_concrete,
                     non_primary= True,
-                    extension = has_no_instances and _mapext or None
+                    extension = extension,
                 )
 
         m.plain = pm
