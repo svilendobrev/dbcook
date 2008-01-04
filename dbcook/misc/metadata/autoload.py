@@ -1,6 +1,5 @@
 #$Id$
-#sdobrev
-# uses sa0.4beta2 MetaData.reflect; no indexes there!
+# uses sa0.4 MetaData.reflect; no indexes there!
 
 import sqlalchemy
 
@@ -30,8 +29,11 @@ db2: SELECT * FROM syscat.tables WHERE tabschema = '<schemaname>'
         raise NotImplementedError
         return indexes-of-the-table
 
+    #coltypes_sa2db = {}  #sa2db
+    coltypes_db2sa = {}   #db2sa - extra to the reverse of above
     def metadata( me, engine =None):
-        coltypes = dict( (v,k) for k,v in me.colspecs.iteritems() )
+        coltypes = dict( (v,k) for k,v in me.coltypes_sa2db.iteritems() )
+        coltypes.update( me.coltypes_db2sa)
         engine = engine or me.engine
         me.metadata = metadata = sqlalchemy.MetaData( engine, reflect=True)
         for table in metadata.table_iterator():
@@ -52,10 +54,11 @@ db2: SELECT * FROM syscat.tables WHERE tabschema = '<schemaname>'
         return metadata
 
 #######
+from sqlalchemy import types as sqltypes
 
 from sqlalchemy.databases import postgres
 class AutoLoader4postgress( AutoLoader):
-    colspecs = postgres.colspecs
+    coltypes_sa2db = postgres.colspecs
         #XXX schema-name???
     sql4indexes = sqlalchemy.text( "SELECT indexname, tablename, indexdef FROM pg_indexes" )
     def __init__( me, engine):
@@ -82,7 +85,11 @@ postgres.PGDialect.AutoLoader = AutoLoader4postgress
 
 from sqlalchemy.databases import mssql
 class AutoLoader4mssql( AutoLoader):
-    colspecs = mssql.MSSQLDialect.colspecs
+    coltypes_sa2db = mssql.MSSQLDialect.colspecs
+    coltypes_db2sa = {
+                    mssql.MSTinyInteger: sqltypes.Smallinteger,
+                    mssql.MSBigInteger:  sqltypes.Integer,
+                }
     def __init__( me, engine):
         me.engine = engine
 
@@ -102,10 +109,10 @@ CREATE TABLE sqlite_master (
   sql TEXT
 );'''
 
-    if 'BOOLEAN' not in sqlite.pragma_names:    #pre 0.4beta
+    if hasattr( sqlite, 'pragma_names') and 'BOOLEAN' not in sqlite.pragma_names:    #pre 0.4beta
         sqlite.pragma_names[ 'BOOLEAN' ] = sqlite.SLBoolean
 
-    colspecs = sqlite.colspecs
+    coltypes_sa2db = sqlite.colspecs
     sql4indexes = sqlalchemy.text( "SELECT name,tbl_name,sql FROM sqlite_master WHERE type='index'" )
 sqlite.SQLiteDialect.AutoLoader = AutoLoader4sqlite
 
@@ -142,7 +149,9 @@ if __name__ == '__main__':
     def column_repr( self):
         kwarg = []
         if self.key != self.name: kwarg.append( 'key')
-        if self._primary_key:   kwarg.append( 'primary_key')
+        if (getattr( self, '_primary_key', None) or
+            getattr( self, 'primary_key', None)
+            ):   kwarg.append( 'primary_key')
         if not self.nullable:   kwarg.append( 'nullable')
         kwarg2 = []
         if self.onupdate:       kwarg2.append( 'onupdate')
