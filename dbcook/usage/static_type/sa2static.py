@@ -72,7 +72,16 @@ if _v03: #'AVOID having privately-named __sa_attr_state':      #not needed for v
     mapperlib.attribute_manager.init_attr = lambda me: None
 
 _static_type.config.notSetYet = None
-_debug = 0*'dict'
+_debug = 1*'dict'
+
+import sqlalchemy.orm.attributes
+_noInstanceState = not hasattr( sqlalchemy.orm.attributes, 'InstanceState')    #>v3463
+def _triggering( state):
+    try:
+        return bool( state.expired_attributes)
+    except AttributeError:
+        return bool( getattr( state, 'trigger', None))   #pre ~v3970
+
 
 class dict_via_attr( object):
     '''this to avoid having __dict__ - SA uses __dict__ directly,
@@ -91,17 +100,17 @@ class dict_via_attr( object):
         dbg = 'dict' in _debug
         if dbg: print 'dict get', me.src.__class__, k, defaultvalue
 
-        if src._state.trigger:
+        if _triggering( src._state):
             if defaultvalue: return defaultvalue[0]
             raise KeyError,k
 
         if k in Base.__slots__:
-            if defaultvalue:
-                return getattr( src, k, defaultvalue[0])
+            #if defaultvalue:
+            #    return getattr( src, k, defaultvalue[0])
             try:
-                return getattr( src, k)
+                return getattr( src, k, *defaultvalue)
             except AttributeError:
-                raise KeyError, k
+                raise KeyError,k
 
         try:
             r = src.StaticType[ k].__get__( src)    #, #no_defaults=True)
@@ -177,9 +186,6 @@ class _Meta2check_dict( _Base.__metaclass__):
             _Base.__metaclass__.__delattr__( klas, attrname)
         else:
             setattr( klas, attrname, st)
-
-import sqlalchemy.orm.attributes
-_noInstanceState = not hasattr( sqlalchemy.orm.attributes, 'InstanceState')    #>v3463
 
 class Base( _Base):
     __metaclass__ = _Meta2check_dict
