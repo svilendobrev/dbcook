@@ -64,15 +64,23 @@ class _Base( _static_type.StaticStruct):
 
 
 ###########################
-'адаптиране на StaticStruct за пред sqlAlchemy'
+'адаптиране на StaticStruct за (под) sqlAlchemy'
+'adapt StaticStruct for use with (under) sqlAlchemy'
 
 from dbcook.config import _v03
-if _v03: #'AVOID having privately-named __sa_attr_state':      #not needed for v04?
+if _v03: #'AVOID having privately-named __sa_attr_state':
     from sqlalchemy.orm import mapperlib
     mapperlib.attribute_manager.init_attr = lambda me: None
 
 _static_type.config.notSetYet = None
 _debug = 1*'dict'
+
+#XXX XXX db_id / atype -> __slots__
+#XXX XXX has_key -> ??
+#   initial_default =False
+#XXX now the whole statictype is under SA;
+#   it may be put above SA, with another specialized __dict__ underneath;
+#   OR some parts maybe above, other parts under... e.g. autoset + value-convert is above
 
 import sqlalchemy.orm.attributes
 _noInstanceState = not hasattr( sqlalchemy.orm.attributes, 'InstanceState')    #>v3463
@@ -100,7 +108,7 @@ class dict_via_attr( object):
         dbg = 'dict' in _debug
         if dbg: print 'dict get', me.src.__class__, k, defaultvalue
 
-        if _triggering( src._state):
+        if _triggering( src._state):    #same must be if brand new obj/autoset?
             if defaultvalue: return defaultvalue[0]
             raise KeyError,k
 
