@@ -73,14 +73,15 @@ if _v03: #'AVOID having privately-named __sa_attr_state':
     mapperlib.attribute_manager.init_attr = lambda me: None
 
 _static_type.config.notSetYet = None
-_debug = 1*'dict'
+_debug = 0*'dict'
 
-#XXX XXX db_id / atype -> __slots__
+#XXX XXX *_id / atype -> __slots__
 #XXX XXX has_key -> ??
 #   initial_default =False
 #XXX now the whole statictype is under SA;
 #   it may be put above SA, with another specialized __dict__ underneath;
-#   OR some parts maybe above, other parts under... e.g. autoset + value-convert is above
+#   OR some parts maybe above, other parts under... e.g. autoset + value-convert is above.
+#   now, if _newAttrAutoset, autoset/defaultvalue goes above as lazy-callable
 
 import sqlalchemy.orm.attributes
 _noInstanceState = not hasattr( sqlalchemy.orm.attributes, 'InstanceState')    #>v3463
@@ -89,6 +90,35 @@ def _triggering( state):
         return bool( state.expired_attributes)
     except AttributeError:
         return bool( getattr( state, 'trigger', None))   #pre ~v3970
+
+_newAttrAutoset = not hasattr( sqlalchemy.orm.attributes.InstrumentedAttribute, 'commit_to_state')  #v3935+
+class AutoSetter( object):
+    def __init__( me, descr4static, instr4sa):
+        me.descr4static = descr4static
+        me.instr4sa = instr4sa
+        me.chain = instr4sa.callable_
+    def autoset( me, obj):
+        value = me.descr4static._set_default_value( obj)
+        if isinstance( me.instr4sa, sqlalchemy.orm.attributes.ScalarObjectAttributeImpl):
+            me.instr4sa.fire_replace_event( obj._state, value, None, initiator=None)
+        obj._state.modified = True
+        return sqlalchemy.orm.attributes.ATTR_WAS_SET
+    def __call__( me, obj):
+        if me.chain:
+            r = me.chain( obj)
+            if r is not None:   #lazyloader or similar
+                return r
+        return lambda: me.autoset( obj)
+
+    @classmethod
+    def attach( klas, objklas, k):
+        descr4static = objklas.StaticType[ k]
+        if _newAttrAutoset:
+            if not descr4static._no_default_value():
+                instr4sa = getattr( objklas, k).impl
+                if not isinstance( instr4sa.callable_, klas):
+                    instr4sa.callable_ = klas( descr4static, instr4sa)
+        return descr4static
 
 
 class dict_via_attr( object):
@@ -113,15 +143,14 @@ class dict_via_attr( object):
             raise KeyError,k
 
         if k in Base.__slots__:
-            #if defaultvalue:
-            #    return getattr( src, k, defaultvalue[0])
             try:
                 return getattr( src, k, *defaultvalue)
             except AttributeError:
                 raise KeyError,k
 
         try:
-            r = src.StaticType[ k].__get__( src)    #, #no_defaults=True)
+            descr4static = AutoSetter.attach( src.__class__, k)     #sa3887+
+            r = descr4static.__get__( src, no_defaults= bool( _newAttrAutoset) )  #no_defaults=True: sa3887+
             if 0*dbg: print '  got', repr(r)
             return r
         except AttributeError,e:    #attribute declared but not set
@@ -133,7 +162,7 @@ class dict_via_attr( object):
             except AttributeError: d = src._my_sa_stuff = dict()
             if dbg: print ' _my_sa_stuff get', k, d.get( k, '<missing>')
             #raise KeyError, a.args
-            if defaultvalue: return d.get(k,*defaultvalue)
+            if defaultvalue: return d.get( k, *defaultvalue)
             return d[k]
     def get( me, k, defaultvalue =None): return me.__getitem__( k, defaultvalue)
 
