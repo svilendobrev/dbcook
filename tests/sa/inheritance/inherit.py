@@ -7,25 +7,25 @@ DB.USE_E = 0
 class tables:
     A = Table('A', metadata,
         Column('i_d', Integer, primary_key=True),
-        Column('name', String),
-        Column('atype', String),
+        Column('name', Text),
+        Column('atype', Text),
     )
 
     if DB.USE_B:
         B = Table('B', metadata,
             Column('i_d', Integer, ForeignKey( 'A.i_d'), primary_key=True, ),
-            Column('B_data', String)
+            Column('B_data', Text)
         )
 
     if DB.USE_C:
         C = Table('C', metadata,
             Column('i_d', Integer, ForeignKey( 'B.i_d'), primary_key=True, ),
-            Column('man2', String),
+            Column('man2', Text),
         )
     if DB.USE_E:
         E = Table('E', metadata,
             Column('i_d', Integer, ForeignKey( 'B.i_d'), primary_key=True, ),
-            Column('eee', String),
+            Column('eee', Text),
             Column('root_id', Integer, ForeignKey('E.i_d') ), #self-ref
             Column('next_id', Integer, ForeignKey('E.i_d') ), #self-ref
         )
@@ -33,7 +33,7 @@ class tables:
     if DB.USE_D:
         D = Table('D', metadata,
             Column('i_d', Integer, ForeignKey( 'A.i_d'), primary_key=True, ),
-            Column('D_info', String),
+            Column('D_info', Text),
             Column('other_id', Integer, ForeignKey('A.i_d') )
         )
 

@@ -1,6 +1,7 @@
 #$Id$
 
 from sqlalchemy import *
+from sqlalchemy import Text as String
 from sqlalchemy.orm import *
 from tests.util import runCBA
 

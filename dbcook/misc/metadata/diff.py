@@ -162,9 +162,9 @@ if __name__ == '__main__':
     class Employee( Person):
         job = Text()
 
-    fm = {  Text:   dict( type=sqlalchemy.String ),
+    fm = {  Text:   dict( type=sqlalchemy.String(10) ),
             Int:    dict( type=sqlalchemy.Integer),
-            Text2:  dict( type=sqlalchemy.String(30) )
+            Text2:  dict( type=sqlalchemy.String(30) ),
         }
     m1 = sqlalchemy.MetaData()
     b1 = o2r.Builder( m1, locals(), fm, only_table_defs= True)

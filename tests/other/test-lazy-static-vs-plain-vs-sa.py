@@ -24,7 +24,7 @@ if 'sa' not in sys.argv:
                 disabled    = Bool()
 
         fmap = {
-            Text: dict( type= sqlalchemy.String, ),
+            Text: dict( type= sqlalchemy.Text, ),
             Number: dict( type= sqlalchemy.Integer, ),
             Date: dict( type= sqlalchemy.Date ),
             Bool: dict( type= sqlalchemy.Boolean),
@@ -35,12 +35,12 @@ if 'sa' not in sys.argv:
         from dbcook.usage.static_type import fieldtypemapper
         import datetime
         typemap_upper = {
-            Text: dict( type= sqlalchemy.String, ),
+            Text: dict( type= sqlalchemy.Text, ),
             Bool: dict( type= sqlalchemy.Boolean), #Integer ?
             Date: dict( type= sqlalchemy.Date ),
         }
         typemap_lower= {
-            str:    dict( type= sqlalchemy.String ),
+            str:    dict( type= sqlalchemy.Text),
             float:  dict( type= sqlalchemy.Float ),
             int:    dict( type= sqlalchemy.Integer),
             datetime.datetime:  dict( type= sqlalchemy.DateTime ),
@@ -74,6 +74,7 @@ if 'sa' not in sys.argv:
 
 else:
     from sqlalchemy import *
+    from sqlalchemy import Text as String
     from sqlalchemy.orm import *
     meta = MetaData( 'sqlite:///proba1.db')
     meta.bind.echo= 'echo' in sys.argv))

@@ -9,7 +9,7 @@ from sqlalchemy.orm import mapper, relation
 class Case_A_A_self( sa_case.SACase):
     def make_tables( me):
         t1 = Table('table1', me.meta,
-                Column('name', String, ),
+                Column('name', Text, ),
                 Column('id', Integer, primary_key=True),
                 Column('t_id', Integer,
                             ForeignKey('table1.id',

@@ -5,7 +5,8 @@ config_components.no_generator = True
 import dbcook.usage.plainwrap as o2r
 import sys
 
-from sqlalchemy import MetaData, create_engine, Table, Column, ForeignKey, String, Integer, outerjoin
+from sqlalchemy import MetaData, create_engine, Table, Column, ForeignKey, Integer, outerjoin
+from sqlalchemy import Text as String
 from sqlalchemy.orm import create_session, mapper, clear_mappers, compile_mappers
 #from pprint import pprint
 

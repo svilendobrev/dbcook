@@ -121,7 +121,7 @@ if __name__ == '__main__':
     import sqlalchemy
     class Text( Type): pass
     fieldtypemap = {
-        Text: dict( type= sqlalchemy.String, ),
+        Text: dict( type= sqlalchemy.Text, ),
     }
 
     class A( Base):

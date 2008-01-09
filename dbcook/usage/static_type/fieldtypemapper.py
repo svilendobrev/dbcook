@@ -53,16 +53,16 @@ if __name__ == '__main__':
 
     #field mapping
     typemap_upper = {
-        Text:   dict( type= sqlalchemy.String, ),
+        Text:   dict( type= sqlalchemy.Text, ),
         Bool  : dict( type= sqlalchemy.Boolean), #Integer ?
      #    Number: dict( type= sqlalchemy.Integer), - dont! rely on typ.typ/lower-level
-        AKeyFromDict: dict( type= sqlalchemy.String),
+        AKeyFromDict: dict( type= sqlalchemy.Text),
      #    Date: dict( type= sqlalchemy.Date ),
         Decimal: lambda intype: dict( type= sqlalchemy.Numeric( length = intype.precision) )
     }
     import decimal
     typemap_lower= {
-        str:    dict( type= sqlalchemy.String ),
+        str:    dict( type= sqlalchemy.Text ),
         float:  dict( type= sqlalchemy.Float ),
         int:    dict( type= sqlalchemy.Integer),
         datetime.datetime:  dict( type= sqlalchemy.DateTime ),

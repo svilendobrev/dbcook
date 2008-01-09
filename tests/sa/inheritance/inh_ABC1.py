@@ -6,18 +6,18 @@ meta = MetaData( 'sqlite:///')
 
     #decomposed by joined_table inheritance
 table_Employee = Table( 'Employee', meta,
-    Column( 'name', type= String, ),
+    Column( 'name', type= Text, ),
     Column( 'id', primary_key= True, type= Integer, ),
-    Column( 'atype', type= String, ),
+    Column( 'atype', type= Text, ),
 )
 
 table_Engineer = Table( 'Engineer', meta,
-    Column( 'machine', type= String, ),
+    Column( 'machine', type= Text, ),
     Column( 'id', Integer, ForeignKey( 'Employee.id', ), primary_key= True, ),
 )
 
 table_Manager = Table( 'Manager', meta,
-    Column( 'duties', type= String, ),
+    Column( 'duties', type= Text, ),
     Column( 'id', Integer, ForeignKey( 'Engineer.id', ), primary_key= True, ),
 )
 

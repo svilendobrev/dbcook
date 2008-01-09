@@ -6,11 +6,11 @@ from klasi import _printcallfunc
 class tables:
     A = Table('A', metadata,
         Column('i_d', Integer, primary_key=True),
-        Column('atype', String),
+        Column('atype', Text),
 
-        Column('name', String),
-        Column('B_data', String),
-        Column('man2', String),
+        Column('name', Text),
+        Column('B_data', Text),
+        Column('man2', Text),
     )
 
 

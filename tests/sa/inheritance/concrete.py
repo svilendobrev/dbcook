@@ -9,28 +9,28 @@ DB.USE_E=0
 class tables:
     A = Table('A', metadata,
         Column('i_d', Integer, primary_key=True),
-        Column('name', String),
+        Column('name', Text),
     )
     if DB.USE_B:
         B = Table('B', metadata,
             Column('i_d', Integer, primary_key=True),
-            Column('name', String),
-            Column('B_data', String)
+            Column('name', Text),
+            Column('B_data', Text)
         )
 
     if DB.USE_C:
         C = Table('C', metadata,
             Column('i_d', Integer, primary_key=True),
-            Column('name', String),
-            Column('B_data', String),
-            Column('man2', String),
+            Column('name', Text),
+            Column('B_data', Text),
+            Column('man2', Text),
         )
 
     if DB.USE_D:
         D = Table('D', metadata,
             Column('i_d', Integer, primary_key=True),
-            Column('name', String),
-            Column('D_info', String),
+            Column('name', Text),
+            Column('D_info', Text),
             Column('other_id', Integer,
                 ForeignKey('A.i_d',
                                use_alter=True, name='zt3id_fk'
@@ -40,8 +40,8 @@ class tables:
     if DB.USE_E:
         E = Table('E', metadata,
             Column('i_d', Integer, primary_key=True),
-            Column('name', String),
-            Column('eee', String),
+            Column('name', Text),
+            Column('eee', Text),
             Column('root_id', Integer, ForeignKey('E.i_d') ), #self-ref
             Column('next_id', Integer, ForeignKey('E.i_d') ), #self-ref
         )

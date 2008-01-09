@@ -102,7 +102,7 @@ def test_inh_ref_A_B_A( meta,
 
     table_A = Table('A', meta,
             Column('id', Integer, primary_key=True),
-            Column('name', String, ),
+            Column('name', Text, ),
         )
     if Alink:
         table_A.append_column( Column('linkA_id', Integer,
@@ -110,17 +110,17 @@ def test_inh_ref_A_B_A( meta,
                 )
         )
     if poly and inh and inh != 'concrete':
-        table_A.append_column( Column('atype', String) )
+        table_A.append_column( Column('atype', Text) )
 
 
     table_B = Table('B', meta,
-            Column('dataB', String, ),
+            Column('dataB', Text, ),
             Column('id', Integer, primary_key=True,
                         *(inh=='joined' and [ForeignKey( 'A.id')] or [])
                 ),
     )
     if inh == 'concrete':
-        table_B.append_column(  Column('name', String, ), )
+        table_B.append_column(  Column('name', Text, ), )
         if Alink:
             table_B.append_column( Column('linkA_id', Integer,
                             ForeignKey( Alink+'.id', use_alter=True, name='whatever2')
