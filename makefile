@@ -3,13 +3,16 @@
 #PYTHONPATH := $(PYTHONPATH):$(shell pwd)/..
 #export PYTHONPATH
 
-now: test misc
+now: test misc static
 test:
 	$(MAKE) -C tests/
 
 misc:
 	$(MAKE) -C dbcook/misc/timed2/tests/
 	$(MAKE) -C dbcook/misc/aggregator/
+
+static: dbcook/usage/static_type/test_autoset_lazy.py
+	PYTHONPATH=`pwd`:$(PYTHONPATH) python $< -v $(ARGS)
 
 %.test: %.py
 	@echo ===============
