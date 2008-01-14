@@ -168,6 +168,21 @@ def join_via( keys, mapper, must_alias =None):
 
     return clause, mapper, self_table
 
+'''
+C.boza= Alabala.Instance()
+C.koza= Alabala.Instance()
+
+a where a.b.c.boza_id=id1 AND a.b.c.koza_id=id2         #алиас=a.b.c; a.b.c.koza.алиас()==id1
+    трябва от c надясно
+a where a.b.c.boza_id=id1 AND a2.b.c.koza_id=id2        #алиас=автоматично
+    A->B->C->Alabala          A2->B->C->Alabala
+    трябва от b надясно (т.е. от a което е явно поискано)
+a where a.boza_id=id1 OR  a.koza_id=id2     не трябва но не пречи
+a where a.b.c.boza_id=id1 AND a.b.c.boza_id=id2
+    йок??! трябва да не прави нищо (и съответно да връща нищо)
+    ако направи нещо, ще се получи кво???? не се знае, я 2 реда я нищо
+    а може би трябва да е WARNING?! уффф абе нека да настъпват...
+'''
 
 def get_column_and_joins( name, context4root, must_alias4root ={} ):
     '''name = multilevel a.b.c.d.e
@@ -194,6 +209,11 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
 
     attr_name = path[-1]
     via_names = path[1:-1]
+    if 0:
+        from sqlalchemy.orm.query import Query
+        q = Query( root_value)
+        q = q.join( via_names, aliased= must_alias4root.get( root_name,None) )
+        print 'AAA', q._joinpoint, q._criterion, q._from_obj
 
         #needs the query's mapper; for now assume primary
     mapper0 = sqlalchemy.orm.class_mapper( root_value)
@@ -232,6 +252,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
 
         if _debug: print '>>>>>', lastcol
 
+    if 0: print 'BBB', lastcol, clause
     return lastcol, clause, False
 
 
@@ -280,7 +301,7 @@ class Translator( expr.Expr.Visitor):
         except: pass
         else:
             return value.db_id
-
+        if isinstance( value, (list, tuple)): return value
         return sql.literal( value)
 
     _ops = {
