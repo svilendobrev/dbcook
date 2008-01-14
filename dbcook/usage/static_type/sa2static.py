@@ -87,9 +87,9 @@ import sqlalchemy.orm.attributes
 _noInstanceState = not hasattr( sqlalchemy.orm.attributes, 'InstanceState')    #>v3463
 def _triggering( state):
     try:
-        return bool( state.expired_attributes)
+        return bool( state.trigger)   #pre ~v3970
     except AttributeError:
-        return bool( getattr( state, 'trigger', None))   #pre ~v3970
+        return bool( getattr( state, 'expired_attributes', None) )
 
 _newAttrAutoset = not hasattr( sqlalchemy.orm.attributes.InstrumentedAttribute, 'commit_to_state')  #v3935+
 class AutoSetter( object):
@@ -138,15 +138,15 @@ class dict_via_attr( object):
         dbg = 'dict' in _debug
         if dbg: print 'dict get', me.src.__class__, k, defaultvalue
 
-        if _triggering( src._state):    #same must be if brand new obj/autoset?
-            if defaultvalue: return defaultvalue[0]
-            raise KeyError,k
-
         if k in Base.__slots__:
             try:
                 return getattr( src, k, *defaultvalue)
             except AttributeError:
                 raise KeyError,k
+
+        if _triggering( src._state):    #same must be if brand new obj/autoset?
+            if defaultvalue: return defaultvalue[0]
+            raise KeyError,k
 
         try:
             descr4static = AutoSetter.attach( src.__class__, k)     #sa3887+
