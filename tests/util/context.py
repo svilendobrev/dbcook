@@ -30,7 +30,7 @@ from dbcook.usage.samanager import SAdb
 
 import sqlalchemy
 fieldtypemap = {
-    Text: dict( type= sqlalchemy.Text, ),
+    Text: dict( type= sqlalchemy.String(200), ),
     Int : dict( type= sqlalchemy.Integer, ),
 }
 

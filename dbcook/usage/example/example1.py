@@ -57,7 +57,7 @@ v03 = hasattr( sqlalchemy, 'mapper')
 
 # map attr-types to sql-column-types
 fieldtypemap = {
-    Text: dict( type= sqlalchemy.Text, ),
+    Text: dict( type= sqlalchemy.String(100), ),
     Int : dict( type= sqlalchemy.Integer, ),
 }
 

@@ -50,19 +50,19 @@ if __name__ == '__main__':
             Number.__init__( me, typ=decimal.Decimal, **kargs)
 
     import sqlalchemy
-
+    satxt = sqlalchemy.String(100)
     #field mapping
     typemap_upper = {
-        Text:   dict( type= sqlalchemy.Text, ),
+        Text:   dict( type= satxt),
         Bool  : dict( type= sqlalchemy.Boolean), #Integer ?
      #    Number: dict( type= sqlalchemy.Integer), - dont! rely on typ.typ/lower-level
-        AKeyFromDict: dict( type= sqlalchemy.Text),
+        AKeyFromDict: dict( type= satxt),
      #    Date: dict( type= sqlalchemy.Date ),
         Decimal: lambda intype: dict( type= sqlalchemy.Numeric( length = intype.precision) )
     }
     import decimal
     typemap_lower= {
-        str:    dict( type= sqlalchemy.Text ),
+        str:    dict( type= satxt),
         float:  dict( type= sqlalchemy.Float ),
         int:    dict( type= sqlalchemy.Integer),
         datetime.datetime:  dict( type= sqlalchemy.DateTime ),

@@ -1,6 +1,7 @@
 #$Id$
 
 from sqlalchemy import *
+Text = String(100)
 from sqlalchemy.orm import create_session, mapper, relation, clear_mappers
 import traceback
 

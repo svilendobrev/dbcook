@@ -74,7 +74,7 @@ class Dept( Base):
 import sqlalchemy
 
 fieldtypemap = {
-    Text: dict( type= sqlalchemy.Text, ),
+    Text: dict( type= sqlalchemy.String(100), ),
     Int : dict( type= sqlalchemy.Integer, ),
 }
 

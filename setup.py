@@ -94,7 +94,7 @@ class Employee( Person):
     DBCOOK_inheritance = 'joined'
 
 #build it
-o2r.Builder( metadata, locals(), { Text: sqlalchemy.String } )
+o2r.Builder( metadata, locals(), { Text: sqlalchemy.String(100) } )
 ...
 ``
 

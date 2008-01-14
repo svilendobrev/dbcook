@@ -24,7 +24,7 @@ if 'sa' not in sys.argv:
                 disabled    = Bool()
 
         fmap = {
-            Text: dict( type= sqlalchemy.Text, ),
+            Text: dict( type= sqlalchemy.String(100), ),
             Number: dict( type= sqlalchemy.Integer, ),
             Date: dict( type= sqlalchemy.Date ),
             Bool: dict( type= sqlalchemy.Boolean),
@@ -35,12 +35,12 @@ if 'sa' not in sys.argv:
         from dbcook.usage.static_type import fieldtypemapper
         import datetime
         typemap_upper = {
-            Text: dict( type= sqlalchemy.Text, ),
+            Text: dict( type= sqlalchemy.String(100), ),
             Bool: dict( type= sqlalchemy.Boolean), #Integer ?
             Date: dict( type= sqlalchemy.Date ),
         }
         typemap_lower= {
-            str:    dict( type= sqlalchemy.Text),
+            str:    dict( type= sqlalchemy.String(100)),
             float:  dict( type= sqlalchemy.Float ),
             int:    dict( type= sqlalchemy.Integer),
             datetime.datetime:  dict( type= sqlalchemy.DateTime ),

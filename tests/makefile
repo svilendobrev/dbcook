@@ -2,7 +2,8 @@
 %.test: %.py
 	@echo ===============
 	PYTHONPATH=`pwd`/..:$(PYTHONPATH) python $*.py -v $(ARGS)
-
+#a: other/expression.test
+#a: ARGS=one
 now: utilz
 now: sa
 now: simple
@@ -33,9 +34,9 @@ abcj: override ARGS+=$(AA)
 abcj: abc
 
 #XXX 16 cases failing:
-BB = insts=ABC Alinks=C,C1 Binhs= Blinks=A,A1 Cinhs=A Clinks=B,B1
-abcj_fail: override ARGS+=$(BB)
-abcj_fail: abcj
+#BB = insts=ABC Alinks=C,C1 Binhs= Blinks=A,A1 Cinhs=A Clinks=B,B1
+#abcj_fail: override ARGS+=$(BB)
+#abcj_fail: abcj
 
 gen: run_generated_cases.test
 

@@ -342,7 +342,7 @@ if __name__ == '__main__':
 
 
     fieldtypemap = {
-        Text: dict( type= sqlalchemy.Text, ),
+        Text: dict( type= sqlalchemy.String(100)),
     }
 
     def str1( me): return reflector.obj2str( me, Base, builder.column4ID.name)

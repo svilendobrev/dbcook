@@ -89,7 +89,7 @@ class column4ID( _column4):
 class column4type( _column4):
     'use as column4type( selectable)'
     name = 'atype'
-    typemap = dict( type= sqlalchemy.Text )   #stores the class-name
+    typemap = dict( type= sqlalchemy.String(100) )   #stores the class-name
 
 
 #### table naming

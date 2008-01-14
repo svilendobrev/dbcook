@@ -14,8 +14,9 @@ _debug = 'debug' in sys.argv
 
 def model( is_lazy =True, is_auto_set =True, is_reference =True, is_value_default =False):
     l = locals()
-    print '--', '  '.join( '%s=%5s' % (k,l[k])
-                    for k in 'is_reference is_lazy is_auto_set is_value_default'.split() )
+    case = '  '.join( '%s=%5s' % (k,l[k])
+                    for k in 'is_reference is_auto_set is_lazy is_value_default'.split() )
+    print '--', case
 
     if is_reference:
         class Name( Base):
@@ -36,7 +37,7 @@ def model( is_lazy =True, is_auto_set =True, is_reference =True, is_value_defaul
 from dbcook.usage.samanager import SAdb
 import sqlalchemy
 fieldtypemap = {
-    Text: dict( type= sqlalchemy.Text, ),
+    Text: dict( type= sqlalchemy.String(100)),
 }
 
 
@@ -71,7 +72,8 @@ def check( is_auto_set =True, is_reference =True, is_value_default =False, **kar
     res = s.query( C).filter( C.code == 'alabala' ).all()
     if _debug: print res
     assert len(res) == 1
-    assert str(res[0])==cexp
+    r = str(res[0])
+    assert r==cexp, '\n'.join( [ namespace['case'], r, '!=', cexp] )
 
     if is_reference:
         res = s.query( Name).one()
@@ -82,8 +84,8 @@ def check( is_auto_set =True, is_reference =True, is_value_default =False, **kar
 failed = 0
 buli = [ False, True]
 for is_ref in buli:
-    for is_lazy in buli:
-        for is_auto in buli[ :1+is_ref]:
+    for is_auto in buli[ :1+is_ref]:
+        for is_lazy in buli:
             for is_value_default in buli:
                 try:
                     check( is_lazy=is_lazy, is_auto_set=is_auto, is_reference=is_ref, is_value_default=is_value_default)
