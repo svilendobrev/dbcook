@@ -1,7 +1,7 @@
 #$Id$
 
 def copy( metadata, src_engine, dst_engine, echo =0 ):
-    for tbl in metadata.table_iterator():
+    for tbl in metadata.table_iterator( reverse= False):
         if echo: print tbl
         data = [ dict( (col.key, x[ col.name]) for col in tbl.c)
                     for x in src_engine.execute( tbl.select()) ]
