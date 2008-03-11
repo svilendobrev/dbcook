@@ -383,11 +383,11 @@ def fix_one2many_relations( klas, builder, mapcontext):
     dbg = 'table' in config.debug or 'relation' in config.debug
     if dbg: print 'make_one2many_table_columns', klas
 
-    for k,collect_klas in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
+    for attr_name,collect_klas in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
         child_klas = collect_klas.assoc_klas
         if isinstance( child_klas, str):
             try: child_klas = builder.klasi[ child_klas]
-            except KeyError: assert 0, '''undefined relation/association class %(child_klas)r in %(klas)s.%(name)s''' % locals()
+            except KeyError: assert 0, '''undefined relation/association class %(child_klas)r in %(klas)s.%(attr_name)s''' % locals()
         #one2many rels can be >1 between 2 tables
         #and many classes can relate to one child klas with relation with same name
 
@@ -397,18 +397,18 @@ def fix_one2many_relations( klas, builder, mapcontext):
             backrefname = backref[ 'name']
             #else: backrefname = backref
         else:
-            backrefname = column4ID.backref_make_name( klas, k)
+            backrefname = column4ID.backref_make_name( klas, attr_name)
         collect_klas.backrefname = backrefname
         fk_column_name = backrefname
         fk_column = make_table_column4struct_reference( klas, fk_column_name, klas, mapcontext)
-        if dbg: print '  attr:', k, 'child_klas:', repr(child_klas), 'fk_column:', repr(fk_column)
+        if dbg: print '  attr:', attr_name, 'child_klas:', repr(child_klas), 'fk_column:', repr(fk_column)
         child_tbl = builder.tables[ child_klas]
         child_tbl.append_column( fk_column)
 
         class assoc_details:
             primary_key= True
             nullable= True
-            relation_attr= k
+            relation_attr= attr_name
         relation._associate( child_klas, klas, assoc_details, fk_column)
 
 
