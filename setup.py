@@ -40,6 +40,7 @@ repository: svn co https://dbcook.svn.sf.net/svnroot/dbcook/trunk
 Additions:
  * complete bitemporal class-mix-in : trunk/dbcook/misc/timed2/
  * (independent) automatic aggregating columns : trunk/dbcook/misc/aggregator*
+ * (independent) metadata management (load,copy,diff): trunk/dbcook/misc/metadata/
 
 Usage cases/levels:
  * DB-definition - completely hides/automates the table/ column/ key/ constraint/
@@ -77,26 +78,27 @@ Dependencies:
  * kjbuckets (from gadfly) for graph-arithmetics
  * SQLAlchemy, both 0.3 and 0.4
 
-Example (trunk/dbcook/usage/example/):
+Example (see trunk/dbcook/usage/example/):
 ``
 import dbcook.usage.plainwrap as o2r
 class Text( o2r.Type): pass
 
 class Address( Base):
-	place = Text()
+    place = Text()
 
 class Person( o2r.Base):
-	name = Text()
-	address = o2r.Type4Reference( Address)
-	friend  = o2r.Type4Reference( 'Person')
+    name = Text()
+    address = o2r.Type4Reference( Address)
+    friend  = o2r.Type4Reference( 'Person')
     DBCOOK_has_instances = True
 
 class Employee( Person):
-	job = Text()
+    job = Text()
     DBCOOK_inheritance = 'joined'
 
 #build it
-o2r.Builder( metadata, locals(), { Text: sqlalchemy.String(100) } )
+o2r.Builder( metadata_from_sqlalchemy, locals(),
+    fieldtype_mapper= { Text: sqlalchemy.String(100) } )
 ...
 ``
 
