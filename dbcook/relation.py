@@ -46,14 +46,27 @@ import sqlalchemy
 import sqlalchemy.orm
 import warnings
 from config import config, _v03
+import itertools
 
 def _associate( klas, attrklas, assoc_details, column):
     dbg = 'relation' in config.debug
     if not assoc_details.primary_key: return
+    relation_attr = assoc_details.relation_attr
     if dbg:
         print 'relate parent:', attrklas, 'to child:', klas
-        print '  attrname:', assoc_details.relation_attr, 'column:', column
+        print '  attrname:', relation_attr, 'column:', column
 
+    ### collect relation_attr to be created by make_relation() if not already done explicitly
+    try:
+        links = getattr( attrklas, '_DBCOOK_assoc_links')
+    except AttributeError:
+        links = attrklas._DBCOOK_assoc_links = set()
+    link = (klas, relation_attr)
+    if link in links:
+        assert 0, 'duplicate definition of assoc_link %(klas)s.%(relation_attr)s to %(attrklas)s' % locals()
+    links.add( (klas, assoc_details.relation_attr) )
+
+    ### collect foreign_keys
     try: foreign_keys = klas.foreign_keys
     except AttributeError: foreign_keys = klas.foreign_keys = {}
 
@@ -147,14 +160,17 @@ class _Relation( object):
         'return relation_klas, actual_relation_klas, relation_kargs'
         dbg = 'relation' in config.debug
         assoc_klas = me.assoc_klas
-        if dbg: print 'relation.make', klas, name, 'assoc_klas:', assoc_klas
+        if dbg: print ' ' , me, klas, '.'+name
+
+        assert name, 'relation/association %(assoc_klas)r relates to %(klas)r but no attrname specified anywhere' % locals();
+
         #print '?', name, assoc_klas
         if isinstance( assoc_klas, str):
             try: assoc_klas = builder.klasi[ assoc_klas]
             except KeyError: assert 0, '''undefined relation/association class %(assoc_klas)r in %(klas)s.%(name)s''' % locals()
 
         foreign_keys = assoc_klas.foreign_keys
-        if dbg: print 'relation.make', 'assoc_fkeys:', foreign_keys
+        if dbg: print ' ', me, 'assoc_fkeys:', foreign_keys
 
         try: fks = foreign_keys[ klas ]
         except KeyError: assert 0, '''missing declaration of link in association %(klas)s.%(name)s <- %(assoc_klas)s''' % locals()
@@ -218,7 +234,7 @@ Check for double-declaration with different names''' % locals()
                     primaryjoin = (fk == colid),
                     remote_side = fk,
                 )
-        if dbg: print me, 'make:', assoc_klas, assoc_klas_actual, rel_kargs
+        if dbg: print ' ', me, 'made:', assoc_klas, assoc_klas_actual, rel_kargs
         return assoc_klas, assoc_klas_actual, rel_kargs
 
 
@@ -262,7 +278,6 @@ class Collection( _Relation):
 
 def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtractor ):
     dbg = 'relation' in config.debug
-    if dbg: print 'make_relations'
 
     if _v03:
         def append( self, *args, **kwargs):
@@ -273,30 +288,63 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
     #XXX TODO move all this into make_mapper_props ??
 
     for m in builder.itermapi( primary_only =True):
+        if dbg: print 'make_relations', m
+
         klas = m.class_
         if issubclass( klas, Association):
             primary_key = m.local_table.primary_key.columns
             m.allow_null_pks = bool( primary_key and [c for c in primary_key if c.nullable] )
-            if dbg: print ' allow_null_pks:', m, m.allow_null_pks   #XXX add to m.tstr???
+            if dbg: print '  allow_null_pks:', m.allow_null_pks   #XXX add to m.tstr???
             continue
 
         fkeys = FKeyExtractor( klas, m.local_table, builder.mapcontext, builder.tables)
 
+        assoc_links = klas._DBCOOK_assoc_links
+
+        #match assoc-links with real rels
+        assoc_links_names = dict( (rel_attr, assoc_klas) for assoc_klas, rel_attr in assoc_links )
+        for name,typ in builder.mapcontext.iter_attr_local( klas):
+            assert name not in assoc_links_names, '''%(klas)s.%(name)s specified both
+                    as attribute and as link in association ''' % locals() + str( assoc_links_names[ name] )
+
+        for name,typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation):
+            try: assoc_links.remove( (typ.assoc_klas, name) )       #match real rel to named link
+            except KeyError:
+                try: assoc_links.remove( (typ.assoc_klas, None))    #match real rel to unnamed link
+                except KeyError:
+                    #print 'notfound'
+                    pass
+                else:
+                    if dbg: print '  found matching noname-assoc_link for', name
+                    pass
+            else:
+                if dbg: print '  found matching named-assoc_link and relation for', name
+                pass
+                #or error as duplicate??
+
+        #only missing links left here in assoc_links... now combine with all other _Relation
+        if dbg and assoc_links: print '  association-implied implicit relations:', assoc_links
+
         relations = {}
-        for name,typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation, dbg=dbg ):
+
+        iter_assoc_implicit_rels = [ (rel_attr, _Relation( assoc_klas))
+                                        for assoc_klas, rel_attr in assoc_links ]
+        iter_rels = builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation, dbg=dbg )
+
+        for name,typ in itertools.chain( iter_rels, iter_assoc_implicit_rels ):
             rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #any2many
             if not rel_klas_actual: rel_klas_actual = rel_klas
 
             #forward link
             r = fkeys.get_relation_kargs( name)
-            if dbg: print ' ', m, name, r, fkeys
+            if dbg: print '  FORWARD', name, r, fkeys
             rel_kargs.update( r)
 
             #backward link
             backref = typ.backref
             if backref:
                 r = fkeys.get_relation_kargs( typ.backrefname)
-                if dbg: print ' BACKREF ', m, typ.backrefname, r
+                if dbg: print '  BACKREF', typ.backrefname, r
                 if 0:
                     backref.update( r)
                 else:
