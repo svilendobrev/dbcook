@@ -19,24 +19,26 @@ TODO:
 +       * 2-посочна с много-към-1: backref е указано
 
       много към много:
--       = неявна
-+           обявява се съвсем явно, но като скрита (без междинен обект) (DBCOOK_hidden=True)
-                class myAssocAB( Association):
-                    DBCOOK_hidden=True
-                    ... .Links
-                x = Association.Relation( myAssocAB, име_в_асоциацията='')
--           трябва да може да се обявява съвсем служебно:
-                x = Association.Hidden( otherstruct, име_отсреща ='')
-                    име_отсреща е на асоциацията от другата страна
-                    с възможно служебно име_отсреща
-
         = явна
 +           class myAssocAB( Association):
                 DBCOOK_hidden=False
-                ... .Links
-            x = Association.Relation( myAssocAB, име_в_асоциацията='')
-                име_в_асоциацията е на Reference/Association.Link
++               a = Link( неименован) - трябва да има съотв. Relation в обекта
++               b = Link( именован) - може да нямат съотв. Relation в обекта, ще се създаде
+            class A:
++               x = Association.Relation( myAssocAB) - трябва да има съответна Link в асоциацията
 -           * възможно служебно име_в_асоциацията
+-       = неявна
++           обявява се съвсем явно, като скрита (без междинен обект) (DBCOOK_hidden=True);
+            не може да има повече от 2 връзки
+                class myAssocAB( Association):
+                    DBCOOK_hidden=True
+                    ...
+-           трябва да може да се обявява съвсем служебно:
+            class A:
+                x = Association.Hidden( B, име_отсреща ='')
+                    име_отсреща е на асоциацията от другата страна
+                    с възможно служебно име_отсреща
+
 +       * 2-посочна
 -       * еднопосочна
 
