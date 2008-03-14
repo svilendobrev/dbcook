@@ -22,6 +22,8 @@ class IntermediateAB( Base4Association):    #color
     b_boza = Base4Association.Link( 'B', attr= 'all_ba')
 #    a = orm.Type4Reference('A')     #plain reference - nothing to do with the AB association
     a2_link = Base4Association.Link( 'A', attr= 'alla2', nullable= True)
+    c_link = Base4Association.Link( 'C', )
+#    DBCOOK_hidden = True
 
 if 0:
     class IntermedADE( Base4Association):   #weigth
@@ -40,16 +42,20 @@ class A( Base):
 #    all_abc = IntermediateABC2.Relation()
 #    all_ade = IntermedADE.Relation()
 #    x = orm.Type4Reference( 'A')
+    alla2   = IntermediateAB.Relation()
 
 class B( Base):
     name    = Text()
 #    my_ab   = IntermediateAB.Relation()  #override -> error
 #    all_ab2 = Base4Association.Relation( 'IntermediateAB2' )
 #        a = orm.Type4Reference( A)#.Instance()
+#    all_ba  = IntermediateAB.Relation()
 
-if 0:
+if 10:
     class C( Base):
         name = Text()
+        cccc = IntermediateAB.Relation()
+if 0:
     class D( Base):
         dname = Text()
     class E( Base):
@@ -71,15 +77,22 @@ a  = A( name= 'a1')
 a3 = A( name= 'a3')
 b1 = B( name= 'b1' )
 b2 = B( name= 'b2' )
+c = C( name = 'c')
+c2 = C( name = 'c2')
 #a.all_ab.append( b) )
-a.all_ab.append( IntermediateAB( b_boza= b1, color='green', a2_link = a3) )
-a.all_ab.append( b_boza= b2, color='rrrr', a2_link = None)
+a.all_ab.append( IntermediateAB( b_boza= b1, color='green', a2_link = a3, c_link=c2) )
+a.all_ab.append( b_boza= b2, color='rrrr', a2_link = None, c_link= c)
 #b1.all_ab2.append( IntermediateAB2( a= a, ) )
 print '1111', [i.b_boza for i in a.all_ab]
 
 s= sa.session()
 sa.saveall( s, locals() )
 s.flush()
+
+print 'b2.all_ba', b2.all_ba
+print 'a3.alla2', a3.alla2
+print 'c.cccc', c.cccc
+
 s.clear()
 sa.query_all_tables()
 s= sa.session()
@@ -89,6 +102,5 @@ print 'xxxxxxx'
 l = [i.b_boza for i in aa.all_ab]
 print '2222', l
 assert len(l) ==2
-
 
 # vim:ts=4:sw=4:expandtab
