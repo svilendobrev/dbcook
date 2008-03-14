@@ -5,7 +5,7 @@ def obj2str( obj, base_klas, attrname_iterator, idname, refname ='name'):
     '''nice str(obj), cuts recursion in references.
     Uses obj.idname, attrname_iterator(obj), and obj.refname (if available) for references
 '''
-    r = obj.__class__.__name__ +'/id='+ str( getattr( obj, idname)) + '('
+    r = obj.__class__.__name__ +'/id='+ str( getattr( obj, idname, None)) + '('
     for k in attrname_iterator( obj):
         v = getattr( obj, k, '<notset>')
         if isinstance( v, base_klas):
