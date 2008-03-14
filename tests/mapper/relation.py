@@ -22,7 +22,7 @@ class IntermediateAB( Base4Association):    #color
     b_boza = Base4Association.Link( 'B', attr= 'all_ba')
 #    a = orm.Type4Reference('A')     #plain reference - nothing to do with the AB association
     a2_link = Base4Association.Link( 'A', attr= 'alla2', nullable= True)
-    c_link = Base4Association.Link( 'C', )
+    c_link = Base4Association.Link( 'C', 'cccc' )
 #    DBCOOK_hidden = True
 
 if 0:
@@ -54,7 +54,7 @@ class B( Base):
 if 10:
     class C( Base):
         name = Text()
-        cccc = IntermediateAB.Relation()
+#        cccc = IntermediateAB.Relation()
 if 0:
     class D( Base):
         dname = Text()
