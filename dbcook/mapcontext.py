@@ -115,9 +115,12 @@ class MappingContext:
         '''дава (първия) базов валиден клас, None ако няма такъв. т.е. на или отвъд валидния корен
          $ get (first) base that is mappable, None if no such, i.e. at or under root-mappable'''
         assert klas
-        while klas is not me.base_klas:
-            base = klas.__bases__[0]
-            assert issubclass( base, me.base_klas)
+        base_klas = me.base_klas
+        while klas is not base_klas:
+            for base in klas.__bases__:
+                if issubclass( base, base_klas): break
+            else:
+                assert 0, '%(klas)s does not inherit baseklas %(base_klas)s' % locals()
             if me.mappable( base): return base
             # allow non-mapped classes to declare props -> added to _all_ their children
             klas = base
