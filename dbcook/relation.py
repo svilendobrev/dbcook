@@ -153,6 +153,7 @@ class _Relation( object):
             except KeyError: assert 0, '''undefined relation/association class %(assoc_klas)r in %(klas)s.%(name)s''' % locals()
 
         foreign_keys = assoc_klas.foreign_keys
+        if dbg: print 'relation.make', klas, name, 'assoc_fkeys:', foreign_keys
 
         try: fks = foreign_keys[ klas ]
         except KeyError: assert 0, '''missing declaration of link in association %(klas)s.%(name)s <- %(assoc_klas)s''' % locals()
@@ -187,13 +188,15 @@ Check for double-declaration with different names''' % locals()
                 for k in fks:
                     if k != key: break
                 else:
-                    assert 0, 'internal error, wrong .foreign_keys[%(klas)s] on %(assoc_klas)s' % locals()
+                    assert 0, '''association %(assoc_klas)s between more than 2 items
+                                cannot be DBCOOK_hidden (which one to give as other side)''' % locals()
                 othername = k
                 otherfk = fks[k]
                 otherklas = klas
             else:   #2 diff klasi
                 #print '2diff', foreign_keys
-                assert len(foreign_keys) == 2, 'internal error, wrong .foreign_keys on %(assoc_klas)s' % locals()
+                assert len(foreign_keys) == 2, '''association %(assoc_klas)s between more than 2 items
+                                cannot be DBCOOK_hidden (which one to give as other side)''' % locals()
                 for otherklas in foreign_keys:
                     if otherklas is not klas: break
                 #else:  cannot happen because of above assert
