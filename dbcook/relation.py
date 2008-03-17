@@ -27,17 +27,24 @@ TODO:
             class A:
 +               x = Association.Relation( myAssocAB) - трябва да има съответна Link в асоциацията
 -           * възможно служебно име_в_асоциацията
--       = неявна
+-       = неявна, обявена
 +           обявява се съвсем явно, като скрита (без междинен обект) (DBCOOK_hidden=True);
             не може да има повече от 2 връзки
                 class myAssocAB( Association):
                     DBCOOK_hidden=True
-                    ...
 -           трябва да може да се обявява съвсем служебно:
             class A:
                 x = Association.Hidden( B, име_отсреща ='')
                     име_отсреща е на асоциацията от другата страна
                     с възможно служебно име_отсреща
+-       = неявна, необявена
+            обявява се само в единия край; останалото става служебно
+            става скрита (DBCOOK_hidden) - не може да има повече от 2 връзки
+            class A:
+                x = Association.Hidden( B, име_отсреща ='')
+                    име_отсреща е на асоциацията от другата страна (B)
+-           * възможно служебно име_в_асоциацията
+
 
 +       * 2-посочна
 -       * еднопосочна
@@ -49,6 +56,7 @@ import sqlalchemy.orm
 import warnings
 from config import config, _v03
 import itertools
+from util.attr import getattr_local_class_only
 
 def _associate( klas, attrklas, assoc_details, column):
     dbg = 'relation' in config.debug
@@ -60,7 +68,7 @@ def _associate( klas, attrklas, assoc_details, column):
 
     ### collect relation_attr to be created by make_relation() if not already done explicitly
     try:
-        links = getattr( attrklas, '_DBCOOK_assoc_links')
+        links = getattr_local_class_only( attrklas, '_DBCOOK_assoc_links')
     except AttributeError:
         links = attrklas._DBCOOK_assoc_links = set()
     link = (klas, relation_attr)
@@ -124,6 +132,10 @@ class Association( object):
             assert issubclass( klas, Association)
             assert klas._is_valid(), '''empty Association %(klas)r - specify .Relation argument, or add .Links of this''' % locals()
         return _Relation( klas)
+
+#    @classmethod
+#    @def Hidden( klas, other_side, other_side_attr =''):
+
 
     @classmethod
     def _CollectionFactory( klas):
@@ -304,7 +316,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
 
         fkeys = FKeyExtractor( klas, m.local_table, builder.mapcontext, builder.tables)
 
-        assoc_links = getattr( klas, '_DBCOOK_assoc_links', () )
+        assoc_links = getattr_local_class_only( klas, '_DBCOOK_assoc_links', () )
 
         if assoc_links:
             #match assoc-links with real rels
