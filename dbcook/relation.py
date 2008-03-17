@@ -28,15 +28,10 @@ TODO:
 +               x = Association.Relation( myAssocAB) - трябва да има съответна Link в асоциацията
 -           * възможно служебно име_в_асоциацията
 -       = неявна, обявена
-+           обявява се съвсем явно, като скрита (без междинен обект) (DBCOOK_hidden=True);
++           обявява се както явната, но като скрита (без междинен обект: DBCOOK_hidden=True)
             не може да има повече от 2 връзки
                 class myAssocAB( Association):
                     DBCOOK_hidden=True
--           трябва да може да се обявява съвсем служебно:
-            class A:
-                x = Association.Hidden( B, име_отсреща ='')
-                    име_отсреща е на асоциацията от другата страна
-                    с възможно служебно име_отсреща
 -       = неявна, необявена
             обявява се само в единия край; останалото става служебно
             става скрита (DBCOOK_hidden) - не може да има повече от 2 връзки
@@ -133,15 +128,24 @@ class Association( object):
             assert klas._is_valid(), '''empty Association %(klas)r - specify .Relation argument, or add .Links of this''' % locals()
         return _Relation( klas)
 
-#    @classmethod
-#    @def Hidden( klas, other_side, other_side_attr =''):
-
-
     @classmethod
     def _CollectionFactory( klas):
         m = _AssocDetails.MyCollection()
         m.factory = klas
         return m
+
+if 0:
+    @staticmethod
+    @def Hidden( other_side_klas, other_side_attr =''):
+        print 'Hidden Assoc', other_side_klas, '.', other_side_attr
+        class AssocHidden( Association):
+            DBCOOK_hidden = True
+            other = Association.Link( other_side_klas, attr=other_side_attr)
+            #TODO this side???
+            #TODO test
+            #TODO change __name__ - see __name__DYNAMIC
+            #TODO self-add to mappable klasi ???? resolve forward-decl ?
+        return _Relation( AssocHidden)
 
 
 def is_association_reference( klas, attrtyp, attrklas):
