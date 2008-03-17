@@ -15,8 +15,12 @@ SAdb.config.getopt()
 print 'config:', SAdb.config
 
 class Base4Association( Base, orm.Association):
-#   Type4Reference = orm.Type4Reference
     DBCOOK_no_mapping = True
+
+class X( Base):
+    'test forw-decl assoc'
+    x = Text()
+    x_ab = Base4Association.Relation( 'IntermediateAB')
 
 class IntermediateAB( Base4Association):    #color
     color = Text()
@@ -25,6 +29,7 @@ class IntermediateAB( Base4Association):    #color
 #    a = orm.Type4Reference('A')     #plain reference - nothing to do with the AB association
     a2_link = Base4Association.Link( 'A', attr= 'alla2', nullable= True)
     c_link = Base4Association.Link( 'C', 'cccc' )
+    x_link = Base4Association.Link( X, nullable= True )
 #    DBCOOK_hidden = True
 
 if 0:
