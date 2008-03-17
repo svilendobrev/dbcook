@@ -158,18 +158,21 @@ class _Relation( object):
         me.backref = backref
     def __str__( me):
         return me.__class__.__name__+'/'+str(me.assoc_klas)
+
+    def resolve( me, builder):
+        'needed separately before make()'
+        assoc_klas = me.assoc_klas
+        if isinstance( assoc_klas, str):
+            try: me.assoc_klas = builder.klasi[ assoc_klas]
+            except KeyError: assert 0, '''undefined relation/association class %(assoc_klas)r''' % locals()
+
     def make( me, builder, klas, name ):
         'return relation_klas, actual_relation_klas, relation_kargs'
         dbg = 'relation' in config.debug
+        me.resolve( builder)
         assoc_klas = me.assoc_klas
-        if dbg: print ' ' , me, klas, '.'+name
-
-        assert name, 'relation/association %(assoc_klas)r relates to %(klas)r but no attrname specified anywhere' % locals();
-
-        #print '?', name, assoc_klas
-        if isinstance( assoc_klas, str):
-            try: assoc_klas = builder.klasi[ assoc_klas]
-            except KeyError: assert 0, '''undefined relation/association class %(assoc_klas)r in %(klas)s.%(name)s''' % locals()
+        if dbg: print ' ' , me, klas, '.', name
+        assert name, 'relation/association %(assoc_klas)r relates to %(klas)r but no attrname specified anywhere' % locals()
 
         foreign_keys = assoc_klas.foreign_keys
         if dbg: print ' ', me, 'assoc_fkeys:', foreign_keys
@@ -310,6 +313,8 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                 assert name not in assoc_links_names, '''%(klas)s.%(name)s specified both
                         as attribute and as link in association ''' % locals() + str( assoc_links_names[ name] )
             for name,typ in builder.mapcontext.iter_attr( klas, attr_base_klas= _Relation, local= False):
+                typ.resolve( builder)
+
                 try: assoc_links.remove( (typ.assoc_klas, name) )       #match real rel to named link
                 except KeyError:
                     try: assoc_links.remove( (typ.assoc_klas, None))    #match real rel to unnamed link
