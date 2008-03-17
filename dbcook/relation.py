@@ -301,31 +301,32 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
 
         fkeys = FKeyExtractor( klas, m.local_table, builder.mapcontext, builder.tables)
 
-        assoc_links = klas._DBCOOK_assoc_links
+        assoc_links = getattr( klas, '_DBCOOK_assoc_links', () )
 
-        #match assoc-links with real rels
-        assoc_links_names = dict( (rel_attr, assoc_klas) for assoc_klas, rel_attr in assoc_links )
-        for name,typ in builder.mapcontext.iter_attr_local( klas):
-            assert name not in assoc_links_names, '''%(klas)s.%(name)s specified both
-                    as attribute and as link in association ''' % locals() + str( assoc_links_names[ name] )
+        if assoc_links:
+            #match assoc-links with real rels
+            assoc_links_names = dict( (rel_attr, assoc_klas) for assoc_klas, rel_attr in assoc_links )
+            for name,typ in builder.mapcontext.iter_attr_local( klas):
+                assert name not in assoc_links_names, '''%(klas)s.%(name)s specified both
+                        as attribute and as link in association ''' % locals() + str( assoc_links_names[ name] )
 
-        for name,typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation):
-            try: assoc_links.remove( (typ.assoc_klas, name) )       #match real rel to named link
-            except KeyError:
-                try: assoc_links.remove( (typ.assoc_klas, None))    #match real rel to unnamed link
+            for name,typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation):
+                try: assoc_links.remove( (typ.assoc_klas, name) )       #match real rel to named link
                 except KeyError:
-                    #print 'notfound'
-                    pass
+                    try: assoc_links.remove( (typ.assoc_klas, None))    #match real rel to unnamed link
+                    except KeyError:
+                        #print 'notfound'
+                        pass
+                    else:
+                        if dbg: print '  found matching noname-assoc_link for', name
+                        pass
                 else:
-                    if dbg: print '  found matching noname-assoc_link for', name
+                    if dbg: print '  found matching named-assoc_link and relation for', name
                     pass
-            else:
-                if dbg: print '  found matching named-assoc_link and relation for', name
-                pass
-                #or error as duplicate??
+                    #or error as duplicate??
 
-        #only missing links left here in assoc_links... now combine with all other _Relation
-        if dbg and assoc_links: print '  association-implied implicit relations:', assoc_links
+            #only missing links left here in assoc_links... now combine with all other _Relation
+            if dbg and assoc_links: print '  association-implied implicit relations:', assoc_links
 
         relations = {}
 
