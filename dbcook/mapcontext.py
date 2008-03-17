@@ -138,12 +138,15 @@ class MappingContext:
                 assert 0, '%(klas)s: unknown DBCOOK_inheritance=%(inheritype)r' % locals()
         return base, inheritype
 
-    def iter_attr_local( me, klas, attr_base_klas =None, **kargs):
+    def iter_attr_local( me, klas, **kargs):
+        return me.iter_attr( klas, local= True, **kargs)
+
+    def iter_attr( me, klas, attr_base_klas =None, **kargs):
         if not attr_base_klas:
             return me.reflector.attrtypes_iteritems( klas)
-        return me._iter_attr_local( klas, attr_base_klas, **kargs)
+        return me._iter_attr( klas, attr_base_klas, **kargs)
 
-    def _iter_attr_local( me, klas, attr_base_klas, dbg =False):
+    def _iter_attr( me, klas, attr_base_klas, local =False, dbg =False):
         base_klas, inheritype = me.base4table_inheritance( klas)
         is_joined_table = (inheritype == table_inheritance_types.JOINED)
         dir_base_klas = is_joined_table and dir( base_klas) or ()
@@ -151,7 +154,7 @@ class MappingContext:
         for k in dir( klas):
             attr = getattr( klas, k)
             if not isinstance( attr, attr_base_klas): continue
-            if k in dir_base_klas:
+            if local and k in dir_base_klas:
                 if dbg: print '  inherited:', k
                 continue
             yield k,attr

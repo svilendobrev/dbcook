@@ -66,7 +66,7 @@ def _associate( klas, attrklas, assoc_details, column):
     link = (klas, relation_attr)
     if link in links:
         assert 0, 'duplicate definition of assoc_link %(klas)s.%(relation_attr)s to %(attrklas)s' % locals()
-    links.add( (klas, assoc_details.relation_attr) )
+    links.add( (klas, relation_attr) )
 
     ### collect foreign_keys
     try: foreign_keys = klas.foreign_keys
@@ -306,11 +306,10 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
         if assoc_links:
             #match assoc-links with real rels
             assoc_links_names = dict( (rel_attr, assoc_klas) for assoc_klas, rel_attr in assoc_links )
-            for name,typ in builder.mapcontext.iter_attr_local( klas):
+            for name,typ in builder.mapcontext.iter_attr( klas, local= False):
                 assert name not in assoc_links_names, '''%(klas)s.%(name)s specified both
                         as attribute and as link in association ''' % locals() + str( assoc_links_names[ name] )
-
-            for name,typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation):
+            for name,typ in builder.mapcontext.iter_attr( klas, attr_base_klas= _Relation, local= False):
                 try: assoc_links.remove( (typ.assoc_klas, name) )       #match real rel to named link
                 except KeyError:
                     try: assoc_links.remove( (typ.assoc_klas, None))    #match real rel to unnamed link

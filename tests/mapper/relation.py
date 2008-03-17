@@ -1,6 +1,8 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
+#TODO XXX test forw.decl Association.Relation( klasname)
+
 from tests.util.context import *
 if USE_STATIC_TYPE:
     Base.auto_set = False
