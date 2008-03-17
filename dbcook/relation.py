@@ -136,7 +136,7 @@ class Association( object):
 
 if 0:
     @staticmethod
-    @def Hidden( other_side_klas, other_side_attr =''):
+    def Hidden( other_side_klas, other_side_attr =''):
         print 'Hidden Assoc', other_side_klas, '.', other_side_attr
         class AssocHidden( Association):
             DBCOOK_hidden = True
