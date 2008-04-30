@@ -12,7 +12,9 @@ if _v03:
     def joincopy( c): return c.copy_container()
 else:
     def base_mapper(m): return m.base_mapper
-    if hasattr( sqlalchemy.orm.Mapper, '_get_equivalent_columns'):
+    if hasattr( sqlalchemy.orm.Mapper, '_equivalent_columns'):
+        def equivs( parent): return parent._equivalent_columns
+    elif hasattr( sqlalchemy.orm.Mapper, '_get_equivalent_columns'):
         def equivs( parent): return parent._get_equivalent_columns()
     else:
         def equivs( parent): return getattr( parent, '_Mapper__get_equivalent_columns')()

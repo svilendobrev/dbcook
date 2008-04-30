@@ -6,10 +6,22 @@ import sqlalchemy
 import sqlalchemy.orm
 _v03 = hasattr( sqlalchemy, 'mapper')
 
-try:
-    from sqlalchemy.orm.attributes import InstanceState    #>v3463
-except:
-    InstanceState = None
+def _setup_state( x): pass
+
+try:    #user_defined_state branch / v4xxx?
+    from sqlalchemy.orm.session import _state_for_unsaved_instance
+    def _setup_state( x):
+        try: session._state_for_unsaved_instance( x, entity_name=None)
+        except session.sa_exc.InvalidRequestError: pass #already persistent
+except ImportError:
+    try:
+        from sqlalchemy.orm.attributes import InstanceState    #>v3463
+        def _setup_state( x):
+            if not hasattr( x, '_state'):
+                x._state = InstanceState(x)
+                #sqlalchemy.attribute_manager.manage(obj) does above
+    except ImportError: pass
+
 
 from sa_engine_defs import Dengine
 
@@ -164,11 +176,11 @@ class SAdb:
         base_klas = mapcontext.base_klas
         for x in itervalues:
             if isinstance( x, base_klas) and mapcontext.has_instances( x.__class__):
-                if InstanceState and not hasattr( x, '_state'):
-                    x._state = InstanceState(x)
-                    #sqlalchemy.attribute_manager.manage(obj) does above
                 pre = getattr( x, 'pre_save', None)
-                if pre: pre()
+                if pre:
+                    _setup_state(x)
+                    pre()
+
                 session.save_or_update( x)
 
     ####### querys
@@ -223,7 +235,11 @@ def setup_logging( log_sa, log2stream =None):
     if log_sa == 'all':
         logging.getLogger( 'sqlalchemy').setLevel( logging.DEBUG) #debug EVERYTHING!
     else:
-        sqlalchemy.logging.default_enabled= True    #else, default_logging() will setFormatter...
+        try:
+            from sqlalchemy import log as salog     #user_defined_state branch
+        except ImportError:
+            from sqlalchemy import logging as salog
+        salog.default_enabled= True    #else, default_logging() will setFormatter...
 
         if 'mapper' in log_sa:
             from sqlalchemy.orm import mapperlib
@@ -242,10 +258,9 @@ def detach_instances( namespace_or_iterable, idname, resetup =False ):
             try: delattr( e, k)
             except AttributeError: pass
         setattr( e, idname, None)       #or delattr ??
-        if resetup and InstanceState:
+        if resetup:
             if debug: print 'resetup', e.__class__, id(e)
-            e._state = InstanceState(e)
-            #sqlalchemy.attribute_manager.manage(obj) does above
+            _setup_state( e)
 
 if 0*'inline_inside_table/embedded_struct':
     _level_delimiter4embedded_name = '_' #( parent,child): return '_'.join( (parent,child) )

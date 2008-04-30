@@ -6,13 +6,25 @@ import sqlalchemy.orm
 import operator
 from dbcook.util.attr import issubclass, find_valid_fullname_import
 from dbcook.config import _v03
+#from util_all.dbg import dbg_funcname
 
 def traverse( visitor, obj):
     try: f = visitor.traverse
     except: return obj.accept_visitor( visitor)
     else: return f( obj)
 
-class CV( sqlalchemy.sql.ClauseVisitor):
+try:
+    from sqlalchemy.sql.visitors import iterate_depthfirst, ClauseVisitor
+    if 0:
+        class Vis( ClauseVisitor):
+            iterate = iterate_depthfirst    #wont work
+    else:
+        Vis = ClauseVisitor
+        sqlalchemy.sql.visitors.iterate = iterate_depthfirst
+except ImportError:
+    Vis = sqlalchemy.sql.ClauseVisitor
+
+class CV( Vis):
     ops = {
         '=':'==',
         operator.eq: '==',
@@ -117,15 +129,14 @@ class Tstr:
     nl = ''
     nl4args = None
     no_kargs = {}   #ignore these kargs of these values
-    def __init__( me, nl=None, nl4args=None, no_kargs =None):
-        if nl is None: nl = me.nl
-        if nl4args is None: nl4args = me.nl4args
-        if no_kargs is None: no_kargs = me.no_kargs
+    avoid_kargs = {}   #ignore these kargs completely
+    def __init__( me, nl=None, nl4args=None, no_kargs =None, avoid_kargs =None):
+        if nl is not None: me.nl = nl
+        if nl4args is not None: me.nl4args = nl4args
+        if no_kargs is not None: me.no_kargs = no_kargs
+        if avoid_kargs is not None: me.avoid_kargs = avoid_kargs
 
-        if nl4args is None: nl4args = nl
-        me.nl = nl
-        me.nl4args = nl4args
-        me.no_kargs = no_kargs
+        if me.nl4args is None: me.nl4args = me.nl
 
     def thestr( me, tself, name, args, kargs):
         nl = me.nl
@@ -138,7 +149,8 @@ class Tstr:
                     [ nl4args.join( [str(tstr(a))+', ' for a in args]) ] +
                     [ (level*'  '+'%s= %s, ') % (k,tstr(kargs[k]))
                         for k in ks #kargs.iteritems()
-                        if kargs[k] is not me.no_kargs.get( k,'_any_any_')
+                        if (k not in me.avoid_kargs and
+                            kargs[k] is not me.no_kargs.get( k,'_any_any_') )
                     ] + [')'] )
                 )
 class TstrSelf( Tstr):
@@ -440,7 +452,8 @@ sqlalchemy.sql.Join.select = select4join
 def repr2alias(me):
     baseselectable= me
     while isinstance( baseselectable, sqlalchemy.sql.Alias):
-        baseselectable = baseselectable.selectable
+        try: baseselectable = baseselectable.element    #user_defined_state branch
+        except: baseselectable = baseselectable.selectable
         try:
             r = str( baseselectable.tstr )
             break
@@ -463,7 +476,10 @@ mapper= duper( sqlalchemy.orm.mapper, otherstr=mapper_varname, nl='\n'+12*' ', n
                 polymorphic_on= None,
                 select_table= None,
                 polymorphic_identity= None,
-                extension= None,
+                #extension= None,
+            ),
+            avoid_kargs= dict(
+                extension=1,
             ) )
 join  = duper( sqlalchemy.join)
 outerjoin  = duper( sqlalchemy.outerjoin)
