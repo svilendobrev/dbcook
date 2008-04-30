@@ -96,9 +96,11 @@ s= sa.session()
 sa.saveall( s, locals() )
 s.flush()
 
-print 'b2.all_ba', b2.all_ba
+if hasattr( b2.__class__, 'all_ba'):
+    print 'b2.all_ba', b2.all_ba
 print 'a3.alla2', a3.alla2
-print 'c.cccc', c.cccc
+if hasattr( c.__class__, 'cccc'):
+    print 'c.cccc', c.cccc
 
 s.clear()
 sa.query_all_tables()
