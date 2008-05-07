@@ -14,17 +14,16 @@ def traverse( visitor, obj):
     else: return f( obj)
 
 try:
-    from sqlalchemy.sql import visitors
-    #import iterate_depthfirst, traverse, ClauseVisitor
+    from sqlalchemy.sql.visitors import iterate_depthfirst, traverse_using, ClauseVisitor
     if 10:
-        class Vis( visitors.ClauseVisitor):
+        class Vis( ClauseVisitor):
             #iterate = iterate_depthfirst    #wont work
             def traverse( self, obj):
                 vv = dict( (name[6:], getattr(self, name))
                                     for name in dir(self)
                                     if name.startswith('visit_') )
-                return visitors.traverse_using(
-                        visitors.iterate_depthfirst( obj, self.__traverse_options__), obj, vv)
+                return traverse_using(
+                        iterate_depthfirst( obj, self.__traverse_options__), obj, vv)
     else:
         Vis = ClauseVisitor
         sqlalchemy.sql.visitors.iterate = iterate_depthfirst
