@@ -152,13 +152,24 @@ if 0:
         timeTrans, timeValid = time
         return timeValid,timeTrans
 
+if 10:
+    import sqlalchemy.orm
+    if hasattr( sqlalchemy.orm.Mapper, '_equivalent_columns'):
+        def equivs( parent): return parent._equivalent_columns
+    elif hasattr( sqlalchemy.orm.Mapper, '_get_equivalent_columns'):
+        def equivs( parent): return parent._get_equivalent_columns()
+    else:
+        def equivs( parent): return getattr( parent, '_Mapper__get_equivalent_columns')()
+
 ## model bases
 def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
     'describe WTF this does'
     #hackish code - TODO move this down to samanager maybe or get rid of this at all -
     #needed in polymorphic case
     joinPoint = q.filter( time_stmt)._joinpoint
-    #print 'jjjjjjjjjjjjjjjjjjj', joinPoint
+    dbg=0
+    if dbg: print 'jjjjj joinPoint', joinPoint
+    if dbg: print 'eeeee equivs', '\n'.join( '%s:%s' % kv for kv in equivs( joinPoint).iteritems() )
     try:
         tbl = time_stmt.left.table
     except AttributeError:
@@ -166,23 +177,32 @@ def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
         return (time_stmt, None)    #unmodified
     aliased_tbl = joinPoint.select_table
     if aliased_tbl is None: aliased_tbl = joinPoint.mapped_table
-    #print 'aaaaaaaaaaaa', aliased_tbl, aliased_tbl.columns
-    #print 'bbbbbbbbbbbb', tbl
+    if dbg: print 'aaaaa aliased_tbl', aliased_tbl #, aliased_tbl.columns
+    if dbg: print 'bbbbb tbl', tbl
     #XXX
     ''' т'ва трябва да се пробва да се прави с joinPoint._get_equivalent_columns вместо
     с table.corresponding_column - виж dbcook/expression.py equivs()
     за конкретния вариант че се сменя често '''
 
+
     id_col = aliased_tbl.corresponding_column( time_stmt.left) #, keys_ok= True)
-    #print 'iiiiiii', id_col
+    if dbg: print 'iiiii id_col', id_col
+    assert id_col is time_stmt.left
+
+    if dbg: print 'ttttt time_stmt', time_stmt.left #, equivs( joinPoint)[ time_stmt.left ]
+    if dbg: print 'j.c.disabled', joinPoint.c.disabled #, equivs( joinPoint)[ joinPoint.c.disabled ]
+    if dbg: print 'j.c.time_valid', joinPoint.c.time_valid
+
     time_stmt = (id_col==time_stmt.right)
     if not with_disabled:
         disabled_col = aliased_tbl.corresponding_column( tbl.c.disabled) #, keys_ok= True)
-        #print 'dddddd', disabled_col
+        if dbg: print 'ddddd disabled_col', disabled_col, tbl.c.disabled
+        assert disabled_col is tbl.c.disabled
         time_stmt &= (~disabled_col)
     if with_valid:
         valid_col = aliased_tbl.corresponding_column( tbl.c.time_valid) #, keys_ok= True)
-        #print 'vvvvvvv', valid_col
+        if dbg: print 'vvvvv valid_col', valid_col, tbl.c.time_valid
+        assert valid_col is tbl.c.time_valid
         time_stmt = (time_stmt, valid_col)
     return time_stmt
 
