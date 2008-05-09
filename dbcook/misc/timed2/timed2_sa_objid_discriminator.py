@@ -158,21 +158,31 @@ def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
     #hackish code - TODO move this down to samanager maybe or get rid of this at all -
     #needed in polymorphic case
     joinPoint = q.filter( time_stmt)._joinpoint
-
-    aliased_tbl = joinPoint.select_table
+    #print 'jjjjjjjjjjjjjjjjjjj', joinPoint
     try:
         tbl = time_stmt.left.table
     except AttributeError:
         print '\nWARNING problem in STMT:', time_stmt, time_stmt.__class__
         return (time_stmt, None)    #unmodified
+    aliased_tbl = joinPoint.select_table
+    if aliased_tbl is None: aliased_tbl = joinPoint.mapped_table
+    #print 'aaaaaaaaaaaa', aliased_tbl, aliased_tbl.columns
+    #print 'bbbbbbbbbbbb', tbl
+    #XXX
+    ''' т'ва трябва да се пробва да се прави с joinPoint._get_equivalent_columns вместо
+    с table.corresponding_column - виж dbcook/expression.py equivs()
+    за конкретния вариант че се сменя често '''
 
     id_col = aliased_tbl.corresponding_column( time_stmt.left) #, keys_ok= True)
+    #print 'iiiiiii', id_col
     time_stmt = (id_col==time_stmt.right)
     if not with_disabled:
         disabled_col = aliased_tbl.corresponding_column( tbl.c.disabled) #, keys_ok= True)
+        #print 'dddddd', disabled_col
         time_stmt &= (~disabled_col)
     if with_valid:
         valid_col = aliased_tbl.corresponding_column( tbl.c.time_valid) #, keys_ok= True)
+        #print 'vvvvvvv', valid_col
         time_stmt = (time_stmt, valid_col)
     return time_stmt
 
