@@ -10,6 +10,7 @@ def _setup_state( x): pass
 
 try:    #user_defined_state branch / v4xxx?
     from sqlalchemy.orm.session import _state_for_unsaved_instance
+    from sqlalchemy.orm import session
     def _setup_state( x):
         try: session._state_for_unsaved_instance( x, entity_name=None)
         except session.sa_exc.InvalidRequestError: pass #already persistent
@@ -178,7 +179,7 @@ class SAdb:
             if isinstance( x, base_klas) and mapcontext.has_instances( x.__class__):
                 pre = getattr( x, 'pre_save', None)
                 if pre:
-                    _setup_state(x)
+                    #_setup_state(x)    #XXX not needed?
                     pre()
 
                 session.save_or_update( x)
