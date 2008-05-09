@@ -70,14 +70,10 @@ def get_populate_namespace( namespace, base_klas, popreflector, generator):
 
 def do_query( query, sadb, session, klas, klasitems, quiet):
     res = []
-    hdr = False
-    SET = sadb.mapcontext.SET
+    SET = list#sadb.mapcontext.SET
     for qy in (callable(query) and [query] or query):       #if not callable/single then iterable
         qname = qy.__name__
-        if hdr:
-            if not quiet: print ' --', klas.__name__,
-            hdr = 0
-        if not quiet: print qname,
+        if not quiet: print ' --', klas.__name__, qname
 
         assert callable( qy)
         er = None
@@ -95,20 +91,17 @@ def do_query( query, sadb, session, klas, klasitems, quiet):
             rq = getattr( klasitems[ klas], qname, None)
             if rq is None:
                 print '\n   ', klas.__name__, qname,' result:', '\n'.join( str(q) for q in r)
-                hdr = True
             else:
                 srq = [ str(q) for q in rq]
                 sr  = [ str(q) for q in r ]
                 srq.sort()
                 sr.sort()
-                ok = srq == sr
-                if not ok:
+                if srq != sr:
                     print '\n   ', klas.__name__, qname,' fail:'
                     print ' result:', '; '.join( sr)
                     print ' expect:', '; '.join( srq), '/size:', len(rq)
                     er = 'AssertionError:\n result=%(sr)s\n expect=%(srq)s' % locals()
         if er:
-            hdr = True
             res.append( klas.__name__+'.'+qname+': '+str(er) )
 
     return res

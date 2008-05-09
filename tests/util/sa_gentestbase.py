@@ -91,9 +91,9 @@ class Test_SA( unittest.TestCase):
             from sqlalchemy.orm import mapperlib
             from sqlalchemy.orm.session import _sessions
             from sqlalchemy.util import ArgSingleton
-            print "MAPPER REG:", len( dict(getattr( mapperlib, 'mapper_registry', getattr( mapperlib, '_mapper_registry', None)) ))
-            print "SESION REG:", len( dict(_sessions) )
-            print "CLASSKEYS:",  len( dict(ArgSingleton.instances) )
+            print "MAPPER REG:", len( dict( getattr( mapperlib, 'mapper_registry', getattr( mapperlib, '_mapper_registry', None)) ))
+            print "SESION REG:", len( dict( _sessions) )
+            print "CLASSKEYS:",  len( dict( ArgSingleton.instances) )
         if config.gc:
             i = 0
             for x in gc.get_objects():
@@ -110,27 +110,35 @@ class Test_SA( unittest.TestCase):
         if config.dump:
             print 'tables:'
             for item in expects:
-                for x in item['table'].select().execute():
-                    print item['table'], ':', x
+                tbl = item['table']
+                s = tbl.select()
+                for x in s.execute():
+                    print tbl, ':', ', '.join( '%s= %s' % kv for kv in zip( s.columns, x) )
         for item in expects:
             me.query1( session, idname=idname, **item)
 
     def query1( me, session, idname, klas, table, oid, exp_single, exp_multi):
         if config.session_clear: session.clear()
+        klasname = klas.__name__
         #single
+        if config.debug: print klas, '.filter_by().first', idname,'=',oid
         q = session.query( klas).filter_by( **{idname: oid}).first()
         me.assertEqual( exp_single, str(q),
-                klas.__name__+'.getby_'+idname+'():\n result= %(q)s\n expect= %(exp_single)s' % locals()
+            '''%(klasname)s .filter_by( %(idname)s=%(oid)s):
+ result= %(q)s
+ expect= %(exp_single)s''' % locals()
             )
 
         if config.session_clear: session.clear()
         #multiple
+        if config.debug: print klas, '.query()'
         q = session.query( klas)
         x = [ str(z) for z in q ]
         x.sort()
         exp_multi.sort()
-        me.assertEqual( exp_multi, x,
-                klas.__name__+'.select():\n result= %(x)s\n expect= %(exp_multi)s' % locals()
+        me.assertEqual( exp_multi, x, '''%(klasname)s .query():
+ result= %(x)s
+ expect= %(exp_multi)s''' % locals()
             )
 
     def run( self, *a, **k):
