@@ -185,9 +185,10 @@ class SAdb:
 
     ####### querys
     def query_all_tables( sadb, **kargs_ignore):
-        print '=== whole database:'
+        yield '=== whole database:'
         for k,t in sadb.tables.iteritems():
-            print k,':', [r for r in t.select().execute()]
+            yield k,':', tuple( t.select().execute() )
+        #return ()
 
     ####### klasifier querys
     if _v03:

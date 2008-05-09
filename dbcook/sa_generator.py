@@ -93,6 +93,11 @@ if _v03:
 else:
     def base_mapper(m): return m.base_mapper
 
+try: sqlalchemy.orm.Mapper._with_polymorphic_mappers
+except:
+    def m2punion( m): return m.select_table
+else:
+    def m2punion( m): return m.with_polymorphic and m.with_polymorphic[1]
 
 level = 0
 def tstr(o):
@@ -316,7 +321,7 @@ meta.create_all()
         maps = [ m for m in iterm if isinstance( m, sqlalchemy.orm.Mapper)]
         maps.sort( key= lambda m: m.class_.__name__)
         for m in maps:
-            pu = m.select_table
+            pu = m2punion( m)
             if isinstance( pu, sqlalchemy.sql.Alias):  #CompoundSelect
                 me.punion( pu)
 
