@@ -1,12 +1,8 @@
 #$Id$
 import sys
-if 'nostatic' in sys.argv:
-   import dbcook.usage.plainwrap as orm
-   class Text( orm.Type): pass
-else:
-   import dbcook.usage.static_type.sa2static as orm
-   from static_type.types.atomary import Text
-   orm.Base.auto_set = False
+import dbcook.usage.static_type.sa2static as orm
+from static_type.types.atomary import Text
+orm.Base.auto_set = False
 
 Base = orm.Base
 
