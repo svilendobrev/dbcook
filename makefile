@@ -40,6 +40,6 @@ tag tags:
 	ctags -R -a sqlalchemy
 
 rmpyc:
-	rm -f `find . -follow -name \*.pyc `
+	find . -follow -name \*.pyc -exec rm {} \;
 
 # vim:ts=4:sw=4:noexpandtab
