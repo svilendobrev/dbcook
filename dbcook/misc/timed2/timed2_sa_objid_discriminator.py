@@ -166,7 +166,12 @@ def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
     'describe WTF this does'
     #hackish code - TODO move this down to samanager maybe or get rid of this at all -
     #needed in polymorphic case
+
+    #XXX
+    ''' ТОВА не работи изобщо в 0.5 - няма подобни joinPoint, и най вероятно не е нужно'''
+
     joinPoint = q.filter( time_stmt)._joinpoint
+    assert joinPoint
     dbg=0
     if dbg: print 'jjjjj joinPoint', joinPoint
     if dbg: print 'eeeee equivs', '\n'.join( '%s:%s' % kv for kv in equivs( joinPoint).iteritems() )
@@ -181,8 +186,7 @@ def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
     if dbg: print 'bbbbb tbl', tbl
     #XXX
     ''' т'ва трябва да се пробва да се прави с joinPoint._get_equivalent_columns вместо
-    с table.corresponding_column - виж dbcook/expression.py equivs()
-    за конкретния вариант че се сменя често '''
+    с table.corresponding_column - виж dbcook/expression.py equivs() '''
 
 
     id_col = aliased_tbl.corresponding_column( time_stmt.left) #, keys_ok= True)
@@ -198,11 +202,13 @@ def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
         disabled_col = aliased_tbl.corresponding_column( tbl.c.disabled) #, keys_ok= True)
         if dbg: print 'ddddd disabled_col', disabled_col, tbl.c.disabled
         assert disabled_col is tbl.c.disabled
+        assert joinPoint.c.disabled is tbl.c.disabled
         time_stmt &= (~disabled_col)
     if with_valid:
         valid_col = aliased_tbl.corresponding_column( tbl.c.time_valid) #, keys_ok= True)
         if dbg: print 'vvvvv valid_col', valid_col, tbl.c.time_valid
         assert valid_col is tbl.c.time_valid
+        assert joinPoint.c.time_valid is tbl.c.disabled
         time_stmt = (time_stmt, valid_col)
     return time_stmt
 
