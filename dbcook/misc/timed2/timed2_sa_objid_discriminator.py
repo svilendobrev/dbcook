@@ -106,7 +106,8 @@ def get_time_range_clause( klas, obj_id, timeFrom, timeTo,
     obj_clause = (t.c.obj_id == obj_id) & discriminating_clause
     where_clause = ( (t.c.time_trans <= timeTrans)
                    & (t.c.time_valid >= timeValidFrom)
-                   & (t.c.time_valid <= timeValidTo) & obj_clause)
+                   & (t.c.time_valid <= timeValidTo)
+                   & obj_clause)
 
     if _debug: print '\nGROUP:', group
     if not group:
@@ -152,7 +153,7 @@ if 0:
         timeTrans, timeValid = time
         return timeValid,timeTrans
 
-if 10:
+if 0:
     import sqlalchemy.orm
     if hasattr( sqlalchemy.orm.Mapper, '_equivalent_columns'):
         def equivs( parent): return parent._equivalent_columns
@@ -162,9 +163,9 @@ if 10:
         def equivs( parent): return getattr( parent, '_Mapper__get_equivalent_columns')()
 
 ## model bases
-def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
-    'describe WTF this does'
-    #hackish code - TODO move this down to samanager maybe or get rid of this at all -
+def zzz_hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
+    'describe wtf this does'
+    #hackish code - todo move this down to samanager maybe or get rid of this at all -
     #needed in polymorphic case
 
     #XXX
@@ -209,6 +210,29 @@ def _hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
         if dbg: print 'vvvvv valid_col', valid_col, tbl.c.time_valid
         assert valid_col is tbl.c.time_valid
         assert joinPoint.c.time_valid is tbl.c.disabled
+        time_stmt = (time_stmt, valid_col)
+    return time_stmt
+
+def _hack_columns( q_ignored, time_stmt, with_valid =False, with_disabled =False):
+    'describe wtf this does - needed in polymorphic case??'
+
+    tbl = time_stmt.left.table  #??
+
+    #aliased_tbl = tbl #joinPoint.select_table
+    def corresp_col( col):
+        return col
+        if dbg: print 'corresp_col  in:', col
+        c = aliased_tbl.corresponding_column( col) #, keys_ok= True)
+        if dbg: print 'corresp_col out:', c
+        return c
+
+    id_col = corresp_col( time_stmt.left)
+    time_stmt = (id_col==time_stmt.right)
+    if not with_disabled:
+        disabled_col = corresp_col( tbl.c.disabled)
+        time_stmt &= (~disabled_col)
+    if with_valid:
+        valid_col = corresp_col( tbl.c.time_valid)
         time_stmt = (time_stmt, valid_col)
     return time_stmt
 
