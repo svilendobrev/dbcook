@@ -70,6 +70,19 @@ class Expr( _Expr):
         me.args = args
         me.kargs = kargs
 
+    def _arg( me, a, visitor, level=0):
+        if isinstance( a, Var):
+            r = visitor.var( a._name___)
+        elif isinstance( a, _Expr):
+            r = a.walk( visitor, level=level)
+        elif isinstance( a, (list,tuple)):
+            #print 'AAAAAAAAAAAAAAAAAAAAAAAAA', str(a)
+            r = type(a)( me._arg( x, visitor, level) for x in a)
+            #print 'BBBBBBBBBBBBBBBBBBBBBBBBB', str(r)
+        else:
+            r = visitor.const( a)
+        return r
+
     def walk( me, visitor, level=0):
         args = me.args
         kargs = me.kargs
@@ -77,12 +90,7 @@ class Expr( _Expr):
 
         bargs = []
         for a in args:
-            if isinstance( a, Var):
-                r = visitor.var( a._name___)
-            elif isinstance( a, _Expr):
-                r = a.walk( visitor, level=level+1)
-            else:
-                r = visitor.const( a)
+            r = me._arg( a, visitor, level+1)
             bargs.append( r)
 #        print level, op, visitor
         return visitor( level, op, *bargs, **kargs)
@@ -188,7 +196,7 @@ class as_text_expr( Expr.Visitor):
         if is_method:
             r = args[0] + '.' + op + '( ' + ', '.join(args[1:]) + ' )'
         elif len(args)==1 or is_func:
-            r = op + '( ' + ', '.join(args) + ' )'
+            r = op + '( ' + ', '.join( str(x) for x in args) + ' )'
         else:
             assert len(args)==2
             r = ' '.join( [ '(', args[0], op, args[1], ')' ] )
@@ -269,7 +277,7 @@ class Eval( Expr.Visitor):
                 'not': 'not_',
             }
     def __call__( me, level, op, *args):
-
+        #print 'evalcal', level, op, args
         if op in me.arithm_op:
             return getattr( operator, me.arithm_op[op] or op ) ( *args)
         if op in me.bool_op:
@@ -399,13 +407,21 @@ if __name__ == '__main__':
     print '/sql :', e.walk( as_sql)
 ######
 
+    class ListChk:
+        def in_( me, val, lst):
+            #print 'chk', val, lst,
+            r = val in lst
+            #print r
+            return r
+
     class Test:
         from engine.testbase import Case
         VERBOSE = 1
 
-        class A( object):
+        class A:
             def __init__( me, a, b, c, d):
                 me.a, me.b, me.c, me.d = ( a, b, c, d)
+                me.ex = ListChk()
             def __str__( me): return 'A(a:%s b:%s c:%s d:%s)' % (me.a, me.b, me.c, me.d)
             __repr__ = __str__
             def __eq__( me, other):
@@ -425,14 +441,17 @@ if __name__ == '__main__':
                 return True
             def __ne__( me, o): return not me.__eq__( o)
 
-        class Sample( object):
+        class Sample:
             def __init__( me, expr, expectedVal, name =''):
                 me.expr = expr
                 me.expected = expectedVal
                 me.name = name
             def testData( me): return '\nEXPR: ' + str( me.expr)
-            def testResult( me, res): return '\nRESULT:%s\nEXPECTED:%s\n' % (res, me.expected)
-            def __str__( me): return '\nSAMPLE: %(expr)s \n%(expected)s' % me.__dict__
+            def testResult( me, res): return '''
+RESULT:%s
+EXPECTED:%s
+''' % (res, me.expected)
+            def __str__( me): return str( me.expr)
 
         class EvalTest( Case):
             def __init__( me): Test.Case.__init__( me, me.__class__.__name__, [], [])
@@ -451,8 +470,7 @@ if __name__ == '__main__':
                 b = Var( 'b')
                 c = Var( 'c')
                 d = Var( 'd')
-                e = Var( 'e')
-                const = 5
+                ex= Var( 'ex')
                 t_ = Test.Sample
                 me.testSamples = [
                     t_( (a>3),   [u,t,x,y],      'Gt'),
@@ -470,7 +488,9 @@ if __name__ == '__main__':
                     t_( ((a>2) & ((b==5) ^ (c==1)) | (d<8)),  [w,v,u,t,x,y,z],  'more complex expr3'),
                     t_( ((a>=2) & ((b!=6) | (c==1)) | (d>8)), [w,u,t,x,z],      'more complex expr4'),
                     t_( ((a>2) | ((b==5) | (c==1)) | (d ^ 8)), [w,u,t,x,y,z],   'more complex expr5'),
-                    t_( (d ^ 8), [x], 'var xor const') ## can mean different things now: xor( bool(d), bool(8))
+                    t_( (d ^ 8), [x], 'var xor const'), ## can mean different things now: xor( bool(d), bool(8))
+                    t_( ([a,b>2]==c),    [], 'list of expr'),
+                    t_( ex.in_( 0*a+3, [a,b+2]),    [w,x,z], 'func of list of expr'),
                 ]
             def testEach( me, testSample):
                 'tests evaluation'

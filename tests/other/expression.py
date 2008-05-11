@@ -197,8 +197,8 @@ def tests( person_pesho, do_friend_adr =True):
         lambda person, f: f.startswith( person.alias, person.name),
         lambda person, f: f.endswith( person.adr.street, 'o' ),
 
-        lambda person, f: f.in_( person.name, 'pesho', 'mencho' ),
-        lambda person, f: f.in_( person.alias, 'peshoali', 'b-'+person.name ),
+        lambda person, f: f.in_( person.name,  ['pesho', 'mencho'] ),
+        lambda person, f: f.in_( person.alias, ['peshoali', 'b-'+person.name] ),
     ] + do_funcs * [
         lambda person, f: (f.between( person.age, 10, 45) & f.like( person.adr.street, 'str%')),
     ] + do_method * [
@@ -273,7 +273,10 @@ class Funcs:
         import math
         return math.sin(a)
 
-    def in_(*args, **kargs): return args[0] in args[1:]
+    #def in_(*args, **kargs): return args[0] in args[1:]
+    def in_(*args, **kargs):
+        #print 'iiiiiin', args, args[0] in set(args[1])
+        return args[0] in set(args[1])  #x in list  does x==element for each element..
 
     def asc(*args, **kargs):
         return 'asc/'+str(args)
@@ -448,13 +451,15 @@ for combina in combinator():
                         r = []
                         for pp in popu.itervalues():
                             f_kargs['person2'] = pp
+                            #print f_args, f_kargs
                             try:
                                 res = bool( func( p, *f_args, **f_kargs))
                             except AttributeError: res = None
                             rr.append( res)
                             ##simulated python eval
                             try:
-                                res = bool( e.walk( expr.Eval( AttrWrap( Struct( person=p, **f_kargs)))) )
+                                res = bool( e.walk( expr.Eval( AttrWrap(
+                                            Struct( person=p, **f_kargs)))) )
                             except AttrWrapError: res = None
                             r.append( res)
 
@@ -463,12 +468,16 @@ for combina in combinator():
                         assert rr == r, 'pyexec:%(rr)s != pysimeval:%(r)s' % locals()
 
                     else:
+                        #print f_args, f_kargs, p.name
+                        #print 'pyexec'
                         try:
                             rr = bool( func( p, *f_args, **f_kargs))
                         except AttributeError: rr = None
                         ##simulated python eval
+                        #print 'pysimeval'
                         try:
-                            r = bool( e.walk( expr.Eval( AttrWrap( Struct( person=p, f=Funcs, p2= p2, person2=p2 )))) )
+                            r = bool( e.walk( expr.Eval( AttrWrap(
+                                        Struct( person=p, f=Funcs, p2= p2, person2=p2 )))) )
                         except AttrWrapError: r = None
 
                         assert rr is r, 'pyexec:%(rr)s != pysimeval:%(r)s' % locals()

@@ -10,6 +10,7 @@ now: simple
 now: mapper
 
 utilz: ../dbcook/kjmincut.test
+utilz: ../dbcook/util/expr.test
 
 sa: sa/ref_AxA.test
 sa: sa/ref_A_B_A_all.test
