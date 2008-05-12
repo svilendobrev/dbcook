@@ -21,9 +21,10 @@ mapper: mapper/test4mapper.test
 mapper: mapper/test_inh_types.test
 mapper: abc
 mapper: mapper/freegen/main.test
-mapper: mapper/relation.test
-mapper: mapper/collection.test
-mapper: other/expression.test
+assoc:   mapper/association.test
+collect: mapper/collection.test
+expr:    other/expression.test
+mapper: assoc collect expr
 
 #abc: ARGS= zno_sisters Binhs=A Cinhs=B Clinks=None doC zdummy
 GG= generate=failed,one

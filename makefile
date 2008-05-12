@@ -7,8 +7,10 @@ now: test misc static
 test:
 	$(MAKE) -C tests/
 
-misc:
+misc: timed2 aggr
+timed2:
 	$(MAKE) -C dbcook/misc/timed2/tests/
+aggr:
 	$(MAKE) -C dbcook/misc/aggregator/
 
 static: dbcook/usage/static_type/test_autoset_lazy.py
