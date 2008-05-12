@@ -8,7 +8,7 @@
 
 Either use the new Builder here, or staticaly
 modify the base original: setup( builder.Builder).
-Then use the Base, Association, Type4Reference, either
+Then use the Base, Association, Reference, either
 via Builder.xxxx, or directly from here.
 '''
 
@@ -90,6 +90,7 @@ class Reflector4sa( builder.Reflector):
 
 
 
+Reference = Type4Reference
 reflector = Reflector4sa()
 
 class Base( object):
@@ -105,7 +106,7 @@ class Collection( builder.relation.Collection):
 
 def setup( s):
     s.reflector = reflector
-    s.Type4Reference = Type4Reference
+    s.Reference = s.Type4Reference = Type4Reference
     s.Base = Base
     s.Association = Association
     s.Collection = Collection
@@ -131,7 +132,7 @@ if __name__ == '__main__':
         alias = Text()
     class C( Base):
         color = Text()
-        blink = Type4Reference( B)
+        blink = Reference( B)
 
     from samanager import SAdb
     SAdb.Builder = Builder

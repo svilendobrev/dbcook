@@ -24,7 +24,7 @@ def model( is_lazy =True, is_auto_set =True, is_reference =True, is_value_defaul
         else:
             code = Text()
         if is_reference:
-            ime = orm.Type4Reference( Name, auto_set= is_auto_set, lazy= is_lazy)
+            ime = orm.Reference( Name, auto_set= is_auto_set, lazy= is_lazy)
         else:
             ime = Text()    #TODO must make a deferred_column when is_lazy
 

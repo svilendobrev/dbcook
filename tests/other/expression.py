@@ -35,12 +35,12 @@ def model(  address_inh ='', #'','c','j'
             home = str( get_attrib( me, 'home.num', 'none'))
             return str( getattr( me, 'street','none')) +'#'+ home
         street = Text()
-        home = Type4Reference( Home)
+        home = Reference( Home)
 
     class Adres( Addr0):
         if address_inh: DBCOOK_inheritance = address_inh
         kvartal = Text()
-        owner = Type4Reference( 'Person')
+        owner = Reference( 'Person')
     class Adres2( Addr0):
         if address_inh: DBCOOK_inheritance = address_inh
         dupka = Int()
@@ -50,13 +50,13 @@ def model(  address_inh ='', #'','c','j'
         DBCOOK_has_instances = 1
         name    = Text()
         age     = Int()
-        friend  = Type4Reference( (person_ref_person or DBCOOK_no_mapping) and 'Person' or 'Human')
+        friend  = Reference( (person_ref_person or DBCOOK_no_mapping) and 'Person' or 'Human')
 
     class Person( Human):
         if person_inh: DBCOOK_inheritance = person_inh
         alias   = Text()
-        adr = Type4Reference( Adres)
-        adr2= Type4Reference( Adres2)
+        adr = Reference( Adres)
+        adr2= Reference( Adres2)
 
         def __eq__( me, other):     #for person.friend == otherperson
             if other is None: return False

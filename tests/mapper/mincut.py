@@ -13,17 +13,17 @@ from tests.util.case2unittest import Case
 class Employee( Base):
     DBCOOK_inheritance = JOINED
     DBCOOK_has_instances = True
-    boss  = Type4Reference( 'Manager')   #put a big weight on this relation
-    boss2 = Type4Reference( 'Manager')
-    boss3 = Type4Reference( 'Manager')
+    boss  = Reference( 'Manager')   #put a big weight on this relation
+    boss2 = Reference( 'Manager')
+    boss3 = Reference( 'Manager')
     name = Text()
-    dept = Type4Reference( 'Dept')          #without this session.topology will not cycle
+    dept = Reference( 'Dept')          #without this session.topology will not cycle
 
 class Manager( Employee):
     extras = Text()
 
 class Dept( Base):
-    boss = Type4Reference( Manager)
+    boss = Reference( Manager)
     name = Text()
 
 '''

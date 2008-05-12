@@ -1,7 +1,7 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
-from tests.util.context import * #Type4Reference, Builder, SAdb, Base, Text, fieldtypemap
+from tests.util.context import * #Reference, Builder, SAdb, Base, Text, fieldtypemap
 
 querys = [ SAdb.query_BASE_instances, SAdb.query_ALL_instances, SAdb.query_SUB_instances]
 inhtr = {
@@ -26,7 +26,7 @@ def test_inh_ref_ABC_any( config,
     class A( Base):
         auto_set = False    #StaticTypeing; else: recursion
         if Alink:
-            linkA = Type4Reference( Alink, lazy=Alazy)
+            linkA = Reference( Alink, lazy=Alazy)
         DBCOOK_inheritance = inh
         DBCOOK_has_instances = 'A' in insts
         name = Text()
@@ -34,7 +34,7 @@ def test_inh_ref_ABC_any( config,
     class B( inhB and A or Base):
         auto_set = False    #StaticTypeing; else: recursion
         if Blink:
-            linkB = Type4Reference( Blink, lazy=Blazy)
+            linkB = Reference( Blink, lazy=Blazy)
         DBCOOK_inheritance = inh
         DBCOOK_has_instances = 'B' in insts
         dataB = Text()
@@ -43,7 +43,7 @@ def test_inh_ref_ABC_any( config,
         class C( inhC=='B' and B or inhC=='A' and A or Base):
             auto_set = False    #StaticTypeing; else: recursion
             if Clink:
-                linkC = Type4Reference( Clink, lazy=Clazy)
+                linkC = Reference( Clink, lazy=Clazy)
             DBCOOK_inheritance = inh
             DBCOOK_has_instances = 'C' in insts
             dataC = Text()

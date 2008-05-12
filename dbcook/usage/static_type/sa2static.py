@@ -8,7 +8,7 @@
 
 Either use the new Builder here, or staticaly
 modify the base original: setup( builder.Builder).
-Then use the Base, Association, Type4Reference, either
+Then use the Base, Association, Reference, either
 via Builder.xxxx, or directly from here.
 '''
 
@@ -273,12 +273,13 @@ class Collection( builder.relation.Collection):
     __slots__ = ()
     Type4Reference = staticmethod( Type4Reference)
 
+Reference = Type4Reference
 Type = _static_type.StaticType
 reflector = Reflector4StaticType()
 
 def setup( s):
     s.reflector = reflector
-    s.Type4Reference = staticmethod( Type4Reference)
+    s.Reference = s.Type4Reference = staticmethod( Type4Reference)
     s.Base = Base
     s.Association = Association
     s.Collection = Collection
@@ -306,20 +307,20 @@ if __name__ == '__main__':
         DBCOOK_has_instances = True
 
         name = Text()
-        dept = Type4Reference( 'Dept')
+        dept = Reference( 'Dept')
 
     class Engineer( Employee):
-        helper = Type4Reference( 'Engineer')
+        helper = Reference( 'Engineer')
         DBCOOK_has_instances = True
 
     class Manager( Employee):
-        secretary = Type4Reference( Employee)
+        secretary = Reference( Employee)
 
     class Hacker( Engineer):
         tools = Text()
 
     class Dept( Base):
-        boss = Type4Reference( Manager)
+        boss = Reference( Manager)
         name = Text()
 
     def populate():

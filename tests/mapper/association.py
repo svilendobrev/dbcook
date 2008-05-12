@@ -26,7 +26,7 @@ class IntermediateAB( Base4Association):    #color
     color = Text()
     a_link = Base4Association.Link( 'A')
     b_boza = Base4Association.Link( 'B', attr= 'all_ba')
-#    a = orm.Type4Reference('A')     #plain reference - nothing to do with the AB association
+#    a = orm.Reference('A')     #plain reference - nothing to do with the AB association
     a2_link = Base4Association.Link( 'A', attr= 'alla2', nullable= True)
     c_link = Base4Association.Link( 'C', 'cccc' )
     x_link = Base4Association.Link( X, nullable= True )
@@ -48,14 +48,14 @@ class A( Base):
     all_ab  = IntermediateAB.Relation()
 #    all_abc = IntermediateABC2.Relation()
 #    all_ade = IntermedADE.Relation()
-#    x = orm.Type4Reference( 'A')
+#    x = orm.Reference( 'A')
     alla2   = IntermediateAB.Relation()
 
 class B( Base):
     name    = Text()
 #    my_ab   = IntermediateAB.Relation()  #override -> error
 #    all_ab2 = Base4Association.Relation( 'IntermediateAB2' )
-#        a = orm.Type4Reference( A)#.Instance()
+#        a = orm.Reference( A)#.Instance()
 #    all_ba  = IntermediateAB.Relation()
 
 if 10:

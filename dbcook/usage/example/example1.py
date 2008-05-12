@@ -20,13 +20,13 @@ Base = o2r.Base
 class Employee( Base):
     name    = Text()
     age     = Int()
-    manager = o2r.Type4Reference( 'Employee')    #or 'Manager'
+    manager = o2r.Reference( 'Employee')    #or 'Manager'
     DBCOOK_inheritance = 'joined'   #for subclasses - this(base) one is always concrete anyway
     #or DBCOOK_inheritance = o2r.table_inheritance_types.JOINED
     DBCOOK_has_instances = True     #by default only class-tree leaves have instances
 
 class Manager( Employee):
-    secretary = o2r.Type4Reference( Employee)
+    secretary = o2r.Reference( Employee)
     DBCOOK_has_instances = True
 
 class Engineer( Employee):
@@ -41,7 +41,7 @@ director_base = dict(
 
 class Director( director_base):
     if 'secretary' not in director_base.__dict__:   #no life without a secretary!
-        secretary = o2r.Type4Reference( Employee)
+        secretary = o2r.Reference( Employee)
     salary = Int()
 
 ####### endof model-definition

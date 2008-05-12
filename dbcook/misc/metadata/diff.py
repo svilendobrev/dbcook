@@ -157,8 +157,8 @@ if __name__ == '__main__':
         size  = Int()
     class Person( o2r.Base):
         name = Text()
-        address = o2r.Type4Reference( Address)
-        friend  = o2r.Type4Reference( 'Person')
+        address = o2r.Reference( Address)
+        friend  = o2r.Reference( 'Person')
     class Employee( Person):
         job = Text()
 

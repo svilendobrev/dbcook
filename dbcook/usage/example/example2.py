@@ -39,14 +39,14 @@ print 'using', o2r.__name__, inh
 class Employee( Base):
     name    = Text()
     age     = Int()
-    dept    = o2r.Type4Reference( 'Dept')
-    lover   = o2r.Type4Reference( 'Employee')
-    manager = o2r.Type4Reference( 'Employee')    #or 'Manager'
+    dept    = o2r.Reference( 'Dept')
+    lover   = o2r.Reference( 'Employee')
+    manager = o2r.Reference( 'Employee')    #or 'Manager'
     DBCOOK_inheritance = inh        #for subclasses - this one is always concrete anyway
     DBCOOK_has_instances = True     #by default only class-tree leaves have instances
 
 class Manager( Employee):
-    secretary = o2r.Type4Reference( Employee)
+    secretary = o2r.Reference( Employee)
     extras = Text()
     DBCOOK_has_instances = True
 
@@ -60,13 +60,13 @@ director_base = dict(
     ).get( config.director_base, Manager)
 class Director( director_base):
     if 'secretary' not in director_base.__dict__:   #no life without a secretary!
-        secretary = o2r.Type4Reference( Employee)
+        secretary = o2r.Reference( Employee)
     salary = Int()
 
 class Dept( Base):
-    manager = o2r.Type4Reference( Manager)
+    manager = o2r.Reference( Manager)
     name = Text()
-    director = o2r.Type4Reference( 'Director')
+    director = o2r.Reference( 'Director')
     #employees = Collection/one2many(???) TODO
 
 ####### endof model-definition
