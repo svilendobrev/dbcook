@@ -391,4 +391,8 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
     Having such relation-attr is not mandatory, some End-object may not need it.
 '''
 
+def get_class_of_relation( parent_klas, relation_attr):
+    return parent_klas._DBCOOK_relations[ relation_attr]
+    return getattr( parent_klas, relation_attr).impl.collection_factory().factory
+
 # vim:ts=4:sw=4:expandtab
