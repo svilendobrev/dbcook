@@ -73,13 +73,16 @@ class HorTestCase( unittest.TestCase):
                 print ' WARNING: second diff gives no diff ??!!'
             raise
 
-def testMain( testcases, verbosity =0):
+def testMain( testcases, verbosity =0, exit_on_error =True):
     import sys
     verbosity = max( verbosity, sys.argv.count('-v') )
     suite = unittest.TestSuite()
     for case in testcases:
         case.verbosity = verbosity
         suite.addTest( case)
-    return HorTestRunner( descriptions= True, verbosity= verbosity).run( suite).wasSuccessful()
+    r = HorTestRunner( descriptions= True, verbosity= verbosity).run( suite).wasSuccessful()
+    if exit_on_error and not r:
+        sys.exit( not r)
+    return r
 
 # vim:ts=4:sw=4:expandtab
