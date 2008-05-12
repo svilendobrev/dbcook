@@ -7,7 +7,6 @@ _fmax = func.max
 
 _debug = 0
 import sqlalchemy
-_v03 = hasattr( sqlalchemy, 'mapper')
 
 def _get_discriminating_clause( klas, aliased_table):
     'needed if polymorphic'
@@ -21,10 +20,7 @@ def _get_discriminating_clause( klas, aliased_table):
     #print '\n\nDISC_COL:', discriminator_column, discriminator_column.table
 
     alltypes = [ m.polymorphic_identity for m in mapper.polymorphic_iterator() ]
-    if _v03:
-        discriminating_clause = discriminator_column.in_( *alltypes)
-    else:
-        discriminating_clause = discriminator_column.in_( alltypes)
+    discriminating_clause = discriminator_column.in_( alltypes)     # (*alltypes) if _v03
     return discriminating_clause
 
 def _timed_clause( klas, table, timeTrans, timeValid):
@@ -154,66 +150,6 @@ if 0:
     def time2key_valid_trans( time):
         timeTrans, timeValid = time
         return timeValid,timeTrans
-
-if 0:
-    import sqlalchemy.orm
-    if hasattr( sqlalchemy.orm.Mapper, '_equivalent_columns'):
-        def equivs( parent): return parent._equivalent_columns
-    elif hasattr( sqlalchemy.orm.Mapper, '_get_equivalent_columns'):
-        def equivs( parent): return parent._get_equivalent_columns()
-    else:
-        def equivs( parent): return getattr( parent, '_Mapper__get_equivalent_columns')()
-
-## model bases
-def zzz_hack_columns( q, time_stmt, with_valid =False, with_disabled =False):
-    'describe wtf this does'
-    #hackish code - todo move this down to samanager maybe or get rid of this at all -
-    #needed in polymorphic case
-
-    #XXX
-    ''' ТОВА не работи изобщо в 0.5 - няма подобни joinPoint, и най вероятно не е нужно'''
-
-    joinPoint = q.filter( time_stmt)._joinpoint
-    assert joinPoint
-    dbg=0
-    if dbg: print 'jjjjj joinPoint', joinPoint
-    if dbg: print 'eeeee equivs', '\n'.join( '%s:%s' % kv for kv in equivs( joinPoint).iteritems() )
-    try:
-        tbl = time_stmt.left.table
-    except AttributeError:
-        print '\nWARNING problem in STMT:', time_stmt, time_stmt.__class__
-        return (time_stmt, None)    #unmodified
-    aliased_tbl = joinPoint.select_table
-    if aliased_tbl is None: aliased_tbl = joinPoint.mapped_table
-    if dbg: print 'aaaaa aliased_tbl', aliased_tbl #, aliased_tbl.columns
-    if dbg: print 'bbbbb tbl', tbl
-    #XXX
-    ''' т'ва трябва да се пробва да се прави с joinPoint._get_equivalent_columns вместо
-    с table.corresponding_column - виж dbcook/expression.py equivs() '''
-
-
-    id_col = aliased_tbl.corresponding_column( time_stmt.left) #, keys_ok= True)
-    if dbg: print 'iiiii id_col', id_col
-    assert id_col is time_stmt.left
-
-    if dbg: print 'ttttt time_stmt', time_stmt.left #, equivs( joinPoint)[ time_stmt.left ]
-    if dbg: print 'j.c.disabled', joinPoint.c.disabled #, equivs( joinPoint)[ joinPoint.c.disabled ]
-    if dbg: print 'j.c.time_valid', joinPoint.c.time_valid
-
-    time_stmt = (id_col==time_stmt.right)
-    if not with_disabled:
-        disabled_col = aliased_tbl.corresponding_column( tbl.c.disabled) #, keys_ok= True)
-        if dbg: print 'ddddd disabled_col', disabled_col, tbl.c.disabled
-        assert disabled_col is tbl.c.disabled
-        assert joinPoint.c.disabled is tbl.c.disabled
-        time_stmt &= (~disabled_col)
-    if with_valid:
-        valid_col = aliased_tbl.corresponding_column( tbl.c.time_valid) #, keys_ok= True)
-        if dbg: print 'vvvvv valid_col', valid_col, tbl.c.time_valid
-        assert valid_col is tbl.c.time_valid
-        assert joinPoint.c.time_valid is tbl.c.disabled
-        time_stmt = (time_stmt, valid_col)
-    return time_stmt
 
 def _hack_columns( q_ignored, time_stmt, with_valid =False, with_disabled =False):
     'describe wtf this does - needed in polymorphic case??'

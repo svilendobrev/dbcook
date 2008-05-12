@@ -49,7 +49,7 @@ TODO:
 import sqlalchemy
 import sqlalchemy.orm
 import warnings
-from config import config, _v03
+from config import config
 import itertools
 from util.attr import getattr_local_class_only
 
@@ -265,19 +265,13 @@ class _AssocDetails:
     #do not pollute Association' namespace
     class MyCollection( list):
         factory = None
-        if _v03:
-            def append( me, obj =_Unspecified, **kargs):
-                if obj is _Unspecified: obj = me.factory( **kargs)
-                list.append( me, obj)
-                return obj
-        else:
-            @sqlalchemy.orm.collections.collection.internally_instrumented
-            def append( me, obj =_Unspecified, **kargs):
-                if obj is _Unspecified: obj = me.factory( **kargs)
-                me._append( obj)
-                return obj
-            @sqlalchemy.orm.collections.collection.appender
-            def _append( me, *a,**k): return list.append( me, *a, **k)
+        @sqlalchemy.orm.collections.collection.internally_instrumented
+        def append( me, obj =_Unspecified, **kargs):
+            if obj is _Unspecified: obj = me.factory( **kargs)
+            me._append( obj)
+            return obj
+        @sqlalchemy.orm.collections.collection.appender
+        def _append( me, *a,**k): return list.append( me, *a, **k)
 
 
 ##############################
@@ -299,12 +293,6 @@ class Collection( _Relation):
 
 def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtractor ):
     dbg = 'relation' in config.debug
-
-    if _v03:
-        def append( self, *args, **kwargs):
-            item = self._data_appender( *args,**kwargs)
-            self._InstrumentedList__setrecord( item)    #private __setrecord; was _before_ _data_appender
-        sqlalchemy.orm.attributes.InstrumentedList.append = append
 
     #XXX TODO move all this into make_mapper_props ??
 

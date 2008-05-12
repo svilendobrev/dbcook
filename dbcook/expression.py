@@ -4,47 +4,35 @@ import sqlalchemy
 import sqlalchemy.orm
 
 _debug = 0
-_v03 = hasattr( sqlalchemy, 'mapper')
-if _v03:
-    def base_mapper(m): return m.base_mapper()
-    def equivs( parent):
-        return parent._get_inherited_column_equivalents()
-    def joincopy( c): return c.copy_container()
-else:
-    def base_mapper(m): return m.base_mapper
-    if hasattr( sqlalchemy.orm.Mapper, '_equivalent_columns'):
-        def equivs( parent): return parent._equivalent_columns
-    elif hasattr( sqlalchemy.orm.Mapper, '_get_equivalent_columns'):
-        def equivs( parent): return parent._get_equivalent_columns()
-    else:
-        def equivs( parent): return getattr( parent, '_Mapper__get_equivalent_columns')()
-    def joincopy( c): return c._clone()
+
+def base_mapper(m): return m.base_mapper
+
+if hasattr( sqlalchemy.orm.Mapper, '_equivalent_columns'):
+    def equivs( parent): return parent._equivalent_columns
+elif hasattr( sqlalchemy.orm.Mapper, '_get_equivalent_columns'):
+    def equivs( parent): return parent._get_equivalent_columns()
+#else:
+#    def equivs( parent): return getattr( parent, '_Mapper__get_equivalent_columns')()
+
+def joincopy( c): return c._clone()
 
 
 from dbcook.util.attr import find_valid_fullname_import, import_fullname
 
 ClauseAdapter = find_valid_fullname_import( '''
-    sqlalchemy.sql_util.ClauseAdapter
     sqlalchemy.sql.util.ClauseAdapter
 ''',1 )
 
-_COMPOUNDexpr = find_valid_fullname_import( '''
+ClauseList = find_valid_fullname_import( '''
     sqlalchemy.sql.expression.ClauseList
-    sqlalchemy.sql.ClauseList
-    sqlalchemy.sql._CompoundClause
 ''',1 )
 
 _BinaryExpression = find_valid_fullname_import( '''
     sqlalchemy.sql.expression._BinaryExpression
-    sqlalchemy.sql._BinaryExpression
 ''',1 )
 
-try:
-    import_fullname( 'sqlalchemy.sql.expression._corresponding_column_or_error', last_non_modules=1)
-except:
-    def corresponding_column( tbl, col): return tbl.corresponding_column( col, raiseerr=False)
-else:
-    def corresponding_column( tbl, col): return tbl.corresponding_column( col)
+def corresponding_column( tbl, col): return tbl.corresponding_column( col)
+import_fullname( 'sqlalchemy.sql.expression._corresponding_column_or_error', last_non_modules=1)    #assert for above
 
 def prop_get_join( self, parent, primary=True, secondary=True):
     ''' from PropertyLoader.get_join(), no cache, no polymorphic joins '''
@@ -357,7 +345,7 @@ class Translator( expr.Expr.Visitor):
                 e = operator( obj, *args, **kargs)
 
         gather_joins = False
-        if not level or isinstance(e, _COMPOUNDexpr):
+        if not level or isinstance(e, ClauseList):
             gather_joins = True
         else:
             if isinstance(e, _BinaryExpression) and e.op in 'AND,OR,NOT,BETWEEN,IS,IS NOT'.split(','):     #maybe also EXISTS -> now Unary...?

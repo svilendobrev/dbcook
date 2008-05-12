@@ -4,9 +4,8 @@
 from sqlalchemy import schema
 from dbcook.util.attr import find_valid_fullname_import
 sql_util = find_valid_fullname_import( '''
-    sqlalchemy.sql_util
     sqlalchemy.sql.util
-''')#this order!
+''')
 
 def fix_table_circular_deps( tablelist, dbg =0, **kargs):
     if dbg: print 'fix_table_circular_dependencies...'

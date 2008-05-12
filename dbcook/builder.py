@@ -45,7 +45,7 @@ import sqlalchemy.orm
 import warnings
 
 
-from config import config_components, config,  column4type, column4ID, table_namer, _v03
+from config import config_components, config,  column4type, column4ID, table_namer
 
 if not config_components.polymunion_from_SA:
     from polymunion import polymorphic_union

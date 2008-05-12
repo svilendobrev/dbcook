@@ -16,6 +16,13 @@ aggr:
 static: dbcook/usage/static_type/test_autoset_lazy.py
 	PYTHONPATH=`pwd`:$(PYTHONPATH) python $< -v $(ARGS)
 
+
+ver: _testver rmpyc now
+_testver:
+	@echo using VER=$(VER)
+	test -e "$(VER)" && ln -nfs $(VER) sqlalchemy
+
+
 %.test: %.py
 	@echo ===============
 	PYTHONPATH=`pwd` python $*.py -v $(ARGS)

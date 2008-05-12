@@ -4,10 +4,8 @@
 from dbcook import builder
 import sqlalchemy
 import sqlalchemy.orm
-_v03 = hasattr( sqlalchemy, 'mapper')
 
 def _setup_state( x): pass
-
 try:    #user_defined_state branch / v4xxx?
     from sqlalchemy.orm.session import _state_for_unsaved_instance
     from sqlalchemy.orm import session
@@ -192,37 +190,19 @@ class SAdb:
         #return ()
 
     ####### klasifier querys
-    if _v03:
-        def query_BASE_instances_raw( sadb, session, klas ):
-            m = sadb.mappers[ klas]
-            if m.plain is None: return ()
-            return session.query( m.plain )
+    def query_BASE_instances( sadb, session, klas ):
+        m = sadb.mappers[ klas]
+        if m.plain is None: return ()
+        return session.query( m.plain )
 
-        def query_ALL_instances_raw( sadb, session, klas ):
-            return session.query( klas)
-
-        def query_BASE_instances( sadb, session, klas ):
-            r = sadb.query_BASE_instances_raw( session, klas )
-            if r: r = r.select()
-            return r
-        def query_ALL_instances( sadb, session, klas ):
-            return sadb.query_ALL_instances_raw( session, klas).select()
-
-    else:
-        def query_BASE_instances( sadb, session, klas ):
-            m = sadb.mappers[ klas]
-            if m.plain is None: return ()
-            return session.query( m.plain )
-
-        def query_ALL_instances( sadb, session, klas ):
-            return session.query( klas)
+    def query_ALL_instances( sadb, session, klas ):
+        return session.query( klas)
 
     def query_SUB_instances( sadb, session, klas ):
         m = sadb.mappers[ klas]
         f = m.polymorphic_sub_only
         if f is None: return ()
         q = session.query( m.polymorphic_all )
-        if _v03: return q.select( f)
         if isinstance( f, sqlalchemy.sql.Selectable):
             return q.from_statement( f)
         else:
@@ -237,10 +217,11 @@ def setup_logging( log_sa, log2stream =None):
     if log_sa == 'all':
         logging.getLogger( 'sqlalchemy').setLevel( logging.DEBUG) #debug EVERYTHING!
     else:
-        try:
-            from sqlalchemy import log as salog     #user_defined_state branch
-        except ImportError:
-            from sqlalchemy import logging as salog
+        from dbcook.util.attr import find_valid_fullname_import
+        salog = find_valid_fullname_import( '''
+            sqlalchemy.log
+            sqlalchemy.logging
+            ''', 0)
         salog.default_enabled= True    #else, default_logging() will setFormatter...
 
         if 'mapper' in log_sa:

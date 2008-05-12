@@ -5,15 +5,11 @@ import sqlalchemy
 import sqlalchemy.orm
 import operator
 from dbcook.util.attr import issubclass, find_valid_fullname_import
-from dbcook.config import _v03
 #from util_all.dbg import dbg_funcname
 
-def traverse( visitor, obj):
-    try: f = visitor.traverse
-    except: return obj.accept_visitor( visitor)
-    else: return f( obj)
+def traverse( visitor, obj): return visitor.traverse( obj)
 
-try:
+try:    #v05+
     from sqlalchemy.sql.visitors import iterate_depthfirst, traverse_using, ClauseVisitor
     if 10:
         class Vis( ClauseVisitor):
@@ -64,8 +60,6 @@ class _state:
 
 _BinaryThing = find_valid_fullname_import( '''
     sqlalchemy.sql.expression._BinaryExpression
-    sqlalchemy.sql._BinaryExpression
-    sqlalchemy.sql._BinaryClause
 ''')
 
 from sqlalchemy.orm.properties import PropertyLoader
@@ -88,10 +82,7 @@ if 0:
             return mapr.get_property( key)
 
 
-if _v03:
-    def base_mapper(m): return m.base_mapper()
-else:
-    def base_mapper(m): return m.base_mapper
+def base_mapper(m): return m.base_mapper
 
 try: sqlalchemy.orm.Mapper._with_polymorphic_mappers
 except:

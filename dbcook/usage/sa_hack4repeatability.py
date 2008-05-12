@@ -100,7 +100,6 @@ def hack4repeat():
     from sqlalchemy.orm import mapperlib
     _mapper_registry = find_valid_fullname_import( '''
         sqlalchemy.orm.mapperlib._mapper_registry
-        sqlalchemy.orm.mapperlib.mapper_registry
     ''',2 )
     assert not _mapper_registry.data
     _mapper_registry.data = DICT()

@@ -67,10 +67,7 @@ class _Base( _static_type.StaticStruct):
 'адаптиране на StaticStruct за (под) sqlAlchemy'
 'adapt StaticStruct for use with (under) sqlAlchemy'
 
-from dbcook.config import _v03
-if _v03: #'AVOID having privately-named __sa_attr_state':
-    from sqlalchemy.orm import mapperlib
-    mapperlib.attribute_manager.init_attr = lambda me: None
+#from dbcook.config import _v04
 
 _static_type.config.notSetYet = None
 _debug = 0*'dict'

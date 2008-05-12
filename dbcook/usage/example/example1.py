@@ -52,8 +52,6 @@ class Director( director_base):
 import sqlalchemy
 import sqlalchemy.orm
 meta = sqlalchemy.MetaData( sqlalchemy.create_engine('sqlite:///', echo= 'echo' in sys.argv ))
-v03 = hasattr( sqlalchemy, 'mapper')
-
 
 # map attr-types to sql-column-types
 fieldtypemap = {
@@ -147,13 +145,11 @@ def test_klas_tree_structure():
         if mapper.polymorphic_sub_only:
             q3 = session.query( klas)
             flt = mapper.polymorphic_sub_only
-            if v03: q3 = q3.select( flt)
+            if isinstance( flt, sqlalchemy.sql.Selectable):
+                q3 = q3.from_statement( flt)
             else:
-                if isinstance( flt, sqlalchemy.sql.Selectable):
-                    q3 = q3.from_statement( flt)
-                else:
-                    q3 = q3.filter( flt)
-                q3 = q3.all()
+                q3 = q3.filter( flt)
+            q3 = q3.all()
             for x in q3: print ' ', x
             for a in q3: assert a.__class__ != klas and isinstance( a, klas)
         else: q3 = []

@@ -32,10 +32,7 @@ def model(  address_inh ='', #'','c','j'
         DBCOOK_no_mapping = not address_inh
         @property
         def name( me):
-            if dbcook.config._v03:
-                home = 'nohome-v03'
-            else:
-                home = str( get_attrib( me, 'home.num', 'none'))
+            home = str( get_attrib( me, 'home.num', 'none'))
             return str( getattr( me, 'street','none')) +'#'+ home
         street = Text()
         home = Type4Reference( Home)

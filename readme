@@ -10,11 +10,12 @@ repository: svn co https://dbcook.svn.sf.net/svnroot/dbcook/trunk
 http://dbcook.sf.net
 
 If u're interested, have a look, dbcook/usage/example1.py might be a start. 
-The directory-structure is still in flux - to use the framework, 
-the internal dbcook/ has to be accessible somehow (PYTHONPATH or else).
+The directory-structure is still in flux. 
+To use it, the internal dbcook/ has to be accessible somehow (PYTHONPATH or else).
+
 Licensed under MIT-license. Dependencies:
+ * SQLAlchemy, v0.5 or v0.4 series. Support for v0.3 and early-v0.4 is dropped at rev259
  * kjbuckets (from gadfly) for graph-arithmetics
- * SQLAlchemy, v0.4 series or v0.3.6+? series (auto-guessing)
 
 
 
@@ -26,6 +27,7 @@ a (relational or not) database, completely hiding the DB where possible.
 The "language/syntax" itself is DB-backend independent.
 Currently the available builder is over SQLAlchemy as backend
 (so it looks like another wrapping declarative translator).
+Eventual future backends may include RDFalchemy or other non-SQL data storages.
 
 Usage cases/levels:
  * DB-definition - completely hides/automates the table/ column/ key/ constraint/
@@ -56,6 +58,7 @@ Work started somewhen in october 2006. Now it can handle:
     (concrete/joined/no-single-yet) - defined localy or hierarchicaly;
     beware that sql-polymorphism only works with joined-table for now
  * associations (many-to-many) - implicit and explicit
+ * collections (one-to-many) 
  * dbcook.usage.samanager is a correct context-like keeper of all db-related SQLAlchemy things in
     one place, on destroy() will try hard to clear _all_ side-effects of its existence,
     allowing use of same objects within several/different subsequent DB-mappings.
@@ -88,7 +91,8 @@ for p in expression.query1(
             klas=Person, session=session) ):
 	print p
 
-..... and no mentioning of tables, columns etc whatsoever .....
+..... thats it. and no mentioning of tables, columns etc whatsoever .....
+
 
 So far it is just a library. There is no single way to use it. The directory
 usage/ has 2 possible reflectors (that walk the declared classes and extract 
@@ -104,16 +108,15 @@ SA is used in dbcook is correct/working, and mapper/other which check whether
 the cooker does right thing as result. It still uses makefile to run all stuff.
 
 Some todo's, long- or short- term:
- - a way of declaring collections (one2many: work in progress)
  - some documentation, translate all in both languages
  - tests for all the stuff, systematically in most of combinations
  - expressions.joins need rethinking (upgraded to SA 0.4 ok)
  - generate sql-server-side functions, triggers etc
  - single-table inheritance
- - concrete-polymorphism: polymunion of (type,id) key
+ - concrete-polymorphism: polymunion of (type,id) key - SA doesnot fully do it
  - other reflectors/"syntaxes" - e.g. elixir-like 
- - substructs as value (contained IN the parent class, not a reference 
-     to elsewhere, but still used as x.y)
+ - sub-structures as value (contained IN the parent class, not a reference 
+     to elsewhere, but still used as x.y; think C memory layout)
  - user-notion types for reflector, e.g. aggregators are like a relation
  - caching tables/columns - e.g. aggregators
  - autoload / reverse-engineering / upgrade / migration (see misc/metadata/)
@@ -123,8 +126,9 @@ see dbcook/misc/readme.txt for some usable recipes.
 have fun
 
 svil 
-svilen_dobrev at users point sourceforge point net
-or see me at sqlalchemy's newsgroup - sqlalchemy at googlegroups point com
+svilen_dobrev at users . sourceforge . net
+az at svilendobrev . com
+or see me at sqlalchemy's newsgroup - sqlalchemy at googlegroups . com
 
 ===================
 

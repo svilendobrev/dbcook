@@ -65,7 +65,6 @@ def check( is_auto_set =True, is_reference =True, is_value_default =False, **kar
     s.close()
 
     s = sa.session()
-    #on v03 all this autoset/lazy doesnot work, so no point fixing C.code
     res = s.query( C).filter( C.code == 'alabala' ).all()
     if _debug: print res
     assert len(res) == 1
