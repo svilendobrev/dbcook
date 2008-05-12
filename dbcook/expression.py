@@ -21,7 +21,7 @@ else:
     def joincopy( c): return c._clone()
 
 
-from dbcook.util.attr import find_valid_fullname_import
+from dbcook.util.attr import find_valid_fullname_import, import_fullname
 
 ClauseAdapter = find_valid_fullname_import( '''
     sqlalchemy.sql_util.ClauseAdapter
@@ -39,10 +39,13 @@ _BinaryExpression = find_valid_fullname_import( '''
     sqlalchemy.sql._BinaryExpression
 ''',1 )
 
-if hasattr( sqlalchemy.sql.expression, '_corresponding_column_or_error'):
-    def corresponding_column( tbl, col): return tbl.corresponding_column( col)
+def corresponding_column( tbl, col): return tbl.corresponding_column( col, raiseerr=False)
+try:
+    import_fullname( 'sqlalchemy.sql.expression._corresponding_column_or_error')
+except: pass
 else:
-    def corresponding_column( tbl, col): return tbl.corresponding_column( col, raiseerr=False)
+    def corresponding_column( tbl, col): return tbl.corresponding_column( col)
+#if hasattr( getattr( sqlalchemy.sql, 'expression', None), '_corresponding_column_or_error'):
 
 def prop_get_join( self, parent, primary=True, secondary=True):
     ''' from PropertyLoader.get_join(), no cache, no polymorphic joins '''

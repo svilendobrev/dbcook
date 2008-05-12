@@ -6,6 +6,8 @@ from sqlalchemy.orm import class_mapper
 _fmax = func.max
 
 _debug = 0
+import sqlalchemy
+_v03 = hasattr( sqlalchemy, 'mapper')
 
 def _get_discriminating_clause( klas, aliased_table):
     'needed if polymorphic'
@@ -15,14 +17,14 @@ def _get_discriminating_clause( klas, aliased_table):
     if not discriminator_column: return None
 
     if aliased_table:   #XXX трябва да мине през aliased_table.corresponding_column()
-        #import copy
-        #discriminator_column = copy.copy( discriminator_column)
-        #discriminator_column.table = aliased_table  #XXX is this legitimate use of .table???
         discriminator_column = aliased_table.corresponding_column( discriminator_column)
     #print '\n\nDISC_COL:', discriminator_column, discriminator_column.table
 
-    discriminating_clause = discriminator_column.in_(
-        [m.polymorphic_identity for m in mapper.polymorphic_iterator()])
+    alltypes = [ m.polymorphic_identity for m in mapper.polymorphic_iterator() ]
+    if _v03:
+        discriminating_clause = discriminator_column.in_( *alltypes)
+    else:
+        discriminating_clause = discriminator_column.in_( alltypes)
     return discriminating_clause
 
 def _timed_clause( klas, table, timeTrans, timeValid):
