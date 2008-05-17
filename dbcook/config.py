@@ -68,7 +68,7 @@ class _column4( object):
 class column4ID( _column4):
     'use as column4ID( selectable)'
     name = 'db_id'
-    typemap = dict( type= sqlalchemy.Integer, primary_key =True)
+    typemap = dict( type= sqlalchemy.Integer, primary_key= True)
 
     special_reference_ext = '_id'
     special_back_reference_ext = '_back'
@@ -84,6 +84,27 @@ class column4ID( _column4):
     @classmethod
     def backref_make_name( klas, parent_klas, name):
         return name + '_' + parent_klas.__name__ + klas.special_back_reference_ext
+
+    #XXX e.g. postgres does not want nulls in a primarykey composed of foreignkeys
+    #XXX the default value must exist (stub record?) else the foreignkeys constraint fails
+    typemap4pkfk = dict( default= 0, autoincrement= False)
+    '''www.postgresql.org/docs/8.1/interactive/sql-createtable.html
+PRIMARY KEY (column constraint)
+PRIMARY KEY ( column_name [, ... ] ) (table constraint)
+
+    The primary key constraint specifies that a column or columns of a table may
+    contain only unique (non-duplicate), nonnull values. Technically, PRIMARY KEY
+    is merely a combination of UNIQUE and NOT NULL, but identifying a set of
+    columns as primary key also provides metadata about the design of the schema,
+    as a primary key implies that other tables may rely on this set of columns as a
+    unique identifier for rows.
+
+    Only one primary key can be specified for a table, whether as a column
+    constraint or a table constraint.
+
+    The primary key constraint should name a set of columns that is different from
+    other sets of columns named by any unique constraint defined for the same
+    table. '''
 
 class column4type( _column4):
     'use as column4type( selectable)'

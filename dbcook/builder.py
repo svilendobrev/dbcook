@@ -275,6 +275,8 @@ def make_table_column4id_fk( column_name, other_klas,
 
 def make_table_column4struct_reference( klas, attrname, attrklas, mapcontext, **column_kargs):
 #    print '  as_reference', attrname,attrklas
+    if column_kargs.get( 'primary_key'):
+        column_kargs.update( column4ID.typemap4pkfk)
     c = make_table_column4id_fk(
             column4ID.ref_make_name( attrname),
             other_klas = attrklas,
