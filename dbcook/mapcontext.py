@@ -105,7 +105,7 @@ class MappingContext:
         return bool( DBCOOK_has_instances)
 
     def needs_id( me, klas):
-        return getattr_local_instance_only( klas, 'DBCOOK_needs_id', False)
+        return getattr_local_instance_only( klas, 'DBCOOK_needs_id', None)
 
     def uniques( me, klas):
         'list of lists of (column-names or columns  (having .name) )'

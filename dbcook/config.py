@@ -87,7 +87,7 @@ class column4ID( _column4):
 
     #XXX e.g. postgres does not want nulls in a primarykey composed of foreignkeys
     #XXX the default value must exist (stub record?) else the foreignkeys constraint fails
-    typemap4pkfk = dict( default= 0, autoincrement= False)
+    #typemap4pkfk = dict( autoincrement= False)  #default= 0,
     '''www.postgresql.org/docs/8.1/interactive/sql-createtable.html
 PRIMARY KEY (column constraint)
 PRIMARY KEY ( column_name [, ... ] ) (table constraint)

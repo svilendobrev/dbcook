@@ -265,10 +265,11 @@ def make_table_column4id_fk( column_name, other_klas,
             )
     if dbg: print '  foreignkey', column_name, column_kargs, fk, fk_kargs
 
-    if column_kargs.get( 'nullable'): column_kargs['autoincrement'] = False
+    #if column_kargs.get( 'nullable'): column_kargs['autoincrement'] = False
     c = sa.Column( column_name,
                 type,
                 fk,     #must be in *args
+                autoincrement= False,       #meaningless, regardless nullable or not
                 **column_kargs  #typemap_kargs
             )
     if dbg: print '    = ', repr(c)
@@ -276,8 +277,8 @@ def make_table_column4id_fk( column_name, other_klas,
 
 def make_table_column4struct_reference( klas, attrname, attrklas, mapcontext, **column_kargs):
 #    print '  as_reference', attrname,attrklas
-    if column_kargs.get( 'primary_key') and column_kargs.get( 'nullable'):
-        column_kargs.update( column4ID.typemap4pkfk)
+    #if column_kargs.get( 'primary_key') and column_kargs.get( 'nullable'):
+    #    column_kargs.update( column4ID.typemap4pkfk)
     c = make_table_column4id_fk(
             column4ID.ref_make_name( attrname),
             other_klas = attrklas,
@@ -351,16 +352,19 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
 
     primary_key = [ c for c in columns if c.primary_key]
     needs_id_primary_key = is_joined_table or mapcontext.needs_id( klas) # needs such, because of being referenced / inherits via joined_table
+    #XXX subtle: mapcontext.needs_id may return None,False,True
     if not primary_key or needs_id_primary_key:
         if dbg: print '  invent primary_key', column4ID.name
+        c = None
         if is_joined_table:
             c = make_table_column4id_fk( column4ID.name, base_klas, **column4ID.typemap)
-        else:
+        elif needs_id_primary_key is not False:     #allow no primary key AND no dbid XXX?
             c = sa.Column( column4ID.name, **column4ID.typemap_() )
-        columns.append( c)
-        if primary_key:     #convert it to just uniq constraint
-            for c in primary_key: c.primary_key = False
-            columns.append( sa.UniqueConstraint( *primary_key) )
+        if c is not None:
+            columns.append( c)
+            if primary_key:     #convert it to just uniq constraint
+                for c in primary_key: c.primary_key = False
+                columns.append( sa.UniqueConstraint( *[d.name for d in primary_key]))
 
     for u in mapcontext.uniques( klas):
         key = [ getattr( c, 'name', c) for c in u ]
