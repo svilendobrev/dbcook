@@ -264,10 +264,11 @@ def make_table_column4id_fk( column_name, other_klas,
                 **fk_kargs
             )
     if dbg: print '  foreignkey', column_name, column_kargs, fk, fk_kargs
+
+    if column_kargs.get( 'nullable'): column_kargs['autoincrement'] = False
     c = sa.Column( column_name,
                 type,
                 fk,     #must be in *args
-                #, nullable= True
                 **column_kargs  #typemap_kargs
             )
     if dbg: print '    = ', repr(c)
@@ -275,7 +276,7 @@ def make_table_column4id_fk( column_name, other_klas,
 
 def make_table_column4struct_reference( klas, attrname, attrklas, mapcontext, **column_kargs):
 #    print '  as_reference', attrname,attrklas
-    if column_kargs.get( 'primary_key'):
+    if column_kargs.get( 'primary_key') and column_kargs.get( 'nullable'):
         column_kargs.update( column4ID.typemap4pkfk)
     c = make_table_column4id_fk(
             column4ID.ref_make_name( attrname),
