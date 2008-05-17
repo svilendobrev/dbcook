@@ -32,13 +32,13 @@ TODO:
             не може да има повече от 2 връзки
                 class myAssocAB( Association):
                     DBCOOK_hidden=True
--       = неявна, необявена
++       = неявна, необявена
             обявява се само в единия край; останалото става служебно
             става скрита (DBCOOK_hidden) - не може да има повече от 2 връзки
             class A:
-                x = Association.Hidden( B, име_отсреща ='')
+                x = Association.Hidden( B, име_отсреща )
                     име_отсреща е на асоциацията от другата страна (B)
--           * възможно служебно име_в_асоциацията
+-           * възможно служебно име_отсреща
 
 
 +       * 2-посочна
@@ -106,7 +106,7 @@ class Association( object):
         typ = klas.Type4Reference( target_klas)
         typ.assoc = _AssocDetails( primary_key= primary_key, nullable= nullable, relation_attr= attr )
         #the klas is typ.typ (or will be after forward-decl-resolving)
-        print 'Link', klas, target_klas, attr, primary_key
+        #print 'Link', klas, target_klas, attr, primary_key
         return typ
 
     @classmethod
@@ -132,21 +132,41 @@ class Association( object):
     def _CollectionFactory( klas):
         m = _AssocDetails.MyCollection()
         m.factory = klas
+        #m.assoc_attr           #assoc side
+        #m.owner, m.owner_attr  #owner side
         return m
 
-if 0:
-    @staticmethod
-    def Hidden( other_side_klas, other_side_attr =''):
-        print 'Hidden Assoc', other_side_klas, '.', other_side_attr
-        class AssocHidden( Association):
-            DBCOOK_hidden = True
-            other = Association.Link( other_side_klas, attr=other_side_attr)
-            #TODO this side???
-            #TODO test
-            #TODO change __name__ - see __name__DYNAMIC
-            #TODO self-add to mappable klasi ???? resolve forward-decl ?
-        return _Relation( AssocHidden)
+    @classmethod
+    def Hidden( klas, other_side_klas, other_side_attr ): #=''
+        #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
+        return _Relation4AssocHidden( (klas, other_side_klas, other_side_attr) )
 
+def resolve_assoc_hidden( builder, klasi):
+    dbg = 'assoc' in config.debug or 'relation' in config.debug
+    news = {}
+    for k,klas in klasi.iteritems():
+        for attr, rel_typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation4AssocHidden, dbg=dbg ):
+            Assoc, other_side_klas, other_side_attr = rel_typ.assoc_klas
+            if dbg: print 'assoc_hidden: ', klas, '.'+attr, '<->', other_side_klas, '.'+other_side_attr
+            class AssocHidden( builder.mapcontext.base_klas, Assoc):
+                DBCOOK_hidden = True
+                other = Assoc.Link( other_side_klas, attr= other_side_attr)
+                this  = Assoc.Link( klas, attr= attr)
+
+            #???? resolve forward-decl ? should work?
+            #TODO test
+
+            rel_typ.assoc_klas = assoc_klas = AssocHidden
+
+            #change __name__ - see __name__DYNAMIC
+            klasname = '_'.join( ('_Assoc', klas.__name__, attr,
+                isinstance( other_side_attr, str) and other_side_attr or other_side_klas.__name__,
+                other_side_attr ))
+            assoc_klas.__name__ = klasname
+
+            #self-add to mappable klasi
+            news[ klasname ] = assoc_klas
+    klasi.update( news)
 
 def is_association_reference( klas, attrtyp, attrklas):
     'used in table-maker'
@@ -208,12 +228,15 @@ available: %(fks)s;
 all foreign_keys: %(foreign_keys)s.
 Check for double-declaration with different names''' % locals()
 
-
+        collection_class = getattr( assoc_klas, '_CollectionFactory', None)
+        #if collection_class:
+        #    c = collection_class
+        #    collection_class = lambda : c( owner=klas, owner_attr=name, assoc_attr= klas)) #klas
         rel_kargs = dict(
                 lazy    = True,
     #           cascade = 'all, delete-orphan',    #DB_hidden-relation does FlushError with this
                 uselist = True,
-                collection_class = getattr( assoc_klas, '_CollectionFactory', None),      #needed if InstrumentedList.append is replaced
+                collection_class = collection_class     #needed if InstrumentedList.append is replaced
             )
         rel_kargs.update( me.rel_kargs)
 
@@ -264,15 +287,21 @@ class _AssocDetails:
 
     #do not pollute Association' namespace
     class MyCollection( list):
+        #owner = None
         factory = None
         @sqlalchemy.orm.collections.collection.internally_instrumented
         def append( me, obj =_Unspecified, **kargs):
-            if obj is _Unspecified: obj = me.factory( **kargs)
+            if obj is _Unspecified:
+                assert len(kargs)>1, 'give all kargs, or maybe use hidden assoc (DBCOOK_hidden=true)'
+                obj = me.factory( **kargs)
+            if not me.factory.DBCOOK_hidden:
+                assert isinstance( obj, me.factory), 'give premade %r object, or maybe use hidden assoc (DBCOOK_hidden=true)' % me.factory
             me._append( obj)
             return obj
         @sqlalchemy.orm.collections.collection.appender
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
+class _Relation4AssocHidden( _Relation): pass
 
 ##############################
 

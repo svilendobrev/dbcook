@@ -586,7 +586,9 @@ class Builder:
         namespace = walkklas.walker( namespace, reflector, base_klas)
 
         me._loadklasi( namespace)
+        relation.resolve_assoc_hidden( me, me.klasi)
         reflector._resolve_forward_references( me.klasi, base_klas)
+
         if force_ordered:
             klasi= me.klasi
             keys = klasi.keys()
