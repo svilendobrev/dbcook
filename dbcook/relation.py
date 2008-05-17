@@ -55,7 +55,8 @@ from util.attr import getattr_local_class_only
 
 def _associate( klas, attrklas, assoc_details, column):
     dbg = 'relation' in config.debug
-    if not assoc_details.primary_key: return
+    #XXX removed? if not assoc_details.primary_key: return
+
     relation_attr = assoc_details.relation_attr
     if dbg:
         print 'relate parent:', attrklas, 'to child:', klas
@@ -95,7 +96,7 @@ class Association( object):
     '''
     __slots__ = ()
     DBCOOK_no_mapping = True
-    #DB_NO_ID = True    #XXX db_id is a must only if table is referred
+    #DBCOOK_needs_id= True    #XXX db_id is a must only if table is referred
     #DBCOOK_unique_keys= ...  #primary key consist of which fields; all by default
     DBCOOK_hidden = False
 
@@ -149,7 +150,7 @@ class Association( object):
     def walk_links( klas):
         for attr,typ in klas.reflector.attrtypes_iteritems( klas):
             assoc_details = getattr( typ, 'assoc', None)
-            if assoc_details and assoc_details.primary_key:
+            if assoc_details: # and assoc_details.primary_key:
                 yield attr,typ
 
     @classmethod
@@ -191,8 +192,8 @@ def is_association_reference( klas, attrtyp, attrklas):
     column_func = None
     if issubclass( klas, Association):
         assoc_details = getattr( attrtyp, 'assoc', None)
-        if assoc_details and assoc_details.primary_key:
-            column_kargs = dict( primary_key= True, nullable= assoc_details.nullable )
+        if assoc_details: # and assoc_details.primary_key:
+            column_kargs = dict( primary_key= assoc_details.primary_key, nullable= assoc_details.nullable )
             column_func = lambda column: _associate( klas, attrklas, assoc_details, column)
     return column_kargs, column_func
 

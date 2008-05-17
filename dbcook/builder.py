@@ -293,6 +293,7 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
     dbg = 'column' in config.debug
     if dbg: print 'make_table_columns', klas, name_prefix
     columns = []
+    id_columns = set()
 
     reflector = mapcontext.reflector
     base_klas, inheritype = mapcontext.base4table_inheritance( klas)
@@ -317,6 +318,7 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
                 c = make_table_column4struct_reference( klas, k, attrklas, mapcontext, **assoc_kargs)
                 if assoc_columner: assoc_columner(c)
                 columns.append( c)
+                id_columns.add( k)
             else:   #inline_inside_table/embedded
                 #... разписване на колоните на подструктурата като колони тука
                 if dbg: print '  as_value', k,typ
@@ -362,6 +364,7 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
 
     for u in mapcontext.uniques( klas):
         key = [ getattr( c, 'name', c) for c in u ]
+        key = [ (k in id_columns and column4ID.ref_make_name( k) or k) for k in key ]
         columns.append( sa.UniqueConstraint( *key) )
 
     ## check for duplicate column-names/constraint-names
