@@ -229,6 +229,8 @@ class Base( _Base):
             '_instance_key',
             '_entity_name',
 
+            #'_foostate',    #0.5
+
             _noInstanceState and '_my_state' or '_state',
             '_my_sa_stuff',
     ]
@@ -276,6 +278,7 @@ class Collection( builder.relation.Collection):
 Reference = Type4Reference
 Type = _static_type.StaticType
 reflector = Reflector4StaticType()
+Association.reflector = Collection.reflector = reflector
 
 def setup( s):
     s.reflector = reflector
@@ -365,7 +368,8 @@ if __name__ == '__main__':
     for klas in [Employee, Engineer, Manager, Hacker, Dept]:
         for q in [ sa.query_ALL_instances, sa.query_BASE_instances, sa.query_SUB_instances]:
             print '====', klas, q.__name__
-            r = list( q( session, klas ) )
+            #r = session.query( klas)
+            r = q( session, klas ).all()
             if not r: print r
             else:
                 for a in r: print a

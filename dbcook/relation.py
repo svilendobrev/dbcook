@@ -100,6 +100,8 @@ class Association( object):
     DBCOOK_hidden = False
 
     Type4Reference = None
+    reflector = None
+
     @classmethod
     def Link( klas, target_klas, attr =None, primary_key =True, nullable =False):
         '''declaration of link to target_klas, aware of being part of association'''
@@ -111,13 +113,15 @@ class Association( object):
 
     @classmethod
     def _is_valid( klas):
-        for k in dir( klas):
-            if not k.startswith( '__') and hasattr( getattr( klas, k), 'assoc'):
-                return True     #has at least 1 Link
+        for attr,typ in klas.walk_links():
+            return True     #has at least 1 Link
+        #for k in dir( klas):
+        #    if not k.startswith( '__') and hasattr( getattr( klas, k), 'assoc'):
+        #        return True     #has at least 1 Link
         return False
 
     @classmethod
-    def Relation( klas, intermediate_klas= None):       #XXX kargs?
+    def Relation( klas, intermediate_klas =None):       #XXX kargs?
         '''storage (declaration) of association arguments for
         intermediate_klas for the end-obj-klas where this is declared'''
 
@@ -140,6 +144,19 @@ class Association( object):
     def Hidden( klas, other_side_klas, other_side_attr ): #=''
         #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
         return _Relation4AssocHidden( (klas, other_side_klas, other_side_attr) )
+
+    @classmethod
+    def walk_links( klas):
+        for attr,typ in klas.reflector.attrtypes_iteritems( klas):
+            assoc_details = getattr( typ, 'assoc', None)
+            if assoc_details and assoc_details.primary_key:
+                yield attr,typ
+
+    @classmethod
+    def find_links( klas, parent_klas):  #, parent_name):
+        for attr,typ in klas.walk_links():
+            if typ.typ is parent_klas:#... and attr
+                yield attr
 
 def resolve_assoc_hidden( builder, klasi):
     dbg = 'assoc' in config.debug or 'relation' in config.debug
@@ -403,7 +420,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
             m.add_property( name, sa_relation_factory( rel_klas_actual, **rel_kargs) )
             relations[ name ] = rel_klas
 
-        if relations:       #винаги ли е нужно? май тр€бва само при изрично поискване
+        if relations:
             klas._DBCOOK_relations = relations
 
 

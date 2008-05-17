@@ -99,9 +99,11 @@ class Base( object):
 
 class Association( builder.relation.Association):
     Type4Reference = Type4Reference
+    reflector = reflector
 
 class Collection( builder.relation.Collection):
     Type4Reference = Type4Reference
+    reflector = reflector
 
 
 def setup( s):
