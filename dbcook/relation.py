@@ -70,14 +70,14 @@ def _associate( klas, attrklas, assoc_details, column):
     link = (klas, relation_attr)
     if link in links:
         assert 0, 'duplicate definition of assoc_link %(klas)s.%(relation_attr)s to %(attrklas)s' % locals()
-    links.add( (klas, relation_attr) )
+    links.add( link )
 
     ### collect foreign_keys
     try: foreign_keys = klas.foreign_keys
     except AttributeError: foreign_keys = klas.foreign_keys = {}
 
     kk = foreign_keys.setdefault( attrklas, {} )
-    key = assoc_details.relation_attr
+    key = relation_attr
 
     if key is not None:
         assert key not in kk, '''duplicate/ambigious association to %(attrklas)s in %(klas)s; specify attr=<assoc_relation_attr> explicitly''' % locals()
@@ -122,7 +122,7 @@ class Association( object):
         return False
 
     @classmethod
-    def Relation( klas, intermediate_klas =None):       #XXX kargs?
+    def Relation( klas, intermediate_klas =None, **kargs):
         '''storage (declaration) of association arguments for
         intermediate_klas for the end-obj-klas where this is declared'''
 
@@ -131,7 +131,7 @@ class Association( object):
         if not isinstance( klas, str):
             assert issubclass( klas, Association)
             assert klas._is_valid(), '''empty Association %(klas)r - specify .Relation argument, or add .Links of this''' % locals()
-        return _Relation( klas)
+        return _Relation( klas, **kargs)
 
     @classmethod
     def _CollectionFactory( klas):
@@ -327,7 +327,7 @@ class Collection( _Relation):
     '''define one2many relations - in the 'one' side of the relation
     (parent-to-child/ren relations in terms of R-DBMS).
     '''
-    __slots__ = [ 'backref', 'backrefname' ]
+    __slots__ = [ 'backrefname' ]
 
     def __init__( me, child_klas,
                     backref =None,   #backref name or dict( name, **rel_kargs)
@@ -337,6 +337,15 @@ class Collection( _Relation):
             backref = dict( name= backref)
         _Relation.__init__( me, child_klas, backref, rel_kargs)
         me.backrefname = None   #decided later
+    def setup_backref( me, parent_klas, parent_attr):
+        from config import column4ID
+        backref = me.backref
+        if backref:
+            backrefname = backref[ 'name']
+        else:
+            backrefname = column4ID.backref_make_name( parent_klas, parent_attr)
+        me.backrefname = backrefname
+        return backrefname
 
 def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtractor ):
     dbg = 'relation' in config.debug
