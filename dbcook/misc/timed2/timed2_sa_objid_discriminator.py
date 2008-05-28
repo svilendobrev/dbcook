@@ -27,8 +27,7 @@ def _timed_clause( klas, table, timeTrans, timeValid):
     t=table
     return (  (t.c.time_trans <= timeTrans)
             & (t.c.time_valid <= timeValid)
-            #& _get_discriminating_clause( klas, t)       #seems needed but not proven by test
-            )
+            & _get_discriminating_clause( klas, t) )     #seems needed but not proven by test
 
 def get_time_clause( klas,  time,
             basemost_table, time2key_valid_trans,
@@ -76,7 +75,7 @@ object(s) from other klas with same obj_id and time_valid > blake.time_valid
                 ttt.c.time_valid.label('time_valid'),
                 ttt.c.obj_id.label('obj_id')
             ],
-            #_get_discriminating_clause( klas, tbl),
+            _get_discriminating_clause( klas, tbl),
             from_obj= [ ttt.join( s1,
                               (ttt.c.obj_id == s1.c.obj_id)
                             & (ttt.c.time_trans == s1.c.time_trans)
@@ -93,7 +92,7 @@ object(s) from other klas with same obj_id and time_valid > blake.time_valid
 
 def get_time_range_clause( klas, obj_id, timeFrom, timeTo,
             basemost_table, time2key_valid_trans,
-            lastver_only_if_same_time =True, db_id_name ='id'
+            group =True, db_id_name ='id'
         ):
     timeValidFrom, timeTrans = time2key_valid_trans( timeFrom)
     timeValidTo, timeTrans   = time2key_valid_trans( timeTo)
@@ -102,14 +101,14 @@ def get_time_range_clause( klas, obj_id, timeFrom, timeTo,
     tbl = basemost_table
     discriminating_clause = _get_discriminating_clause( klas, tbl)
     t = tbl #.alias('t')
-    obj_clause = (t.c.obj_id == obj_id) #& discriminating_clause
+    obj_clause = (t.c.obj_id == obj_id) & discriminating_clause
     where_clause = ( (t.c.time_trans <= timeTrans)
                    & (t.c.time_valid >= timeValidFrom)
                    & (t.c.time_valid <= timeValidTo)
                    & obj_clause)
 
-    if _debug: print '\nGROUP:', lastver_only_if_same_time
-    if not lastver_only_if_same_time:
+    if _debug: print '\nGROUP:', group
+    if not group:
         return where_clause
 
     s = select( [
@@ -176,44 +175,22 @@ def _hack_columns( q_ignored, time_stmt, with_valid =False, with_disabled =False
     return time_stmt
 
 def get_all_objects_by_time( klas, query4klas, time, with_disabled =False, **kargs4timeclause):
-    old=0
-    if old:
-        time_stmt = get_time_clause( klas, time, **kargs4timeclause)
-        if _debug: print 'get_all_objects_by_time clause:', time_stmt
-            #klas.debug_statement( time_stmt)
-        q = query4klas
-        time_stmt = _hack_columns( q, time_stmt, with_disabled= with_disabled)
-        q = q.filter( time_stmt)
-        if _debug: klas.debug_statement( q, 'full2timed stmt')
-        #TODO .order_by( ime) if exist ime
-        #print 'QQQQQQQQQQQQ', q
-    if not old:
-        from kadri.time1query import get_all_objects_by_time
-        q = get_all_objects_by_time( klas, query4klas, time, with_disabled, **kargs4timeclause)
-        #print 'RRRRRRRRRRRRRRRRRRRR', q
+    time_stmt = get_time_clause( klas, time, **kargs4timeclause)
+    if _debug: print 'get_all_objects_by_time clause:', time_stmt
+        #klas.debug_statement( time_stmt)
+    q = query4klas
+    time_stmt = _hack_columns( q, time_stmt, with_disabled= with_disabled)
+    q = q.filter( time_stmt)
+    if _debug: klas.debug_statement( q, 'full2timed stmt')
+    #TODO .order_by( ime) if exist ime
     return q
 
 def get_obj_history_in_timerange( klas, query4klas,  obj_id, timeFrom, timeTo, **kargs4timeclause):
-    old=0
-    dbg=0
-    if old:
-        time_stmt = get_time_range_clause( klas, obj_id, timeFrom, timeTo, **kargs4timeclause)
-        q = query4klas
-        (time_stmt, valid_col) = _hack_columns( q, time_stmt, with_valid= True)
-        q = q.filter( time_stmt)
-        if valid_col: q = q.order_by( [valid_col])  #TODO this always
-        if dbg:
-            print 'QQQQQQQQQQQQQQQQQQQ', q
-            for a in q._clone(): print a
-            print '-----------'
-    if not old:
-        from kadri.time1query import get_obj_history_in_timerange
-        q = get_obj_history_in_timerange( klas, query4klas, obj_id, timeFrom, timeTo, **kargs4timeclause)
-        if dbg:
-            print 'RRRRRRRRRRRRRRRRRRR', q
-            for a in q._clone(): print a
-            print '-----------'
-
+    time_stmt = get_time_range_clause( klas, obj_id, timeFrom, timeTo, **kargs4timeclause)
+    q = query4klas
+    (time_stmt, valid_col) = _hack_columns( q, time_stmt, with_valid= True)
+    q = q.filter( time_stmt)
+    if valid_col: q = q.order_by( [valid_col])  #TODO this always
     return q
 
 # vim:ts=4:sw=4:expandtab

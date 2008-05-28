@@ -1,4 +1,5 @@
 #$Id$
+now: ../timed_sa.test
 now: test_timed_dbcook.test
 
 PP=..:../../../..:../../..:$(PYTHONPATH)

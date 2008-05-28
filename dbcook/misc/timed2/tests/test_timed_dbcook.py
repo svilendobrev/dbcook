@@ -10,8 +10,8 @@ when obj is alone in the table/collection. These must be tested with simple and 
 klasses
 
 subject under test:
-    allInstances/get_all_objects_by_time
-    get_obj_history_in_range
+    allInstances/get_allobj_lastversion
+    get_version_history
 '''
 import timed.tests.test_base as satest
 
@@ -141,7 +141,7 @@ class Timed_Wrapper( Timed_Wrapper4Disabled):
         res = [ getattr( each, 'val', each) for each in q ] or None
         return res
     def _get_range_val( me, timeFrom, timeTo, **kargs):
-        q = me.val.get_obj_history_in_range( me.val.OBJ_ID, timeFrom, timeTo).all()
+        q = me.val.get_version_history( me.val.OBJ_ID, timeFrom, timeTo).all()
         return [ getattr( each, 'val', each) for each in q ]
     def _put_val( me, value, time):
         return me.val.put( value, time)

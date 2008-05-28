@@ -3,7 +3,6 @@
 '''Timed2 aspect'''
 
 import config
-#import timed2_sa_objid_discriminator as timed2
 import timed_sa as timed2
 
 class Timed2Mixin( config.BaseClass4Mixin):
@@ -20,68 +19,83 @@ class Timed2Mixin( config.BaseClass4Mixin):
     time_trans  = config.TransTimeType()
 
     #config
-    rootTable           = classmethod( config.rootTable)
+    rootTable           = classmethod( config.rootTable)        #needed only for timed2_sa_objid_discriminator
     defaultTimeContext  = classmethod( config.defaultTimeContext)
     now = config.now
     #eo config
 
     @classmethod
-    def get_obj_by_time( klas, obj_id, time =None, with_disabled =False ):
-        if time is None: time = klas.defaultTimeContext()
+    def get_version_last( klas, obj_id =None, time =None,
+            #timeFrom =None,
+            with_disabled =False
+        ):
+        'returns ONE objects (or None) if single obj_id specified; else returns many objects'
+
         query4klas = klas.allInstances_basic()
-        if config.runtime.notimed:  #shunt4testing
-            raise NotImplementedError
-            q = query4klas.filter_by( obj_id=obj_id)
-            if not with_disabled: q = q.filter( ~klas.disabled )
-            return q.order_by( klas.db_id.desc() ).first()
-        return timed2.get_obj_by_time( klas, query4klas,
-                        obj_id, time,
+        if config.runtime.notimed: return query4klas    #shunt4testing  - not proper
+        if time is None: time = klas.defaultTimeContext()
+        return timed2.get_lastversion( klas, query4klas,
+                        obj_id=obj_id, time=time,
                         with_disabled= with_disabled,
                         time2key_valid_trans= klas.time2key_valid_trans,
+                        dbid_attr= config.db_id_name,
                 )
+    get_obj_lastversion = get_version_last
 
     @classmethod
-    def allInstances( klas, time= None, with_disabled =False):
-        if time is None: time = klas.defaultTimeContext()
-        query4klas = klas.allInstances_basic()
-        if config.runtime.notimed: return query4klas    #shunt4testing
-        return timed2.get_all_objects_by_time( klas, query4klas,
-                        time,
-                        with_disabled= with_disabled,
-                        basemost_table= klas.rootTable(),
-                        time2key_valid_trans= klas.time2key_valid_trans,
-                        db_id_name = config.db_id_name
-                )
-    if 0:
-        @classmethod
-        def get_time_clause( klas, time= None):
-            if time is None: time = klas.defaultTimeContext()
-            if config.runtime.notimed: return None    #shunt4testing
-            assert issubclass( klas, config.BaseClass4check), klas
+    def get_allobj_lastversion( klas, time= None, with_disabled =False):
+        old=0
+        if old:
             query4klas = klas.allInstances_basic()
-            return timed2.get_time_clause( klas,
-                            time,
-                            basemost_table= klas.rootTable(),
-                            time2key_valid_trans= klas.time2key_valid_trans,
-                            db_id_name = config.db_id_name
-                        )
+            if config.runtime.notimed: return query4klas    #shunt4testing  - not proper
+            if time is None: time = klas.defaultTimeContext()
+            from timed2_sa_objid_discriminator import get_all_objects_by_time
+            return get_all_objects_by_time( klas, query4klas,
+                    time,
+                    with_disabled= with_disabled,
+                    basemost_table= klas.rootTable(),
+                    time2key_valid_trans= klas.time2key_valid_trans,
+                    db_id_name= config.db_id_name
+                )
+        return klas.get_version_last( None, time= time, with_disabled= with_disabled)
+    allInstances = get_allobj_lastversion
 
     @classmethod
-    def get_obj_history_in_range( klas, obj_id, timeFrom= None, timeTo= None, lastver_only_if_same_time =True, times_only =False):
+    def get_version_history( klas, obj_id =None, timeFrom= None, timeTo= None,
+            with_disabled =False,
+            lastver_only_if_same_time =True,
+            times_only =False
+        ):
+        'always returns many objects'
+
+        if config.runtime.notimed: return None    #shunt4testing
         if timeFrom is None:
             timeTo = timeFrom = klas.defaultTimeContext()
-        if config.runtime.notimed: return None    #shunt4testing
         assert issubclass( klas, config.BaseClass4check), klas
         query4klas = klas.allInstances_basic()
-        return timed2.get_obj_history_in_timerange( klas, query4klas,
+
+        old=0
+        if old:
+            from timed2_sa_objid_discriminator import get_obj_history_in_timerange
+            return get_obj_history_in_timerange( klas, query4klas,
+                    obj_id, timeFrom, timeTo,
+                    #with_disabled= with_disabled,
+                    group= lastver_only_if_same_time,
+                    basemost_table= klas.rootTable(),
+                    time2key_valid_trans= klas.time2key_valid_trans,
+                    db_id_name= config.db_id_name
+                )
+
+        return timed2.get_history( klas, query4klas,
                         obj_id, timeFrom, timeTo,
+                        with_disabled= with_disabled,
                         lastver_only_if_same_time= lastver_only_if_same_time,
-                        basemost_table= klas.rootTable(),
                         time2key_valid_trans= klas.time2key_valid_trans,
-                        db_id_name = config.db_id_name,
+                        dbid_attr= config.db_id_name,
 
                         times_only = times_only
                 )
+    get_obj_history = get_version_history
 
     def key_valid_trans2time( tkey):
         timeValid, timeTrans = tkey
