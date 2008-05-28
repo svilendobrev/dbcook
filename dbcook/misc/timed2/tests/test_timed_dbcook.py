@@ -7,12 +7,11 @@ this must test all additional aspects of bitemporal behaviour in "real database"
         between 2 certain TimeContexts - from to
 it uses more basic testing data from engine/timed that tests only bitemporal behavior by its one
 when obj is alone in the table/collection. These must be tested with simple and with polymorphic
-klasses. Supposes that simple db aspects as allinstances_basic are working perfectly.
+klasses
 
 subject under test:
-    def get_time_clause( klas, time= defaultTimeContext(), only_value =True):
-    def get_obj_history_in_range( klas, obj_id, timeFrom= defaultTimeContext(),
-            timeTo= defaultTimeContext(), group =True):
+    allInstances/get_all_objects_by_time
+    get_obj_history_in_range
 '''
 import timed.tests.test_base as satest
 

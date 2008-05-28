@@ -3,7 +3,8 @@
 '''Timed2 aspect'''
 
 import config
-import timed2_sa_objid_discriminator as timed2
+#import timed2_sa_objid_discriminator as timed2
+import timed_sa as timed2
 
 class Timed2Mixin( config.BaseClass4Mixin):
     ''' requires the following fields in the database model object:
@@ -11,7 +12,7 @@ class Timed2Mixin( config.BaseClass4Mixin):
         obj_id: distinguishes between different objects
         time_valid: time(stamp) of start of validity of the object - usually user-filled with default from the clock
         time_trans: time(stamp) of transaction - usually comes directly from the clock
-       requires allInstances_basic() method
+       requires allInstances_basic() method as a query to start with
     '''
     __slots__ = ()
 
@@ -25,6 +26,21 @@ class Timed2Mixin( config.BaseClass4Mixin):
     #eo config
 
     @classmethod
+    def get_obj_by_time( klas, obj_id, time =None, with_disabled =False ):
+        if time is None: time = klas.defaultTimeContext()
+        query4klas = klas.allInstances_basic()
+        if config.runtime.notimed:  #shunt4testing
+            raise NotImplementedError
+            q = query4klas.filter_by( obj_id=obj_id)
+            if not with_disabled: q = q.filter( ~klas.disabled )
+            return q.order_by( klas.db_id.desc() ).first()
+        return timed2.get_obj_by_time( klas, query4klas,
+                        obj_id, time,
+                        with_disabled= with_disabled,
+                        time2key_valid_trans= klas.time2key_valid_trans,
+                )
+
+    @classmethod
     def allInstances( klas, time= None, with_disabled =False):
         if time is None: time = klas.defaultTimeContext()
         query4klas = klas.allInstances_basic()
@@ -36,22 +52,22 @@ class Timed2Mixin( config.BaseClass4Mixin):
                         time2key_valid_trans= klas.time2key_valid_trans,
                         db_id_name = config.db_id_name
                 )
+    if 0:
+        @classmethod
+        def get_time_clause( klas, time= None):
+            if time is None: time = klas.defaultTimeContext()
+            if config.runtime.notimed: return None    #shunt4testing
+            assert issubclass( klas, config.BaseClass4check), klas
+            query4klas = klas.allInstances_basic()
+            return timed2.get_time_clause( klas,
+                            time,
+                            basemost_table= klas.rootTable(),
+                            time2key_valid_trans= klas.time2key_valid_trans,
+                            db_id_name = config.db_id_name
+                        )
 
     @classmethod
-    def get_time_clause( klas, time= None):
-        if time is None: time = klas.defaultTimeContext()
-        if config.runtime.notimed: return None    #shunt4testing
-        assert issubclass( klas, config.BaseClass4check), klas
-        query4klas = klas.allInstances_basic()
-        return timed2.get_time_clause( klas,
-                        time,
-                        basemost_table= klas.rootTable(),
-                        time2key_valid_trans= klas.time2key_valid_trans,
-                        db_id_name = config.db_id_name
-                    )
-
-    @classmethod
-    def get_obj_history_in_range( klas, obj_id, timeFrom= None, timeTo= None, group =True):
+    def get_obj_history_in_range( klas, obj_id, timeFrom= None, timeTo= None, lastver_only_if_same_time =True, times_only =False):
         if timeFrom is None:
             timeTo = timeFrom = klas.defaultTimeContext()
         if config.runtime.notimed: return None    #shunt4testing
@@ -59,10 +75,12 @@ class Timed2Mixin( config.BaseClass4Mixin):
         query4klas = klas.allInstances_basic()
         return timed2.get_obj_history_in_timerange( klas, query4klas,
                         obj_id, timeFrom, timeTo,
-                        group= group,
+                        lastver_only_if_same_time= lastver_only_if_same_time,
                         basemost_table= klas.rootTable(),
                         time2key_valid_trans= klas.time2key_valid_trans,
-                        db_id_name = config.db_id_name
+                        db_id_name = config.db_id_name,
+
+                        times_only = times_only
                 )
 
     def key_valid_trans2time( tkey):
