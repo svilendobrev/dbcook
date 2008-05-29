@@ -115,7 +115,7 @@ class Association( object):
     @classmethod
     def _is_valid( klas):
         n=0
-        for attr,typ in klas.walk_links():
+        for whatever in klas.walk_links():
             n+=1
         return n>=1 #has at least 1 Link
         #for k in dir( klas):
@@ -145,17 +145,19 @@ class Association( object):
         return _Relation4AssocHidden( (klas, other_side_klas, other_side_attr) )
 
     @classmethod
-    def walk_links( klas):
-        for attr,typ in klas.reflector.attrtypes_iteritems( klas):
-            assoc_details = getattr( typ, 'assoc', None)
-            if assoc_details: # and assoc_details.primary_key:
-                yield attr,typ
+    def walk_links( klas ):
+        for attr,typ in klas.reflector.attrtypes( klas).iteritems():
+            is_substruct = klas.reflector.is_reference_type( typ)
+            if is_substruct:
+                assoc_details = getattr( typ, 'assoc', None)
+                if assoc_details: # and assoc_details.primary_key:
+                    yield attr, is_substruct['klas']
 
     @classmethod
     def find_links( klas, parent_klas):  #, parent_name):
-        for attr,typ in klas.walk_links():
-            if typ.typ is parent_klas:#... and attr
-                yield attr
+        for l_attr,l_klas in klas.walk_links():
+            if l_klas is parent_klas: #... and l_attr
+                yield l_attr
 
 def resolve_assoc_hidden( builder, klasi):
     dbg = 'assoc' in config.debug or 'relation' in config.debug
@@ -454,25 +456,26 @@ class get_class_of_relation( object):
         get_class_of_relation.parent(x) #=== .reference
         '''
     @staticmethod
-    def child( klas_attr_or_klas, attr =None):
+    def _klas_attr( klas_attr_or_klas, attr =None):
+        if attr is not None: return getattr( klas_attr_or_klas, attr)
+        return klas_attr_or_klas
+
+    @classmethod
+    def child( me, klas_attr_or_klas, attr =None):
         'get_child_class'
-        if attr is not None: klas_attr = getattr( klas_attr_or_klas, attr)
-        else: klas_attr = klas_attr_or_klas
+        klas_attr = me._klas_attr( klas_attr_or_klas, attr )
         return klas_attr.impl.collection_factory().factory
         #return parent_klas._DBCOOK_relations[ attr]   #needs flatening from all the inh-classes
 
-    @staticmethod
-    def reference( klas_attr_or_klas, attr =None):
+    @classmethod
+    def reference( me, klas_attr_or_klas, attr =None):
         'get_parent_class'
-        if attr is not None: klas_attr = getattr( klas_attr_or_klas, attr)
-        else: klas_attr = klas_attr_or_klas
+        klas_attr = me._klas_attr( klas_attr_or_klas, attr )
         return klas_attr.property.mapper.class_
     parent = reference
 
-    @staticmethod
-    def otherside( klas_attr_or_klas, attr =None):
-        if attr is not None: klas_attr = getattr( klas_attr_or_klas, attr)
-        else: klas_attr = klas_attr_or_klas
+    def otherside( me, klas_attr_or_klas, attr =None):
+        klas_attr = me._klas_attr( klas_attr_or_klas, attr )
         prop = getattr( klas_attr, 'property', None)
         if prop is not None: #parent - ref2one ... or isinstance???
             return prop.mapper.class_
@@ -480,7 +483,69 @@ class get_class_of_relation( object):
         impl = getattr( klas_attr, 'impl', None)
         assert impl is not None, 'not a relation klas_attr: %(klas_attr)r' % locals()
         return impl.collection_factory().factory
-    def __new__( selfklas, *args, **kargs):
-        return selfklas.otherside( *args, **kargs)
+    __new__ = otherside
+    otherside = classmethod( otherside)
+
+class about_relation( object):
+    __slots__ = ( '_klas_attr', 'class_', 'name' )
+    '''use as
+        get_class_of_relation(x)        #=== .otherside(x)
+        get_class_of_relation.otherside(x)
+        get_class_of_relation.child(x)
+        get_class_of_relation.reference(x)
+        get_class_of_relation.parent(x) #=== .reference
+        '''
+    @staticmethod
+    def _child_name( klas_attr):
+        return klas_attr.impl.xxxx
+    @staticmethod
+    def _child_class( klas_attr):
+        return klas_attr.impl.collection_factory().factory
+    @staticmethod
+    def _parent_name( klas_attr):
+        return list[ klas_attr.property.remote_side ][0].key    #column-name! not attr-name
+    @staticmethod
+    def _parent_class( klas_attr):
+        return klas_attr.property.mapper.class_
+
+    def __init__( me, klas_attr_or_klas, attr =None):
+        if attr is not None: me._klas_attr = getattr( klas_attr_or_klas, attr)
+        else: me._klas_attr = klas_attr_or_klas
+
+    @property
+    def child( me):
+        klas_attr = me._klas_attr
+        me.class_ = me._child_class( klas_attr)
+        me.name   = me._child_name( klas_attr)
+        return me
+        #return parent_klas._DBCOOK_relations[ attr]   #needs flatening from all the inh-classes
+
+    @property
+    def parent( me):
+        'get_parent_class'
+        klas_attr = me._klas_attr
+        #klas_attr.impl.class_ is  klas - thisside
+        #klas_attr.impl.key    is  klas.attr name - thisside
+        #print  prop._reverse_property - needs backref
+        #print  prop._reverse_property.impl.key  - otherside name, needs backref
+        #print  prop.backref.key  - otherside attrname, needs backref
+        # prop.remote_side - otherside , set of columns
+        me.class_ = me._parent_class( klas_attr)
+        me.name   = me._parent_name( klas_attr)
+        return me
+    reference = parent
+
+    @property
+    def otherside( me):
+        try:
+            return me.parent
+        except AttributeError:
+            try:
+                return me.child
+            except AttributeError:
+                assert 0, 'not a relation klas_attr: '+ repr( me._klas_attr)
+
+    def parent_name( me):
+        return me._parent_name( me._klas_attr)
 
 # vim:ts=4:sw=4:expandtab

@@ -21,16 +21,27 @@ from dbcook import builder
 table_inheritance_types = builder.table_inheritance_types
 
 class Reflector4StaticType( builder.Reflector):
-    def attrtypes_iteritems( me, klas):     return klas.StaticType.itertypes()  #name,type
-    def attrtypes_iterkeys( me, klas):      return klas.StaticType.iterkeys()
-    def attrtypes_itervalues( me, klas):    return klas.StaticType.itervalues()
-    def attrtypes_hasattr( me, klas, attr): return attr in klas.StaticType
-    def type_is_collection( me, typ):
-        from static_type.types.sequence import Sequence
-        return isinstance( typ, Sequence)
+    class DICT( object):
+        __slots__ = ( 'st', )
+        def __init__( me, st): me.st = st
+        def iterkeys( me):      return me.st.iterkeys()
+        def itervalues( me):    return me.st.itervalues()
+        def __contains__( me,k):  return me.st.__contains__(k)
+        def iteritems( me):     return me.st.itertypes()
+        if 0:
+            def iter_attr_type_klas( me):
+                for k,v in me.st.itertypes():
+                    if isinstance( v, _static_type.SubStruct):
+                        yield k, v.typ, v.typ.typ
+
+    def attrtypes( me, klas): return me.DICT( klas.StaticType )
+
+#    def is_collection_type( me, typ):
+#        from static_type.types.sequence import Sequence
+#        return isinstance( typ, Sequence)
 
     #checker4substruct_as_value = None
-    def type_is_substruct(  me, typ):
+    def is_reference_type(  me, typ):
         if not isinstance( typ, _static_type.SubStruct):
             return None
         klas = typ.typ

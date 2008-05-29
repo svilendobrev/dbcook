@@ -300,16 +300,16 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
     base_klas, inheritype = mapcontext.base4table_inheritance( klas)
     is_joined_table = (inheritype == table_inheritance_types.JOINED)
     assert base_klas or not is_joined_table
-    for attr,typ in reflector.attrtypes_iteritems( klas):
+    for attr,typ in reflector.attrtypes( klas).iteritems():
         if is_joined_table:
             #joined_table: subclass' tables consist of extra attributes -> joins
-            if reflector.attrtypes_hasattr( base_klas, attr):
+            if attr in reflector.attrtypes( base_klas):
                 if dbg: print '  inherited:', attr
                 continue
 
         #else: 'concrete_table' - each class OWN table
         k = name_prefix + attr
-        is_substruct = reflector.type_is_substruct( typ)
+        is_substruct = reflector.is_reference_type( typ)
         if is_substruct:
             attrklas = is_substruct[ 'klas']
             if not is_substruct[ 'as_value']:
@@ -488,14 +488,14 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
         fkeys = FKeyExtractor( klas, table, mapcontext, tables)
 
         base_klas, inheritype = mapcontext.base4table_inheritance( klas)
-        for k,typ in reflector.attrtypes_iteritems( klas):
-            if base_klas and reflector.attrtypes_hasattr( base_klas, k):
+        for k,typ in reflector.attrtypes( klas).iteritems():
+            if base_klas and k in reflector.attrtypes( base_klas):
                 if inheritype != table_inheritance_types.CONCRETE:
                     if dbg: print '  inherited:', k
                     continue
                 else:
                     if dbg: print '  concrete-inherited-relink:', k
-            is_substruct = reflector.type_is_substruct( typ)
+            is_substruct = reflector.is_reference_type( typ)
             if is_substruct:
                 attrklas = is_substruct[ 'klas']
                 if is_substruct[ 'as_value']:
@@ -521,13 +521,13 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                     if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
                     m.add_property( k, sa_relation( attrklas, **rel_kargs))
 
-            if reflector.type_is_collection( typ):
-                raise NotImplementedError
-                m.add_property( k+'_multi',
-                    sa_relation( typ.itemtype,
-                        uselist=True    #??typ.forward?
-                    )
-                )
+            #if reflector.is_collection_type( typ):
+            #    raise NotImplementedError
+            #    m.add_property( k+'_multi',
+            #        sa_relation( typ.itemtype,
+            #            uselist=True    #??typ.forward?
+            #        )
+            #    )
 
 
 class _MapExt( sqlalchemy.orm.MapperExtension):
@@ -657,7 +657,7 @@ class Builder:
                 fkey.tstr.kargs.update( dict( use_alter=True, name=fkey.name))
 
         def getprops( klas):
-            return [ column4ID.name ] + list( me.reflector.attrtypes_iterkeys( klas) ) #if not k.startswith('link')]
+            return [ column4ID.name ] + list( me.reflector.attrtypes( klas).iterkeys()) #if not k.startswith('link')]
 
         try:
             if not only_table_defs:

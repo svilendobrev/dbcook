@@ -60,7 +60,7 @@ def ownerbase( klas, attr, reflector):
     base = klas
     while base:
         b = base.__bases__[0]    #!!!
-        #if not reflector.attrtypes_hasattr( b, attr) or getattr( b, attr) is not value:
+        #if attr not in reflector.attrtypes( b) or getattr( b, attr) is not value:
         if getattr( b, attr, None) is not value:
             break
         base = b
@@ -74,8 +74,8 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
     if _debug: print ind, 'klas:', `klas`
     _level+=1
     ind += '    '
-    for attr,typ in reflector.attrtypes_iteritems( klas):
-        is_substruct = reflector.type_is_substruct( typ)
+    for attr,typ in reflector.attrtypes( klas).iteritems():
+        is_substruct = reflector.is_reference_type( typ)
         if not is_substruct:
             if _debug: print ind, attr, 'ignoring non-ref:', typ
             continue

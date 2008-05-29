@@ -48,33 +48,36 @@ class Reflector4sa( builder.Reflector):
     The only reason for the Reflector to be static and not local to Builder
     is the Base's __str___/obj2str below...
     '''
-    def _attrtypes( me, klas):
+    DICT = dict
+    if 0:
+        class DICT( dict):
+            def iter_attr_type_klas( me):
+                for k,v in me.iteritems():
+                    if isinstance( v, Type4Reference):
+                        yield k, v, v.itemklas
+
+    def attrtypes( me, klas):
         try:
             d = klas.__dict__[ '_attrtypes']
         except KeyError:
-            klas._attrtypes = d = {}
+            klas._attrtypes = d = me.DICT()
             for k in dir( klas):
                 if k.startswith('__'): continue
                 v = getattr( klas,k)
                 if isinstance( v, Type): d[k]=v
         return d
-    def attrtypes_iterkeys( me, klas):   return me._attrtypes( klas).iterkeys()
-    def attrtypes_itervalues( me, klas): return me._attrtypes( klas).itervalues()
-    def attrtypes_iteritems( me, klas):  return me._attrtypes( klas).iteritems()
-    def attrtypes_hasattr( me, klas, attr):
-        return attr in me._attrtypes( klas)
-    def attrtypes_clean( me, klas):
-        try: del klas._attrtypes
-        except AttributeError: pass
+
+    if 0:
+        def attrtypes_clean( me, klas):
+            try: del klas._attrtypes
+            except AttributeError: pass
 
     ##############
-    def type_is_substruct( me, typ):
+    def is_reference_type( me, typ):
         if not isinstance( typ, Type4Reference):
             return None
-        klas = typ.itemklas
-        return dict( klas=typ.itemklas, lazy=typ.lazy, as_value=typ.as_value)
+        return dict( klas= typ.itemklas, lazy= typ.lazy, as_value= typ.as_value)
 
-    def type_is_collection( me, typ): return False
 
     ##############
     def _resolve_forward_references( me, namespace, base_klas):
@@ -82,7 +85,7 @@ class Reflector4sa( builder.Reflector):
         for klas in namespace.itervalues():
             if not builder.issubclass( klas, base_klas): continue
             Type4Reference.resolve_forwards( namespace,
-                    me.attrtypes_itervalues( klas),
+                    me.attrtypes( klas).itervalues(),
                     sys.modules[ klas.__module__].__dict__ )
         #this can also remove all Type4Reference's from klas
     def _resolve_forward_reference1( me, klas, namespace):

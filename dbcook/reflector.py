@@ -6,21 +6,28 @@ class Reflector:
     и други свързани запитвания и операции - оправяне на предварително обявени
     (символични) указатели (forward declared references)'''
 
-    def attrtypes_hasattr( me, klas, attr):
+    def attrtypes( me, klas):
         raise NotImplementedError
-        return 'bool( attr belongs to klas+bases)'
-    def attrtypes_iteritems( me, klas):
-        raise NotImplementedError
-        return 'iter_over_ all (attr_name, attr_type) of klas+bases'
+        return dict-like-thing
+    if 0:
+        class dictLike:
+            '(the attr belonging to klas+bases)'
+            def __contains__(): return 'bool( attr belongs to klas+bases)'
+            def iterkeys():     return 'yield attr_name '
+            def iteritems():    return 'yield (attr_name, attr_type) '
+            def itervalues():   return 'yield attr_type '
+            #def iter_klasi():       return 'yield attr_type.klas '
+            #def iter_attr_klas():   return 'yield (attr_name, attr_type.klas) '
+            #def iter_attr_type_klas():  return 'yield (attr_name, attr_type, attr_type.klas) '
 #    def iter_attrtype_local( me, klas):
 #        raise NotImplementedError
 #        return 'iter_over_ (attr_name, attr_type) of klas only (no bases!)'
-    def type_is_collection( me, typ):
+#    def is_collection_type( me, typ):
+#        raise NotImplementedError
+#        return bool
+    def is_reference_type( me, typ):
         raise NotImplementedError
-        return bool
-    def type_is_substruct( me, typ):
-        raise NotImplementedError
-        return None or dict( klas=typ.itemklas, lazy=bool or None or 'default', as_value=bool)
+        return None or dict( klas= typ.itemklas, lazy= bool or None or 'default', as_value= bool)
     def _resolve_forward_references( me, namespace, base_klas):
         raise NotImplementedError
 
@@ -28,7 +35,7 @@ class Reflector:
         from baseobj import obj2str
         '''nice str(obj), cuts recursion. Uses obj.refname for references (if available)'''
         return obj2str( obj, base_klas,
-                    attrname_iterator= lambda o: (k for k,typ in me.attrtypes_iteritems( o.__class__)) ,
+                    attrname_iterator= lambda o: me.attrtypes( o.__class__).iterkeys() ,
                     idname = idname,
                     refname= refname,
                 )
