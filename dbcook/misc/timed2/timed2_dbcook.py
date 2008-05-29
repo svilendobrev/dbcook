@@ -114,6 +114,8 @@ class Timed2Mixin( config.BaseClass4Mixin):
             me.time_valid = me.time_trans
         elif not me.time_valid:
             me.time_valid = trans
+        if me.time_trans is None:   #?? XXX
+            me.time_trans = trans   #??
 
 #### end of Timed2 aspect
 
