@@ -8,9 +8,7 @@ class Config:
     def __getattr__( me, a):
         return getattr( me._chain, a)
     def __str__( me):
-        all = set( dir(me)) | set( dir( me._chain))
-        all = list(all)
-        all.sort()
+        all = sorted( set( dir(me)) | set( dir( me._chain)) )
         return ', '.join( '%s=%s' % (k,getattr(me,k))
                     for k in all
                     if not k.startswith('_') and not callable( getattr(me,k))

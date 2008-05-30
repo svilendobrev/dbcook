@@ -594,9 +594,7 @@ class Builder:
 
         if force_ordered:
             klasi= me.klasi
-            keys = klasi.keys()
-            keys.sort()
-            me.klasi = me.DICT( (k,klasi[k]) for k in keys )
+            me.klasi = me.DICT( (k,klasi[k]) for k in sorted( klasi) )
 
         #work
         me.make_subklasi()

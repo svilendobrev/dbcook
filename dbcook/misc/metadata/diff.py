@@ -183,8 +183,7 @@ if __name__ == '__main__':
 
     def tt( m, name):
         print name, m
-        ts = [(t.name, t) for t in m.table_iterator( reverse=False ) ]
-        ts.sort()
+        ts = sorted( (t.name, t) for t in m.table_iterator( reverse=False ) )
         print ', '.join( name for name,t in ts )
         return ts
 

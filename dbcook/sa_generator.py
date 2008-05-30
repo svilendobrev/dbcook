@@ -144,13 +144,11 @@ class Tstr:
         nl = me.nl
         nl4args = me.nl4args
         t = tself and (tself + '.') or ''
-        ks = kargs.keys()
-        ks.sort()
         return ( t + name+ '( '+
                 nl.join(
                     [ nl4args.join( [str(tstr(a))+', ' for a in args]) ] +
                     [ (level*'  '+'%s= %s, ') % (k,tstr(kargs[k]))
-                        for k in ks #kargs.iteritems()
+                        for k in sorted( kargs)
                         if (k not in me.avoid_kargs and
                             kargs[k] is not me.no_kargs.get( k,'_any_any_') )
                     ] + [')'] )
@@ -387,8 +385,7 @@ meta = t.meta
         r = '''
 #populate
 '''
-        s = [ (k,m) for k,m in namespace.iteritems() if isinstance( m, Base)]
-        s.sort()
+        s = sorted( (k,m) for k,m in namespace.iteritems() if isinstance( m, Base) )
         names = {}
         for (k,m) in s:
             r += k +' = ' + klas_translator( m.__class__).__name__ +'()\n'
