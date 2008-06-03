@@ -278,13 +278,13 @@ def last_versions_1t( query, oid_attr, time_attr =None, dbid_attr =None, klas =N
     return v.all_lastver()
 
 
-def get_one_lastversion( klas, query4klas,
+def get_one_lastversion( klas, query,
         obj_id, time,
         with_disabled =False,
         **setup_kargs
     ):
 
-    v = versions_2t( query4klas,
+    v = versions_2t( query,
             klas= klas,
             timeTrans_attr= 'time_trans', timeValid_attr= 'time_valid',
             **setup_kargs
@@ -295,14 +295,14 @@ def get_one_lastversion( klas, query4klas,
     q = v.single_lastver_upto_time( obj_id, time, where=q )
     return q
 
-def get_many_lastversion( klas, query4klas,
+def get_many_lastversion( klas, query,
         time,
         obj_id =(),
         with_disabled =False,
         **setup_kargs
     ):
 
-    v = versions_2t( query4klas,
+    v = versions_2t( query,
             klas= klas,
             timeTrans_attr='time_trans', timeValid_attr='time_valid',
             **setup_kargs
@@ -311,7 +311,7 @@ def get_many_lastversion( klas, query4klas,
         v.upto_time( time)
         w2 = v._all_lastver()
         if not with_disabled: w2 = v.filter_disabled( w2)
-        return query4klas.filter( w2)
+        return query.filter( w2)
 
     where = None
     if obj_id: where = v.c_oid.in_( obj_id)
@@ -326,18 +326,18 @@ def _singular(x):
     except TypeError: return True
     return False
 
-def get_lastversion( klas, query4klas,
+def get_lastversion( klas, query,
         obj_id =None,       #one or None or list
         time =None,
         with_disabled =False,
         **setup_kargs
     ):
     func = _singular( obj_id) and get_one_lastversion or get_many_lastversion
-    return func( klas, query4klas,
+    return func( klas, query,
                     obj_id= obj_id, time= time, with_disabled= with_disabled,
                     **setup_kargs )
 
-def get_history( klas, query4klas,
+def get_history( klas, query,
         obj_id, timeFrom, timeTo,
         with_disabled = False,
         lastver_only_if_same_time =True,
@@ -347,7 +347,7 @@ def get_history( klas, query4klas,
     ):
 
     #print kargs4timeclause_ignore.keys()
-    v = versions_2t( query4klas,
+    v = versions_2t( query,
             klas= klas,
             timeTrans_attr='time_trans', timeValid_attr='time_valid',
             **setup_kargs
@@ -364,7 +364,7 @@ def get_history( klas, query4klas,
                         v.c_time2,
                     ], where
                 ).order_by( *order_by)
-        q = query4klas.session.execute( q)
+        q = query.session.execute( q)
     else:
         q = v.range( timeFrom, timeTo, oid_value=obj_id, lastver_only_if_same_time=lastver_only_if_same_time )
         if not with_disabled: q = v.filter_disabled( q)

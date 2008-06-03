@@ -27,14 +27,15 @@ class Timed2Mixin( config.BaseClass4Mixin):
     @classmethod
     def get_version_last( klas, obj_id =None, time =None,
             #timeFrom =None,
-            with_disabled =False
+            with_disabled =False,
+            query =None
         ):
         'returns ONE objects (or None) if single obj_id specified; else returns many objects'
 
-        query4klas = klas.allInstances_basic()
-        if config.runtime.notimed: return query4klas    #shunt4testing  - not proper
+        if query is None: query = klas.allInstances_basic()
+        if config.runtime.notimed: return query     #shunt4testing  - not proper
         if time is None: time = klas.defaultTimeContext()
-        return timed2.get_lastversion( klas, query4klas,
+        return timed2.get_lastversion( klas, query,
                         obj_id=obj_id, time=time,
                         with_disabled= with_disabled,
                         time2key_valid_trans= klas.time2key_valid_trans,
@@ -43,14 +44,17 @@ class Timed2Mixin( config.BaseClass4Mixin):
     get_obj_lastversion = get_version_last
 
     @classmethod
-    def get_allobj_lastversion( klas, time= None, with_disabled =False):
+    def get_allobj_lastversion( klas, time= None,
+            with_disabled =False,
+            query =None
+        ):
         old=0
         if old:
-            query4klas = klas.allInstances_basic()
-            if config.runtime.notimed: return query4klas    #shunt4testing  - not proper
+            query = klas.allInstances_basic()
+            if config.runtime.notimed: return query    #shunt4testing  - not proper
             if time is None: time = klas.defaultTimeContext()
             from timed2_sa_objid_discriminator import get_all_objects_by_time
-            return get_all_objects_by_time( klas, query4klas,
+            return get_all_objects_by_time( klas, query,
                     time,
                     with_disabled= with_disabled,
                     basemost_table= klas.rootTable(),
@@ -64,7 +68,8 @@ class Timed2Mixin( config.BaseClass4Mixin):
     def get_version_history( klas, obj_id =None, timeFrom= None, timeTo= None,
             with_disabled =False,
             lastver_only_if_same_time =True,
-            times_only =False
+            times_only =False,
+            query =None
         ):
         'always returns many objects'
 
@@ -72,12 +77,12 @@ class Timed2Mixin( config.BaseClass4Mixin):
         if timeFrom is None:
             timeTo = timeFrom = klas.defaultTimeContext()
         assert issubclass( klas, config.BaseClass4check), klas
-        query4klas = klas.allInstances_basic()
+        if query is None: query = klas.allInstances_basic()
 
         old=0
         if old:
             from timed2_sa_objid_discriminator import get_obj_history_in_timerange
-            return get_obj_history_in_timerange( klas, query4klas,
+            return get_obj_history_in_timerange( klas, query,
                     obj_id, timeFrom, timeTo,
                     #with_disabled= with_disabled,
                     group= lastver_only_if_same_time,
@@ -86,7 +91,7 @@ class Timed2Mixin( config.BaseClass4Mixin):
                     db_id_name= config.db_id_name
                 )
 
-        return timed2.get_history( klas, query4klas,
+        return timed2.get_history( klas, query,
                         obj_id, timeFrom, timeTo,
                         with_disabled= with_disabled,
                         lastver_only_if_same_time= lastver_only_if_same_time,

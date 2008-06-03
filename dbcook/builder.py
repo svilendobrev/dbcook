@@ -349,6 +349,7 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
     # - predefined primary_key columns, and no need for explicit db_id
     # - db_id as primary_key if joined_table or being referenced;
     #   all else wanna-be-primary-keys become just unique constraints
+    # note: sqlite cannot have composite partialy-autoincrementing primary key
 
     primary_key = [ c for c in columns if c.primary_key]
     needs_id_primary_key = is_joined_table or mapcontext.needs_id( klas) # needs such, because of being referenced / inherits via joined_table
