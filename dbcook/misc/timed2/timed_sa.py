@@ -27,15 +27,14 @@ class _versions( object):
             return where0
         return where
 
-    def _query( me, filter, query =None):
-        if query is None: query = me.query
-        return query.filter( filter)
+    def _query( me, filter):
+        query = me.query
+        if filter is not None: query = query.filter( filter)
+        return query
 
-    def single_lastver( me, oid_value, where =None, query =None ):
+    def single_lastver( me, oid_value, where =None):
         '''1t: last version of single object / последната версия на един обект'''
-        if query is None: query = me.query
-        where = me._get_where( where)
-        if where: query = query.filter( where)
+        query = me._query( me._get_where( where))
         query = me.filter_type( query)
         return query.filter( me.c_oid == oid_value
                     ).order_by( *(c.desc() for c in me._order_by4single() )
@@ -167,14 +166,14 @@ class versions_1t( _versions):
         g2, where2 = me._alv_2_dbid( where=where1, alias=alias)
         return where2
 
-    def all_lastver( me, query =None):
-        return me._query( me._all_lastver(), query )
+    def all_lastver( me):
+        return me._query( me._all_lastver())
 
     def _all_lastver_upto_time( me, time, where =None):
         me.upto_time( time)
         return me._all_lastver( where= where)
-    def all_lastver_upto_time( me, time, where =None, query =None):
-        return me._query( me._all_lastver_upto_time( time, where), query )
+    def all_lastver_upto_time( me, time, where =None):
+        return me._query( me._all_lastver_upto_time( time, where))
 
     def range( me, *a, **k):
         where = me._range( *a,**k)
@@ -182,7 +181,9 @@ class versions_1t( _versions):
 
 
 class versions_2t( versions_1t):
-    def _initkargs( me, timeTrans_attr, timeValid_attr, time2key_valid_trans=lambda x:x, **kargs):
+    def _initkargs( me, timeTrans_attr, timeValid_attr,
+                        time2key_valid_trans =lambda x:x,
+                        **kargs):
         versions_1t._initkargs( me, time_attr= timeValid_attr, **kargs)
         me.c_time2 = getattr( me.klas, timeTrans_attr).expression_element()
         me.time2key_valid_trans = time2key_valid_trans
@@ -331,8 +332,7 @@ def get_lastversion( klas, query4klas,
         with_disabled =False,
         **setup_kargs
     ):
-    if _singular( obj_id): func = get_one_lastversion
-    else: func = get_many_lastversion
+    func = _singular( obj_id) and get_one_lastversion or get_many_lastversion
     return func( klas, query4klas,
                     obj_id= obj_id, time= time, with_disabled= with_disabled,
                     **setup_kargs )
