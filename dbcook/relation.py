@@ -104,9 +104,9 @@ class Association( object):
     reflector = None
 
     @classmethod
-    def Link( klas, parent_klas, attr =None, primary_key =True, nullable =False):
+    def Link( klas, parent_klas, attr =None, primary_key =True, nullable =False, **kargs4type):
         '''(in some assoc_klas) declaration of link to parent_klas'''
-        typ = klas.Type4Reference( parent_klas)
+        typ = klas.Type4Reference( parent_klas, **kargs4type)
         typ.assoc = _AssocDetails( primary_key= primary_key, nullable= nullable, relation_attr= attr )
         #the parent_klas is typ.typ (or will be after forward-decl-resolving)
         #print 'Link', klas, parent_klas, attr, primary_key

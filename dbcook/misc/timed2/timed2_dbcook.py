@@ -61,7 +61,7 @@ class Timed2Mixin( config.BaseClass4Mixin):
                     time2key_valid_trans= klas.time2key_valid_trans,
                     db_id_name= config.db_id_name
                 )
-        return klas.get_version_last( None, time= time, with_disabled= with_disabled)
+        return klas.get_version_last( None, time= time, with_disabled= with_disabled, query= query)
     allInstances = get_allobj_lastversion
 
     @classmethod

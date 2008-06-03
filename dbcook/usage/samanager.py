@@ -178,16 +178,19 @@ class SAdb:
                 pre = getattr( x, 'pre_save', None)
                 if pre:
                     #_setup_state(x)    #XXX not needed?
+                    #print 'pre_save', object.__repr__( x)
                     pre()
 
                 session.save_or_update( x)
 
     ####### querys
-    def query_all_tables( sadb, **kargs_ignore):
+    def query_all_tables( sadb, *classes, **kargs_ignore):
         yield '=== whole database:'
         for k,t in sadb.tables.iteritems():
-            yield k,':', tuple( t.select().execute() )
-        #return ()
+            if not classes or k in classes:
+                yield k, '\n'.join(
+                        ' '.join( '%s=%s' % kv for kv in r.items())
+                        for r in t.select().execute() )
 
     ####### klasifier querys
     def query_BASE_instances( sadb, session, klas ):
