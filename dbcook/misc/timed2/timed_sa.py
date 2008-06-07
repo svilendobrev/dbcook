@@ -259,9 +259,13 @@ class versions_2t( versions_1t):
         where = ( (me.c_time2 <= timeTransTo)
                 & (me.c_time >= timeValidFrom)
                 & (me.c_time <= timeValidTo) )
-        single_oid = oid_value is not None
+
+
+        single_oid = oid_value is not None and _singular( oid_value)
         if single_oid:
             where &= (me.c_oid == oid_value)
+        elif oid_value:
+            where &= me.c_oid.in_( oid_value)
         where = me.filter_type( where)
         if not lastver_only_if_same_time:
             return where

@@ -68,6 +68,7 @@ class Timed2Mixin( config.BaseClass4Mixin):
     def get_version_history( klas, obj_id =None, timeFrom= None, timeTo= None,
             with_disabled =False,
             lastver_only_if_same_time =True,
+            order_by_time_then_obj =False,
             times_only =False,
             query =None
         ):
@@ -96,6 +97,7 @@ class Timed2Mixin( config.BaseClass4Mixin):
                         with_disabled= with_disabled,
                         lastver_only_if_same_time= lastver_only_if_same_time,
                         time2key_valid_trans= klas.time2key_valid_trans,
+                        order_by_time_then_obj= order_by_time_then_obj,
                         dbid_attr= config.db_id_name,
 
                         times_only = times_only
