@@ -25,6 +25,7 @@ assoc:   mapper/association.test
 collect: mapper/collection.test
 expr:    other/expression.test
 mapper: assoc collect expr
+mapper: other/aboutrel.test
 
 #abc: ARGS= zno_sisters Binhs=A Cinhs=B Clinks=None doC zdummy
 GG= generate=failed,one

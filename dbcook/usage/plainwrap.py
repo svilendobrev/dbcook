@@ -67,10 +67,9 @@ class Reflector4sa( builder.Reflector):
                 if isinstance( v, Type): d[k]=v
         return d
 
-    if 0:
-        def attrtypes_clean( me, klas):
-            try: del klas._attrtypes
-            except AttributeError: pass
+    def cleanup( me, klas):
+        try: del klas._attrtypes
+        except AttributeError: pass
 
     ##############
     def is_reference_type( me, typ):

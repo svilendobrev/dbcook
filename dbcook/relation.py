@@ -51,9 +51,8 @@ import sqlalchemy.orm
 import warnings
 from config import config
 import itertools
-from util.attr import getattr_local_class_only
 
-def _associate( klas, parentklas, assoc_details, column):
+def _associate( klas, parentklas, assoc_details, column, cacher ):
     dbg = 'relation' in config.debug
     #XXX removed? if not assoc_details.primary_key: return
 
@@ -63,24 +62,25 @@ def _associate( klas, parentklas, assoc_details, column):
         print '  attrname:', relation_attr, 'column:', column
 
     ### collect relation_attr to be created by make_relation() if not already done explicitly
-    try:
-        links = getattr_local_class_only( parentklas, '_DBCOOK_assoc_links')
-    except AttributeError:
-        links = parentklas._DBCOOK_assoc_links = set()
+    lcache = cacher.assoc_links = getattr( cacher, 'assoc_links', {})
+    links = lcache.setdefault( parentklas, set() )
     link = (klas, relation_attr)
-    if link in links:
-        assert 0, 'duplicate definition of assoc_link %(klas)s.%(relation_attr)s to %(parentklas)s' % locals()
+    assert link not in links, '''
+        duplicate definition of assoc_link %(klas)s.%(relation_attr)s to %(parentklas)s'''.strip() % locals()
     links.add( link )
 
     ### collect foreign_keys
-    try: foreign_keys = klas.foreign_keys
-    except AttributeError: foreign_keys = klas.foreign_keys = {}
-
+    fcache = cacher.foreign_keys = getattr( cacher, 'foreign_keys', {})
+    foreign_keys = fcache.setdefault( klas, {})
     kk = foreign_keys.setdefault( parentklas, {} )
     key = relation_attr
 
     if key is not None:
-        assert key not in kk, '''duplicate/ambigious association to %(parentklas)s in %(klas)s; specify attr=<assoc_relation_attr> explicitly''' % locals()
+        assert key not in kk, '''
+            duplicate/ambigious association to %(parentklas)s in %(klas)s;
+            specify attr=<assoc_relation_attr> explicitly
+            key=%(key)s
+            kk=%(kk)s'''.strip() % locals()
     else:
         if key in kk:
             warnings.warn( '''duplicate/ambigious/empty association to %(parentklas)s in %(klas)s; specify attr=>assoc_relation_attr> explicitly''' % locals() )
@@ -194,7 +194,7 @@ def is_association_reference( klas, attrtyp, attrklas):
         assoc_details = getattr( attrtyp, 'assoc', None)
         if assoc_details:
             column_kargs = dict( primary_key= assoc_details.primary_key, nullable= assoc_details.nullable )
-            column_func = lambda column: _associate( klas, attrklas, assoc_details, column)
+            column_func = lambda column, cacher: _associate( klas, attrklas, assoc_details, column, cacher=cacher)
     return column_kargs, column_func
 
 
@@ -228,7 +228,7 @@ class _Relation( object):
         if dbg: print ' ' , me, klas, '.', name
         assert name, 'relation/association %(assoc_klas)r relates to %(klas)r but no attrname specified anywhere' % locals()
 
-        foreign_keys = assoc_klas.foreign_keys
+        foreign_keys = builder.foreign_keys[ assoc_klas]
         if dbg: print ' ', me, 'assoc_fkeys:', foreign_keys
 
         try: fks = foreign_keys[ klas ]
@@ -364,7 +364,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
 
         fkeys = FKeyExtractor( klas, m.local_table, builder.mapcontext, builder.tables)
 
-        assoc_links = getattr_local_class_only( klas, '_DBCOOK_assoc_links', () )
+        assoc_links = getattr( builder, 'assoc_links', {}).get( klas, () )
 
         if assoc_links:
             #match assoc-links with real rels
@@ -430,8 +430,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
             m.add_property( name, sa_relation_factory( rel_klas_actual, **rel_kargs) )
             relations[ name ] = rel_klas
 
-        if relations:
-            klas._DBCOOK_relations = relations
+        klas._DBCOOK_relations = relations
 
 
 
@@ -447,105 +446,47 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
     Having such relation-attr is not mandatory, some End-object may not need it.
 '''
 
-class get_class_of_relation( object):
-    '''use as
-        get_class_of_relation(x)        #=== .otherside(x)
-        get_class_of_relation.otherside(x)
-        get_class_of_relation.child(x)
-        get_class_of_relation.reference(x)
-        get_class_of_relation.parent(x) #=== .reference
-        '''
-    @staticmethod
-    def _klas_attr( klas_attr_or_klas, attr =None):
-        if attr is not None: return getattr( klas_attr_or_klas, attr)
-        return klas_attr_or_klas
+if 10:
+    from aboutrel import about_relation
+    def get_class_of_relation(*a,**k): return about_relation(*a,**k).otherside.klas
+else:
+    class get_class_of_relation( object):
+        '''use as
+            get_class_of_relation(x)        #=== .otherside(x)
+            get_class_of_relation.otherside(x)
+            get_class_of_relation.child(x)
+            get_class_of_relation.reference(x)
+            get_class_of_relation.parent(x) #=== .reference
+            '''
+        @staticmethod
+        def _klas_attr( klas_attr_or_klas, attr =None):
+            if attr is not None: return getattr( klas_attr_or_klas, attr)
+            return klas_attr_or_klas
 
-    @classmethod
-    def child( me, klas_attr_or_klas, attr =None):
-        'get_child_class'
-        klas_attr = me._klas_attr( klas_attr_or_klas, attr )
-        return klas_attr.impl.collection_factory().factory
-        #return parent_klas._DBCOOK_relations[ attr]   #needs flatening from all the inh-classes
+        @classmethod
+        def child( me, klas_attr_or_klas, attr =None):
+            'get_child_class'
+            klas_attr = me._klas_attr( klas_attr_or_klas, attr )
+            return klas_attr.impl.collection_factory().factory
+            #return parent_klas._DBCOOK_relations[ attr]   #needs flatening from all the inh-classes
 
-    @classmethod
-    def reference( me, klas_attr_or_klas, attr =None):
-        'get_parent_class'
-        klas_attr = me._klas_attr( klas_attr_or_klas, attr )
-        return klas_attr.property.mapper.class_
-    parent = reference
+        @classmethod
+        def reference( me, klas_attr_or_klas, attr =None):
+            'get_parent_class'
+            klas_attr = me._klas_attr( klas_attr_or_klas, attr )
+            return klas_attr.property.mapper.class_
+        parent = reference
 
-    def otherside( me, klas_attr_or_klas, attr =None):
-        klas_attr = me._klas_attr( klas_attr_or_klas, attr )
-        prop = getattr( klas_attr, 'property', None)
-        if prop is not None: #parent - ref2one ... or isinstance???
-            return prop.mapper.class_
-        #child - rel2many
-        impl = getattr( klas_attr, 'impl', None)
-        assert impl is not None, 'not a relation klas_attr: %(klas_attr)r' % locals()
-        return impl.collection_factory().factory
-    __new__ = otherside
-    otherside = classmethod( otherside)
-
-class about_relation( object):
-    __slots__ = ( '_klas_attr', 'class_', 'name' )
-    '''use as
-        get_class_of_relation(x)        #=== .otherside(x)
-        get_class_of_relation.otherside(x)
-        get_class_of_relation.child(x)
-        get_class_of_relation.reference(x)
-        get_class_of_relation.parent(x) #=== .reference
-        '''
-    @staticmethod
-    def _child_name( klas_attr):
-        return klas_attr.impl.xxxx
-    @staticmethod
-    def _child_class( klas_attr):
-        return klas_attr.impl.collection_factory().factory
-    @staticmethod
-    def _parent_name( klas_attr):
-        return list[ klas_attr.property.remote_side ][0].key    #column-name! not attr-name
-    @staticmethod
-    def _parent_class( klas_attr):
-        return klas_attr.property.mapper.class_
-
-    def __init__( me, klas_attr_or_klas, attr =None):
-        if attr is not None: me._klas_attr = getattr( klas_attr_or_klas, attr)
-        else: me._klas_attr = klas_attr_or_klas
-
-    @property
-    def child( me):
-        klas_attr = me._klas_attr
-        me.class_ = me._child_class( klas_attr)
-        me.name   = me._child_name( klas_attr)
-        return me
-        #return parent_klas._DBCOOK_relations[ attr]   #needs flatening from all the inh-classes
-
-    @property
-    def parent( me):
-        'get_parent_class'
-        klas_attr = me._klas_attr
-        #klas_attr.impl.class_ is  klas - thisside
-        #klas_attr.impl.key    is  klas.attr name - thisside
-        #print  prop._reverse_property - needs backref
-        #print  prop._reverse_property.impl.key  - otherside name, needs backref
-        #print  prop.backref.key  - otherside attrname, needs backref
-        # prop.remote_side - otherside , set of columns
-        me.class_ = me._parent_class( klas_attr)
-        me.name   = me._parent_name( klas_attr)
-        return me
-    reference = parent
-
-    @property
-    def otherside( me):
-        try:
-            return me.parent
-        except AttributeError:
-            try:
-                return me.child
-            except AttributeError:
-                assert 0, 'not a relation klas_attr: '+ repr( me._klas_attr)
-
-    def parent_name( me):
-        return me._parent_name( me._klas_attr)
+        def otherside( me, klas_attr_or_klas, attr =None):
+            klas_attr = me._klas_attr( klas_attr_or_klas, attr )
+            prop = getattr( klas_attr, 'property', None)
+            if prop is not None: #parent - ref2one ... or isinstance???
+                return prop.mapper.class_
+            #child - rel2many
+            impl = getattr( klas_attr, 'impl', None)
+            assert impl is not None, 'not a relation klas_attr: %(klas_attr)r' % locals()
+            return impl.collection_factory().factory
+        __new__ = otherside
+        otherside = classmethod( otherside)
 
 # vim:ts=4:sw=4:expandtab

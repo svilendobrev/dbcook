@@ -11,21 +11,22 @@ class Base( orm.Base):
 SAdb.config.getopt()
 print 'config:', SAdb.config
 
-class Kid( Base):
-    name = Text()
 
 def tsingle():
+    class Kid( Base): name = Text()
     class Parent( Base):
         things  = orm.Collection( Kid)
     return locals()
 
 def t2collects():
+    class Kid( Base): name = Text()
     class Parent( Base):
         things  = orm.Collection( Kid)
         mings   = orm.Collection( Kid)
     return locals()
 
 def t3inheritparent():
+    class Kid( Base): name = Text()
     class Parent( Base):
         things  = orm.Collection( Kid)
     class Parent2( Parent):
@@ -38,7 +39,7 @@ for namespacer in tsingle, t2collects, t3inheritparent:
     sa.open( recreate=True)
     print '---', namespacer.__name__
     types = namespacer()
-    types.update( Kid=Kid)
+    Kid = types['Kid']
     sa.bind( types, base_klas= Base )
 
     s= sa.session()
@@ -66,11 +67,12 @@ for namespacer in tsingle, t2collects, t3inheritparent:
     s.clear()
     print list( s.query( parentklas) )
     parent = s.query( parentklas).first()
+    print ' collection:', parent.things
+    if use_mings: print ' collect2:', parent.mings
+
     assert [ k.name for k in parent.things ] == op
     if use_mings: assert [ k.name for k in parent.mings  ] == os
 
-    print ' collection:', parent.things
-    if use_mings: print ' collect2:', parent.mings
     sa.destroy()
 
 # vim:ts=4:sw=4:expandtab

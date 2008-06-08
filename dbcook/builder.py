@@ -290,9 +290,10 @@ def make_table_column4struct_reference( klas, attrname, attrklas, mapcontext, **
 
 
 
-def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
+def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
     dbg = 'column' in config.debug
     if dbg: print 'make_table_columns', klas, name_prefix
+    mapcontext = builder.mapcontext
     columns = []
     id_columns = set()
 
@@ -315,9 +316,9 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
             if not is_substruct[ 'as_value']:
                 if dbg: print '  as_reference', k,typ
 #                print klas.__name__, k, typ
-                assoc_kargs, assoc_columner= relation.is_association_reference( klas, typ, attrklas)
+                assoc_kargs, assoc_columner= relation.is_association_reference( klas, typ, attrklas, )
                 c = make_table_column4struct_reference( klas, k, attrklas, mapcontext, **assoc_kargs)
-                if assoc_columner: assoc_columner(c)
+                if assoc_columner: assoc_columner( c, cacher=builder)
                 columns.append( c)
                 id_columns.add( k)
             else:   #inline_inside_table/embedded
@@ -381,19 +382,19 @@ def make_table_columns( klas, mapcontext, fieldtype_mapper, name_prefix ='', ):
 
     return columns
 
-def make_table( klas, metadata, mapcontext, **kargs):
+def make_table( klas, metadata, builder, **kargs):
     dbg = 'table' in config.debug
     if dbg: print '\n'+'make_table for:', klas.__name__, kargs
-    columns = make_table_columns( klas, mapcontext, **kargs)
+    columns = make_table_columns( klas, builder, **kargs)
     name = table_namer( klas)
     t = sa.Table( name, metadata, *columns )
     if dbg: print repr(t)
     return t
 
-def fix_one2many_relations( klas, builder, mapcontext):
+def fix_one2many_relations( klas, builder):
     dbg = 'table' in config.debug or 'relation' in config.debug
     if dbg: print 'make_one2many_table_columns', klas
-
+    mapcontext = builder.mapcontext
     for attr_name,collection in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
         child_klas = collection.assoc_klas
         if isinstance( child_klas, str):
@@ -413,7 +414,7 @@ def fix_one2many_relations( klas, builder, mapcontext):
             primary_key= True
             nullable= True
             relation_attr= attr_name
-        relation._associate( child_klas, klas, assoc_details, fk_column)
+        relation._associate( child_klas, klas, assoc_details, fk_column, cacher=builder)
 
 
 def make_mapper( klas, table, **kargs):
@@ -554,7 +555,8 @@ class Builder:
 
                 debug = None,       #same as config.debug
                 generator =None,    #None->see config.generate; True->use SrcGenerator; anything non-empty, use it as the src_generator
-                only_table_defs = False,
+                only_table_defs = False,    #stop after metadata.tables setup and no metadata.create_all
+                only_declarations= False,   #do not metadata.create_all - work on empty metadata
             ):
         #config/setup
         if debug is not None:
@@ -577,10 +579,6 @@ class Builder:
         mc.reflector = reflector
         me.mapcontext = mc
 
-        if isinstance( fieldtype_mapper, dict):
-            fm = lambda typ: fieldtype_mapper[ typ.__class__ ]
-        else: fm = fieldtype_mapper
-
         if force_ordered:
             me.DICT = mc.DICT = me.DICTordered
             mc.SET  = me.SETordered
@@ -589,22 +587,27 @@ class Builder:
         walkklas._debug = 'walk' in config.debug
         namespace = walkklas.walker( namespace, reflector, base_klas)
 
-        me._loadklasi( namespace)
+        me._load_klasi( namespace)
+        me._cleanup_klasi()     #here? or after _resolve_forward_references?
         relation.resolve_assoc_hidden( me, me.klasi)
         reflector._resolve_forward_references( me.klasi, base_klas)
 
         if force_ordered:
-            klasi= me.klasi
-            me.klasi = me.DICT( (k,klasi[k]) for k in sorted( klasi) )
+            me.klasi = me.DICT( sorted( me.klasi.items() ))
+
+        if isinstance( fieldtype_mapper, dict):
+            fm = lambda typ: fieldtype_mapper[ typ.__class__ ]
+        else: fm = fieldtype_mapper
 
         #work
         me.make_subklasi()
 
-        me.make_tables( metadata, fieldtype_mapper=fm, only_table_defs= only_table_defs)
+        me.make_tables( metadata, fieldtype_mapper=fm,
+                            only_table_defs= only_table_defs or only_declarations )
         if not only_table_defs:
             me.make_mappers()
 
-    def _loadklasi( me, namespace_or_iterable):
+    def _load_klasi( me, namespace_or_iterable):
         try: itervalues = namespace_or_iterable.itervalues()        #if dict-like
         except AttributeError: itervalues = namespace_or_iterable   #or iterable
 
@@ -615,6 +618,14 @@ class Builder:
                 assert k and not k.startswith('__')
                 klasi[ k] = typ     #aliases are ignored; same-name items are overwritten
         me.klasi = klasi
+
+    def _cleanup_klasi( me):
+        for klas in me.iterklasi():
+            me.reflector.cleanup( klas)
+            for k in '_DBCOOK_relations'.split():
+                try: delattr( klas, k)
+                except AttributeError: pass
+
 
     def iterklasi( me): return me.klasi.itervalues()
     def column4ID( me, klas):
@@ -637,9 +648,9 @@ class Builder:
     def make_tables( me, metadata, only_table_defs =False, **kargs):
         me.tables = me.DICT()
         for klas in me.iterklasi():
-             me.tables[ klas] = make_table( klas, metadata, me.mapcontext, **kargs)
+             me.tables[ klas] = make_table( klas, metadata, me, **kargs)
         for klas in me.iterklasi(): #to be sure all tables exists already
-             fix_one2many_relations( klas, me, me.mapcontext)
+             fix_one2many_relations( klas, me)
 
 
         from table_circular_deps import fix_table_circular_deps

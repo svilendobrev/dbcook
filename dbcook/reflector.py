@@ -25,6 +25,9 @@ class Reflector:
 #    def is_collection_type( me, typ):
 #        raise NotImplementedError
 #        return bool
+    def cleanup( me, klas):
+        'clean klas of any side-effects like caches'
+        raise NotImplementedError
     def is_reference_type( me, typ):
         raise NotImplementedError
         return None or dict( klas= typ.itemklas, lazy= bool or None or 'default', as_value= bool)
