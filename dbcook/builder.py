@@ -621,7 +621,7 @@ class Builder:
 
     def _cleanup_klasi( me):
         for klas in me.iterklasi():
-            me.reflector.cleanup( klas)
+            me.reflector.cleanup( klas)    #XXX this makes repeateable-over-same-clas plainwrap tests FAIL. see NO_CLEANUP there
             for k in '_DBCOOK_relations'.split():
                 try: delattr( klas, k)
                 except AttributeError: pass

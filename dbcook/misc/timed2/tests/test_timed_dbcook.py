@@ -20,6 +20,7 @@ if 0:
     from static_type.types.atomary  import Number
 else:
     from dbcook.usage import plainwrap as orm
+    orm.NO_CLEANUP =1
     class Number( orm.Type): pass
 
 import dbcook.usage.samanager as sam

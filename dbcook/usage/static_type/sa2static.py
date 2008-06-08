@@ -35,6 +35,8 @@ class Reflector4StaticType( builder.Reflector):
                         yield k, v.typ, v.typ.typ
 
     def attrtypes( me, klas): return me.DICT( klas.StaticType )
+    def cleanup( me, klas):     #XXX nothing so far... maybe _order_Statics_cache
+        pass
 
 #    def is_collection_type( me, typ):
 #        from static_type.types.sequence import Sequence

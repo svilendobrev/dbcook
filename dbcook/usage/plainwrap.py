@@ -15,6 +15,12 @@ via Builder.xxxx, or directly from here.
 
 from dbcook import builder
 table_inheritance_types = builder.table_inheritance_types
+NO_CLEANUP = False
+#XXX TODO cleanup() below makes all
+# repeateable-over-same-clas plainwrap tests FAIL
+# because mapper+clear_mappers() wipes the Type-definitions in the classes
+# Needs restoration procedure ?? put all back from the cache before erasing it?
+# for now, use NO_CLEANUP = True where needed
 
 class Type( object): pass
 class Type4Reference( Type):
@@ -68,6 +74,7 @@ class Reflector4sa( builder.Reflector):
         return d
 
     def cleanup( me, klas):
+        if NO_CLEANUP: return
         try: del klas._attrtypes
         except AttributeError: pass
 
