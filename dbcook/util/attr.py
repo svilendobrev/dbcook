@@ -101,6 +101,20 @@ def issubclass( obj, klas):
     from types import ClassType
     return isinstance( obj, (type, ClassType)) and __issubclass(obj, klas)
 
+
+def isiterable( obj, string_is_iterable =False):
+    if isinstance( obj, basestring):
+        return string_is_iterable
+    try:
+        x = iter( obj)
+    except TypeError:
+        return False
+    return True
+
+
+def iscollection( obj):
+    return isinstance( obj, (list, tuple, set))
+
 ########
 # util/module.py
 
