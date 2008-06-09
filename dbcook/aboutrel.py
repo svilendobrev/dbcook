@@ -54,10 +54,25 @@ class about_relation( object):
             me.otherside = _other
             me.is_parent = not _other.is_parent
 
+        '''
+m2m:
+    containerthis: getattr( prop.parent.class_, prop.key)
+     midthis: getattr( prop.secondary, prop.remote_side[0]) -> this: getattr( prop.parent.class_, prop.local_side[0])
+     midother:getattr( prop.secondary, prop.remote_side[1]) -> other:getattr( prop.mapper.class_, prop.local_side[1])
+    containerother: getattr( prop.mapper.class_, ??????)
+1toN:
+    containerthis: getattr( prop.parent.class_, prop.key)
+     other:getattr( prop.mapper.class_, prop.remote_side[0]) -> this:getattr( prop.parent.class_, prop.local_side[0])
+    other:getattr( prop.mapper.class_, ??????)
+*to1:
+    this: getattr( prop.parent.class_, prop.key) ->
+     this:getattr( prop.parent.class_, prop.local_side[0]) -> other:getattr( prop.mapper.class_, prop.remote_side[0])
+    other:getattr( prop.mapper.class_, ??????)
+'''
         me.parent, me.child = me.is_parent and (me, me.otherside) or (me.otherside, me)
-
+        #TODO: try on 1:1/backref and n:n
         if me._is_thisside:
-            me.klas = impl.class_
+            me.klas = impl.class_   #same as prop.parent.class_
             me.name = prop.key
             me.attr = klas_attr
             assert me.attr is getattr( me.klas, me.name)
@@ -65,8 +80,19 @@ class about_relation( object):
             me.klas = mapper.class_
             revprop = prop._reverse_property
             if revprop is None:
+                if 0:
+                    print 'ZZZZZZZ', prop
+                    for k in '''
+target secondary _opposite_side remote_side local_side foreign_keys
+'''.split():
+                        a = getattr( prop, k)
+                        if isinstance( a, set): a = ', '.join( str(s) for s in a)
+                        print ' .'+ k, ' \t', a
+
                 me.no_backref = True
                 if not me.is_parent:
+                        #ok on 1:m
+                        #not ok on m:m - see local_side/_opposite_side but those are db_id
                     me.name = list( prop.remote_side )[0].key    #column-name! not attr-name
                     me.attr = getattr( me.klas, me.name)
                 else:
