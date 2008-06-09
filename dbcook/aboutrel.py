@@ -47,7 +47,7 @@ class about_relation( object):
         if _other is None:
             from sqlalchemy.orm.attributes import CollectionAttributeImpl
             me._is_thisside = True
-            me.is_parent = isinstance( impl, CollectionAttributeImpl)
+            me.is_parent = prop.uselist #isinstance( impl, CollectionAttributeImpl)
             me.otherside = about_relation( klas_attr, _other=me)
         else:   #slave
             me._is_thisside = False
