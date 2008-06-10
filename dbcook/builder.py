@@ -611,6 +611,7 @@ class Builder:
         try: itervalues = namespace_or_iterable.itervalues()        #if dict-like
         except AttributeError: itervalues = namespace_or_iterable   #or iterable
 
+        #me.aliasi = dict() XXX TODO
         klasi = me.DICT()
         for typ in itervalues:      #for k in getattr( namespace, '_order', itervalues):
             if me.mapcontext.mappable( typ):
