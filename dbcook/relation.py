@@ -145,13 +145,15 @@ class Association( object):
         return _Relation4AssocHidden( (klas, other_side_klas, other_side_attr), backref=backref )
 
     @classmethod
-    def walk_links( klas ):
+    def walk_links( klas, with_typ =False ):
         for attr,typ in klas.reflector.attrtypes( klas).iteritems():
             is_substruct = klas.reflector.is_reference_type( typ)
             if is_substruct:
                 assoc_details = getattr( typ, 'assoc', None)
                 if assoc_details: # and assoc_details.primary_key:
-                    yield attr, is_substruct['klas']
+                    r = attr, is_substruct['klas']
+                    if with_typ: r = r + (typ,)
+                    yield r
 
     @classmethod
     def find_links( klas, parent_klas):  #, parent_name):

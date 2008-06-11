@@ -99,8 +99,8 @@ class about_relation( object):
         r = me.__class__.__name__[:5]+ ' %s %s this=%s / other=%s: %s' % (
                     not me.no_backref and 'backref' or 'no_backref',
                     me.thisside,
-                    me.thisside.has_many  and 'collect' or 'single',
-                    me.otherside.has_many and 'collect' or 'single',
+                    me.thisside.has_many  and 'collection' or 'reference',
+                    me.otherside.has_many and 'collection' or 'reference',
                     me.otherside,
                 )
         if me.midthis:
