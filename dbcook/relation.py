@@ -140,9 +140,9 @@ class Association( object):
         return m
 
     @classmethod
-    def Hidden( klas, other_side_klas, other_side_attr ): #=''
+    def Hidden( klas, other_side_klas, other_side_attr. backref =None ): #other_side_attr=''
         #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
-        return _Relation4AssocHidden( (klas, other_side_klas, other_side_attr) )
+        return _Relation4AssocHidden( (klas, other_side_klas, other_side_attr), backref=backref )
 
     @classmethod
     def walk_links( klas ):
@@ -161,15 +161,16 @@ class Association( object):
 
 def resolve_assoc_hidden( builder, klasi):
     dbg = 'assoc' in config.debug or 'relation' in config.debug
+    mapcontext = builder.mapcontext
     news = {}
     for k,klas in klasi.iteritems():
-        for attr, rel_typ in builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation4AssocHidden, dbg=dbg ):
+        for attr, rel_typ in mapcontext.iter_attr_local( klas, attr_base_klas= _Relation4AssocHidden, dbg=dbg ):
             Assoc, other_side_klas, other_side_attr = rel_typ.assoc_klas
             if dbg: print 'assoc_hidden: ', klas, '.'+attr, '<->', other_side_klas, '.'+other_side_attr
-            class AssocHidden( builder.mapcontext.base_klas, Assoc):
+            class AssocHidden( mapcontext.base_klas, Assoc):
                 DBCOOK_hidden = True
-                other = Assoc.Link( other_side_klas, attr= other_side_attr)
-                this  = Assoc.Link( klas, attr= attr)
+                right = Assoc.Link( other_side_klas, attr= other_side_attr)
+                left  = Assoc.Link( klas, attr= attr)
 
             #???? resolve forward-decl ? should work?
             #TODO test
@@ -177,8 +178,9 @@ def resolve_assoc_hidden( builder, klasi):
             rel_typ.assoc_klas = assoc_klas = AssocHidden
 
             #change __name__ - see __name__DYNAMIC
-            klasname = '_'.join( ('_Assoc', klas.__name__, attr,
-                isinstance( other_side_attr, str) and other_side_attr or other_side_klas.__name__,
+            klasname = '_'.join( ('_Assoc',
+                klas.__name__, attr,
+                isinstance( other_side_klas, str) and other_side_klas or other_side_klas.__name__,
                 other_side_attr ))
             assoc_klas.__name__ = klasname
 
@@ -260,11 +262,13 @@ Check for double-declaration with different names''' % locals()
 
         colid = builder.column4ID( klas )
 
+        ERR_CANNOT_HIDE_ASSOC = '''association %(assoc_klas)s between more than 2 items
+            cannot be DBCOOK_hidden (which one to give as other side?)'''
+
         if getattr( assoc_klas, 'DBCOOK_hidden', None):
             if len(fks)==2:     #2 diff links to same klas
                 #print 'same klas x2'
-                assert len(foreign_keys) == 1, '''association %(assoc_klas)s between more than 2 items
-                                cannot be DBCOOK_hidden (which one to give as other side)''' % locals()
+                assert len(foreign_keys) == 1, ERR_CANNOT_HIDE_ASSOC % locals()
                 for k in fks:
                     if k != key: break
                 else:
@@ -274,8 +278,7 @@ Check for double-declaration with different names''' % locals()
                 otherklas = klas
             else:   #2 diff klasi
                 #print '2diff', foreign_keys
-                assert len(foreign_keys) == 2, '''association %(assoc_klas)s between more than 2 items
-                                cannot be DBCOOK_hidden (which one to give as other side)''' % locals()
+                assert len(foreign_keys) == 2, ERR_CANNOT_HIDE_ASSOC % locals()
                 for otherklas in foreign_keys:
                     if otherklas is not klas: break
                 #else:  cannot happen because of above assert
@@ -407,7 +410,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
             if dbg: print '  FORWARD', name, r, fkeys
             rel_kargs.update( r)
 
-            #backward link
+            #backward link 1:n
             backref = typ.backref
             if backref:
                 r = fkeys.get_relation_kargs( typ.backrefname)
@@ -421,7 +424,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                 backref = sa_backref_factory(
                             #explicit - as SA does if backref is str
                             primaryjoin= rel_kargs[ 'primaryjoin'],
-                            uselist= False, #??? goes wrong if selfref - both sides become lists
+                            ##XXX uselist= False, #??? goes wrong if selfref - both sides become lists
                             **backref)
                 rel_kargs[ 'backref'] = backref
 
