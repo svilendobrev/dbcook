@@ -140,7 +140,7 @@ class Association( object):
         return m
 
     @classmethod
-    def Hidden( klas, other_side_klas, other_side_attr. backref =None ): #other_side_attr=''
+    def Hidden( klas, other_side_klas, other_side_attr, backref =None ): #other_side_attr=''
         #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
         return _Relation4AssocHidden( (klas, other_side_klas, other_side_attr), backref=backref )
 
