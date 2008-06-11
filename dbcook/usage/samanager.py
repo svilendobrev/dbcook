@@ -76,6 +76,12 @@ class SAdb:
     Builder = builder.Builder           #do override
     fieldtypemap = None                 #do override
     def bind( me, namespace, fieldtypemap =None, builder =None, print_srcgenerator =True, **kargs):
+        '''make and run a builder, and keep some important stuff locally:
+            mapcontext: context of work - baseklas, subclasses-tree, meta-info
+            klasi:   dict(name:klas) of ALL classes
+            tables:  dict(klas:table) of ALL classes
+            mappers: dict(klas:mapper/mapper) of ALL ORMapped classes (less Hidden Association-classes);
+        '''
         if builder is None: builder = me.Builder
         if fieldtypemap is None: fieldtypemap = me.fieldtypemap
 
@@ -118,7 +124,7 @@ class SAdb:
     def destroy( me, full =True):
         if 'open' in config.debug: print 'destroy:', full and 'full' or ''
         #my caches
-        for a in 'mappers tables klas_only_selectables'.split():
+        for a in 'mappers tables'.split(): #klas_only_selectables
             try: getattr( me, a).clear()
             except AttributeError: pass
 

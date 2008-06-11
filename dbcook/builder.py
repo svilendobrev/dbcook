@@ -690,15 +690,18 @@ class Builder:
 
     def make_mappers( me, **kargs):
         me.mappers = me.DICT()
+        iterklasi = [ mklas for mklas in me.iterklasi()
+                        if not getattr( mklas, 'DBCOOK_hidden', None)
+                    ]
 
         me.klas_only_selectables = me.DICT( (klas, me.make_klas_selectable( klas))
-                                            for klas in me.iterklasi() )
+                                            for klas in iterklasi)
 
         try:
-            for klas in me.iterklasi():
+            for klas in iterklasi:
                 me._make_mapper_polymorphic( klas, **kargs)
 
-            for klas in me.iterklasi():    #table=me.tables[ klas],
+            for klas in iterklasi:    #table=me.tables[ klas],
                 make_mapper_props( klas, me.mapcontext, me.mappers[ klas], me.tables )
 
             relation.make_relations( me, sa_relation, sa_backref, FKeyExtractor)
