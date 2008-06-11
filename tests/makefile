@@ -1,7 +1,8 @@
 #$Id$
+PY ?= python
 %.test: %.py
 	@echo ===============
-	PYTHONPATH=`pwd`/..:$(PYTHONPATH) python $*.py -v $(ARGS)
+	PYTHONPATH=`pwd`/..:$(PYTHONPATH) $(PY) $*.py -v $(ARGS)
 #a: other/expression.test
 #a: ARGS=one
 now: utilz

@@ -2,48 +2,33 @@
 # -*- coding: cp1251 -*-
 from dbcook.aboutrel import about_relation
 
-def test( *args,**kargs):
-    is_parent = bool( kargs.pop( 'is_parent', None))
-    mname = kargs.pop( 'name',  None)
-    oname = kargs.pop( 'oname', None)
-    mklas = kargs.pop( 'klas',  None)
-    oklas = kargs.pop( 'oklas', None)
-
+def test( attr, other={}, **this):
     def eq( me,o):
-        for k in '_klas_attr is_parent name klas attr'.split():
+        for k in '_klas_attr has_many name klas attr'.split():
             my= getattr( me,k); other= getattr( o,k)
             if k == 'name': r = (my == other)
             else: r = (my is other)
             if not r: return False
         return True
     about_relation.__eq__ = eq
-    a = about_relation( *args,**kargs)
+    a = about_relation( attr)
     print a
-    b = a.otherside
-    print b
-    assert b.otherside is a
-    if a.is_parent:
-        assert a.child  is a.otherside
-        assert a.parent is a
-    else:
-        assert a.parent is a.otherside
-        assert a.child  is a
-    assert a.is_parent == (not b.is_parent)
+    if a.ownedside:
+        if a.thisside.has_many:
+            assert a.ownedside is a.otherside
+            assert a.ownerside is a.thisside
+        else:
+            assert a.ownerside is a.otherside
+            assert a.ownedside is a.thisside
 
-    for target,expect,intype in [
-            (a.is_parent, is_parent, 'is_parent=bool' ),
-            (a.name, mname, 'name=str' ),
-            (b.name, oname, 'oname=str'),
-            (a.klas, mklas, 'klas='  ),
-            (b.klas, oklas, 'oklas=' ),
-        ]:
-        if expect is None: print 'give', intype, 'to test it'
-        else: assert target == expect, '%s: %r ?= %r' % (intype, target, expect)
-
-    return a,b
+    other.setdefault( 'has_many', not this['has_many'])
+    for o,oexpect in [[a.thisside,this], [a.otherside,other]]:
+        target = dict( (k,getattr(o,k)) for k in oexpect)
+        assert target == oexpect, '%s:\n %r ?=\n %r' % (o, target, oexpect)
 
 
-from sqlalchemy.orm import clear_mappers
+
+from sqlalchemy.orm import clear_mappers, class_mapper
 from sqlalchemy import MetaData, Integer, String
 import unittest
 
@@ -52,35 +37,41 @@ class AboutRel( object):
         clear_mappers()
 
     BACKREF = False
-    backref_kids = backref_club = None
+    backref_kids = backref_club = backref_work = backref_friend = None
     def backrefs( me):
         BACKREF = me.BACKREF
-        me.backref_kids = BACKREF and 'mama' or None
+        me.backref_kids2 = me.backref_kids = BACKREF and 'mama' or None
         me.backref_club = BACKREF and 'members' or None
+        me.backref_work = BACKREF and 'employes' or None
+        me.backref_papa = BACKREF and 'papa' or None
 
-    def test_mama_kids( me):
-        Mama = me.Mama
-        test( Mama.kids, is_parent=True,
-            name='kids', klas=Mama,
-            oname=me.backref_kids,
-            oklas=me.Kid
+    def test_mama_kids_1_n( me):
+        test( me.Mama.kids,
+            name='kids', klas=me.Mama, has_many=True,
+            other=dict( name=me.backref_kids, klas=me.Kid, anyname=me.backref_kids2)
         )
-    def test_mama_club( me):
-        Mama = me.Mama
-        test( Mama.club, is_parent=False,
-            name='club', klas=Mama,
-            oname=me.backref_club,
-            oklas=me.Club
+    def test_mama_work_n_1( me):
+        test( me.Mama.work,
+            name='work', klas=me.Mama, has_many=False,
+            other=dict( name=me.backref_work, klas=me.Work)
         )
-
-    def test_mama_friend( me):
-        Mama = me.Mama
-        test( Mama.friend, is_parent=False,
-            name='friend', klas=Mama,
-            oname=None,
-            oklas=Mama
+    def test_mama_club_n_n( me):
+        test( me.Mama.club,
+            name='club', klas=me.Mama, has_many=True,
+            other=dict( name=me.backref_club, klas=me.Club, has_many=True)
         )
-
+    def test_mama_friend_self_n_1( me):
+        Mama = me.Mama
+        test( Mama.friend,
+            name='friend', klas=Mama, has_many=False,
+            other=dict( name=None, klas=Mama)
+        )
+    def test_mama_papa_1_1( me):
+        Mama = me.Mama
+        test( Mama.papa,
+            name='papa', klas=Mama, has_many=False,
+            other=dict( name=me.backref_papa, klas=me.Papa, has_many=not me.backref_papa )
+        )
     def test_wrongs( me):
         for a in me.Kid, me.Kid.name, 'alala':
             try:
@@ -91,17 +82,20 @@ class AboutRel( object):
 
 class AboutRel_backref( AboutRel):
     BACKREF = True
-    def test_kid_mama( me):
-        test( me.Kid.mama, is_parent=False,
-            name='mama', klas=me.Kid,
-            oname='kids',
-            oklas=me.Mama
+    def test_kid_mama_1_n_back( me):
+        test( me.Kid.mama,
+            name='mama', klas=me.Kid, has_many=False,
+            other=dict( name='kids', klas=me.Mama)
         )
-    def test_club_members( me):
-        test( me.Club.members, is_parent=True,
-            name='members', klas=me.Club,
-            oname='club',
-            oklas=me.Mama
+    def test_work_employes_n_1_back( me):
+        test( me.Work.employes,
+            name='employes', klas=me.Work, has_many=True,
+            other=dict( name='work', klas=me.Mama)
+        )
+    def test_club_members_n_n_back( me):
+        test( me.Club.members,
+            name='members', klas=me.Club, has_many=True,
+            other=dict( name='club', klas=me.Mama, has_many=True)
         )
 
 
@@ -120,19 +114,32 @@ if 'nodbcook' not in sys.argv:
             me.backrefs()
             backref_kids = me.backref_kids
             backref_club = me.backref_club
+            backref_work = me.backref_work
+            backref_papa = me.backref_papa
+
+            class Work( o2r.Base):
+                name = Text()
+                if backref_work:
+                    assert backref_work == 'employes'
+                    employes = o2r.Collection( 'Mama', backref='work')
             class Club( o2r.Base):
-                place = Text()
-                if backref_club:
+                name = Text()
+                if 0:#*backref_club:
                     assert backref_club == 'members'
                     members = o2r.Collection( 'Mama', backref='club')
             class Kid( o2r.Base):
                 name = Text()
             class Mama( o2r.Base):
                 name = Text()
-                if not backref_club:
-                    club = o2r.Reference( Club)
+                if not backref_work:
+                    work = o2r.Reference( Work)
+                if 1:#not backref_club:
+                    club = o2r.Association.Hidden( Club, 'members')
                 kids = o2r.Collection( Kid, backref=backref_kids)
                 friend = o2r.Reference( 'Mama')
+                papa   = o2r.Reference( 'Papa') #not yet,  backref=backref_papa)
+            class Papa( o2r.Base):
+                name = Text()
 
             namespace = locals().copy()
             mkids = Mama.kids
@@ -143,11 +150,12 @@ if 'nodbcook' not in sys.argv:
                 )
 
             from dbcook import config
-            me.backref_kids = backref_kids or config.column4ID.ref_make_name( mkids.backrefname)
-            me.backref_club = backref_club
+            me.backref_kids2 = backref_kids or config.column4ID.ref_make_name( mkids.backrefname)
             me.Mama = Mama
             me.Kid = Kid
             me.Club = Club
+            me.Work = Work
+            me.Papa = Papa
 
     class t3_dbcook_nobackref( dbcook_setup, AboutRel, unittest.TestCase ):
         pass
@@ -155,22 +163,38 @@ if 'nodbcook' not in sys.argv:
         pass
 
 class sa_setup( object):
+    def table( me, klas):
+        return class_mapper( klas).local_table.c
     def setUp( me):
         me.backrefs()
-        from sqlalchemy.orm import mapper, relation, compile_mappers
+        from sqlalchemy.orm import mapper, relation, compile_mappers, backref
         from sqlalchemy import Table, Column, ForeignKey
         meta = MetaData( 'sqlite:///')
         #meta.bind.echo=True
 
+        twork = Table('work', meta,
+                Column('name', Integer, ),
+                Column('id', Integer, primary_key=True),
+            )
         tclub = Table('club', meta,
                 Column('name', Integer, ),
                 Column('id', Integer, primary_key=True),
             )
+        tpapa = Table('papa', meta,
+                Column('name', Integer, ),
+                Column('id', Integer, primary_key=True),
+                Column('mama_id', Integer, ForeignKey('mama.id'))
+            )
         tmama = Table('mama', meta,
                 Column('name', Integer, ),
                 Column('id', Integer, primary_key=True),
+                Column('work_id', Integer, ForeignKey('work.id',)),
+                Column('friend_id', Integer, ForeignKey('mama.id', use_alter=True, name='ma2ma')),
+                Column('papa_id', Integer, ForeignKey('papa.id', use_alter=True, name='ma2pa')),
+            )
+        tclubmama = Table('clubmama', meta,
                 Column('club_id', Integer, ForeignKey('club.id',)),
-                Column('friend_id', Integer, ForeignKey('mama.id', use_alter=True, name='zt2id_fk'))
+                Column('mama_id', Integer, ForeignKey('mama.id',)),
             )
         tkid = Table('kid', meta,
                 Column('name', Integer, ),
@@ -183,25 +207,48 @@ class sa_setup( object):
             def __init__( me, **kargs):
                 for k,v in kargs.items(): setattr( me,k,v)
         class Club( Base):pass
+        class Papa( Base):pass
+        class Work( Base):pass
         class Mama( Base): pass
         class Kid( Base): pass
 
         mapper( Mama, tmama, properties={
                 'kids': relation( Kid,  backref= me.backref_kids,),
-                'club': relation( Club, backref= me.backref_club,),
+                'club': relation( Club, backref= me.backref_club, secondary=tclubmama),
+                'work': relation( Work, backref= me.backref_work,),
                 'friend': relation( Mama,
                             post_update=True,
                             uselist=False,
-                            lazy=True, )
+                            lazy=True,
+                        ),
+                'papa': relation( Papa,
+                            uselist=False,
+                            primaryjoin= tmama.c.papa_id == tpapa.c.id,
+                            backref= me.backref_papa and backref(
+                                me.backref_papa,
+                                primaryjoin= tpapa.c.mama_id == tmama.c.id,
+                                uselist=False,
+                            ),
+                        ),
+
             })
         mapper( Kid, tkid)
         mapper( Club, tclub)
+        mapper( Work, twork)
+        pa=mapper( Papa, tpapa)
+        if not me.backref_papa:
+            pa.add_property(  'mama', relation( Mama,
+                            primaryjoin= tpapa.c.mama_id == tmama.c.id,
+                            uselist=False,
+                        ))
         compile_mappers()   #or populate()
 
-        me.backref_kids = me.backref_kids or 'mama_id'
+        me.backref_kids2 = me.backref_kids or 'mama_id'
         me.Mama = Mama
         me.Kid = Kid
         me.Club = Club
+        me.Work = Work
+        me.Papa = Papa
 
 class t1_sa_nobackref( sa_setup, AboutRel, unittest.TestCase ):
     pass
