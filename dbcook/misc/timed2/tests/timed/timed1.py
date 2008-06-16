@@ -1,9 +1,9 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
-import bisect
+from bisect import bisect_left
 
-class Timed1:
+class Timed1( object):
     '''
     Single-timestamp history (i.e. versioned) object. use any (ascending) representation of time.
 
@@ -17,67 +17,75 @@ class Timed1:
     като огъвка - състоянието на нещото си е само негова работа.
     '''
     N_TIMES = 1
-    _WITH_DIRECT_ACCESS = 0     #not really needed, maybe internal testing only
     class NOT_FOUND: pass
+
     def __init__( me):
         me.order = []
-        if me._WITH_DIRECT_ACCESS:
-            me.all = {}
 
+    #TODO into_record( time,obj,step=0) / from_record( time,obj)
     def put( me, obj_version, time):
-        assert time
-        order = me.order
-
-            # the middle 0 is used as stepper: to be able to _search_ for a step AFTER an
-            # existing time but before next valid one - as the way to make a valid 'next' is unknown
-            #
-            # 0-та в средата се ползва като стъпало/разделител - да може да се търси една стъпка СЛЕД някакво
-            # съществуващо време но преди следващото валидно - като пресмятането на 'следващо' не е известно
-
-        #if 0:   #разчита на подредбата на obj_version при еднакви времена
-        #    bisect.insort_right( me.order, (time,0,obj_version) )
+        # the 0 in the middle of the record is used as stepper: allows searching for a
+        # step AFTER an existing time but before next valid one without knowing what is 'time'.
+        # (also works for BEFORE/prev).
+        # looking for (time,1)  will position AFTER  last existing  t==time
+        # looking for (time,-1) will position BEFORE first existing t==time
+        # looking is done via bisect_left; bisect_right gives same results
+        #
+        # 0-та в средата на записа се ползва като стъпало/разделител - да може да се търси една
+        # стъпка СЛЕД някакво съществуващо време но преди следващото валидно време,
+        # без да се знае какво точно е 'време' (също става и за ПРЕДИ/предишно)
 
         ##при еднакви времена, това винаги добавя в края им
-        time_next = (time,1, None)
-        ix = bisect.bisect_left( order, time_next)
-        order.insert( ix, (time,0,obj_version) )
+        ix = me._get_ix( time)
+        me.order.insert( ix, (time,0,obj_version) )
 
-        if me._WITH_DIRECT_ACCESS: #follows direct access - not really needed
-            me.all[ time ] = obj_version
-            if not time.startswith('_'): time='_'+time
-            setattr( me, time, obj_version)
-
-    def _get_ix( me, time ):
+    def _get_ix_after( me, time ):
+        '''index of next eventual item after 'time':
+            just-after right side of [a,b] period - inclusive 'time' looking from 0 upwards
+            0 means not found; can be == len(order)
+            -=1 to use as index of last item <= time
+        '''
         assert time
-        order = me.order
             #see put() for explaining the middle 1
         time_next = (time,1, None)          #преди следващото
-        ix = bisect.bisect_left( order, time_next )
+        ix = bisect_left( me.order, time_next )
         return ix   #0 значи няма запис
+    _get_ix = _get_ix_after
 
-    def _get_ix2( me, timefrom, timeto ):   #включително
-        assert timefrom
-        assert timeto       #символ/маркер ? напр. до-края
-        order = me.order
+    def _get_ix_least( me, time):
+        '''index of least item matching 'time' (i.e. inclusive):
+            can be 0 ; can be == len(order)
+            this is left side of [a,b] period
+            -=1 to use as index of last item _before_ time
+        '''
+        assert time
+        time_prev = (time,-1, None)
+        return bisect_left( me.order, time_prev )
 
-        # *from is different from _get_ix() -
-        time_prev = (timefrom,-1, None)     #след предното ????
-        ix_from = bisect.bisect_right( order, time_prev )
+    def _get_ix2( me, timefrom, timeto, exclusiveTo =False ):   #always inclusiveFrom
+        '''return ix_from:inclusive, ix_to:exclusive
+            i.e. ix_from is real index, ix_to needs -=1 to become real index'''
+        #TODO timeto :  #символ/маркер ? напр. до-края
+        ix_from = me._get_ix_least( timefrom)
+        get_ix_to = exclusiveTo and me._get_ix_least or me._get_ix_after
+        ix_to = get_ix_to( timeto)
+        return ix_from, ix_to
 
-        if ix_from: ix_from -= 1    #XXX ????
+    def _getitem( me, ix):
+        rkey, _stepper, robj = me.order[ ix]
+        return rkey,robj
 
-        # *to is same like _get_ix() ; 0 means not found
-        time_next = (timeto,1, None)        #преди следващото
-        ix_to   = bisect.bisect_left( order, time_next )
-        #if ix_to >= ix_from: return None    # няма намерени ???????????? нещо такова
-        return ix_from,ix_to   #ix_to is like _get_ix(); ix_from is not
+    def _result( me, rkey, robj, only_value =True):     #only_value= bool or callable
+        if callable( only_value):
+            return only_value( rkey, robj)
+        if only_value: return robj
+        return rkey,robj
 
     def get( me, time, only_value =True ):
         ix = me._get_ix( time)
         if ix:
-            r = me.order[ix-1]
-            if only_value: return r[-1]
-            return (r[0],r[-1])         #skip the middle stepper
+            rkey, robj = me._getitem( ix-1)
+            return me._result( rkey, robj, only_value)
         return me.NOT_FOUND #None
     __getitem__ = get
 
@@ -90,6 +98,12 @@ class Timed1:
 ###################### test base
 
 class Test0( object):
+    @staticmethod
+    def input2time( t): return t
+    @staticmethod
+    def timekey2input( timed, k): return k
+    input_printer = repr
+
     def fill( me, timed, inputs =None, input2time =None):
         print 'fill:',
         if not input2time: input2time = me.input2time
@@ -104,19 +118,18 @@ class Test0( object):
         if me.verbose: print timed
         return objects
 
-    input_printer = repr
     def test_db( me, timed,
                 timekey2input   =None,
-                input_times     =None,
                 input_printer   =None,
             ):
         print 'test_internal_contents',
         if not timekey2input: timekey2input = me.timekey2input
-        if not input_times: input_times = me.input_times
         if not input_printer: input_printer = me.input_printer
+        input_times = me.input_times
         err = 0
         res_db = timed.order
-        res_times = [ timekey2input( timed, row[0]) for row in res_db ]
+        key2out = getattr( timed, '_fromkey', lambda k:k)
+        res_times = [ timekey2input( timed, key2out( row[0])) for row in res_db ]
         if res_times != list( input_times):
             l_in = len( input_times)
             l_db = len( res_db)
@@ -131,7 +144,8 @@ class Test0( object):
         me.err += err
         return err
 
-    input2time = staticmethod( lambda t:t )
+    #XXX TODO test_getRange
+
     def test_get( me, timed,
                 objects,
                 cases       =None,
@@ -170,6 +184,13 @@ class Test0( object):
         me.err += err
         return err
 
+    def test_get_empty( me, timed):
+        assert not timed.order
+        print 'empty'
+        return me.test_get( timed, [],
+            cases=[ (c[:2]+[None]) for c in me.cases ]
+        )
+
     __slots__ = ()
     _err = 0
     def seterr( me, v): Test0._err = v
@@ -184,16 +205,15 @@ class Test0( object):
 ####### test timed1
 
 class Test( Test0):
-    input_times = [ 20060901, 20061002, ]
-    cases= [    #time   #case-name      #result-obj = 1+index over input_times
-            [ 20061002, 'exact'         , 2    ],
-            [ 20060901, 'exact'         , 1    ],
-            [ 20060900, '1 step-before' , None ],
-            [ 20060910, 'between'       , 1    ],
-            [ 20060202, 'before all'    , None ],
-            [ 20061010, 'after all'     , 2    ],
-           ]
-    timekey2input = staticmethod( lambda timed, k: k )
+    input_times = [ 901, 1002, ]
+    cases= [#time   #case-name      #result-obj = 1+index over input_times
+            [ 1002, 'exact'         , 2    ],
+            [  901, 'exact'         , 1    ],
+            [  900, '1 step-before' , None ],
+            [  910, 'between'       , 1    ],
+            [  202, 'before all'    , None ],
+            [ 1010, 'after all'     , 2    ],
+    ]
 
     def fill4sametime( me, timed, shade, objects, shade_out =None ):
         objs = objects[:]
@@ -209,6 +229,9 @@ if __name__ == '__main__':
     test = Test()
     t = Timed1()
 
+    test.test_get_empty( t)
+
+    #something
     objects = test.fill( t, [1,2] )
     test.test_db( t)
 

@@ -1,11 +1,11 @@
 #$Id$
-
+PY?=python
 nw: line now
 line:
 	@echo -e '\n\n\n=================================\n'
 %.test: %.py
 	@echo ===============
-	PYTHONPATH=.:..:../../.. python $*.py -v
+	PYTHONPATH=.:..:../../.. $(PY) $*.py -v
 
 now: ../timed1.test
 now: ../timed2.test

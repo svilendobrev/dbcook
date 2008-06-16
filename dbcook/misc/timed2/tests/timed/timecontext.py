@@ -53,8 +53,9 @@ class TimeContext( tuple):
     Всички времена трябва да са от тип TimeContext.Time (променяемо);
     (ако има отделно TransTime, trans трябва да е TransTime,
 
-    добре е също така точността на записаните версии и на контекста,
-    с който се търси да е еднаква (трудно е да се форсира това, обаче)!!!
+    добре е също така точностите на всички записани времена, както и на
+    времената по които се търси, да са еднакви, Това си остава
+    пожелание - не може да се наложи.
     '''
 
     Time = object
@@ -67,11 +68,10 @@ class TimeContext( tuple):
     _isTransTime = isTransTime #save it
 
     def __new__( klas, **kargs):
-        'ctor( trans=, valid=)'
-        return klas._ctor1( **kargs)
-    @classmethod
-    def time( klas, **kargs):
-        'ctor( trans_time=, valid_time=)'
+        ''' ctor( trans=, valid=)
+            ctor( trans_time=, valid_time=)
+            ctor( time_trans=, time_valid=)
+        '''
         return klas._ctor2( **kargs)
     @classmethod
     def copy( klas, tm):
@@ -85,8 +85,20 @@ class TimeContext( tuple):
         assert klas.isTransTime( trans), `trans`
         return tuple.__new__( klas, (valid,trans))
     @classmethod
-    def _ctor2( klas, valid_time, trans_time):
-        return klas._ctor1( valid_time,trans_time)
+    def _ctor2( klas, **kargs):
+        valid = trans = None
+        for k,v in kargs.iteritems():
+            if k in klas._names4valid:
+                if valid is None: valid = v
+                else: raise TypeError, 'multiple values for time_valid; use only one of ' +klas._names4valid
+            if k in klas._names4trans:
+                if trans is None: trans = v
+                else: raise TypeError, 'multiple values for time_trans; use only one of ' +klas._names4trans
+        if valid is None:
+            raise TypeError, 'time_valid not specified; use one of ' +klas._names4valid
+        if trans is None:
+            raise TypeError, 'time_trans not specified; use one of ' +klas._names4trans
+        return klas._ctor1( valid, trans)
 
     class _Pickler(object):
         def __new__( klas, valid,trans):
@@ -94,8 +106,10 @@ class TimeContext( tuple):
     def __reduce__( me):
         return _Pickler, me.as_trans_valid()
 
-    valid = valid_time = property( lambda me: tuple.__getitem__(me,0) ) #me[0] )
-    trans = trans_time = property( lambda me: tuple.__getitem__(me,1) ) #me[1] )
+    valid = time_valid = valid_time = property( lambda me: tuple.__getitem__(me,0) ) #me[0] )
+    trans = time_trans = trans_time = property( lambda me: tuple.__getitem__(me,1) ) #me[1] )
+    _names4valid = 'valid', 'valid_time', 'time_valid'
+    _names4trans = 'trans', 'trans_time', 'time_trans'
     def as_trans_valid( me): return me.trans,me.valid   #tuple.__getitem__(me,1)],me[0] ,me[0]
     def as_valid_trans( me): return tuple(me)
     def __str__( me): return 'TimeContext( trans=%r, valid=%r)' % me.as_trans_valid()
@@ -157,10 +171,10 @@ class _Timed2overTimeContext( _timed2.Timed2):
 
 
 class _Test( _timed2.Test):
-    timekey2input = staticmethod(
-        lambda timed, k: k.as_trans_valid() )
-    input2time = staticmethod(
-        lambda (t,v): TimeContext( trans=t,valid=v) )
+    @staticmethod
+    def timekey2input( timed, (v,t)): return (t,v)
+    @staticmethod
+    def input2time( (t,v)): return TimeContext( trans=t,valid=v)
 
 if __name__ == '__main__':
     try: c = TimeContext( 1,2)
@@ -174,7 +188,7 @@ if __name__ == '__main__':
     test2 = _Test()
     t = _Timed2overTimeContext()
     objects = test2.fill( t, [1,3,2,4]  )
-    err = test2.test_db( t,)
+    err = test2.test_db( t)
 #    if not err: print t
     test2.test_get( t, objects,)
     test2.exit()

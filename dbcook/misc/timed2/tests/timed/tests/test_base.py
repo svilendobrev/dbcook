@@ -37,14 +37,15 @@ class TimedTestSimpleCase( Case):
         me._testDefaultTime = False
         me.obj = Customer()
     def setupEach( me, f):
-        me.obj.age.put( value=f.value, trans=f.record, valid=f.actual, deleted=(f.status == 'd') )
+        me.obj.age.put( value=f.value, trans=f.trans, valid=f.valid, deleted=(f.status == 'd') )
     def testEach( me, t):
         res = None
         if me.obj:
             if me._testDefaultTime:
-                t.record = t.actual = datetime.now()
-            res = me.obj.age.get( trans=t.record, valid=t.actual, include_deleted=False)
+                t.trans = t.valid = datetime.now()
+            res = me.obj.age.get( trans=t.trans, valid=t.valid, include_deleted=False)
         return res
+    def systemState( me): return str(me.obj.age)
 
 
 class TimedCombinationsTestCase( TimedTestSimpleCase):
@@ -72,7 +73,7 @@ class TimedRangeTestCase( TimedTestSimpleCase):
     def testEach( me, t):
         res = None
         if me.obj:
-            res = me.obj.age.getRange( trans=t.record, validFrom=t.actual, validTo=t.actualTo, include_deleted=False)
+            res = me.obj.age.getRange( trans=t.trans, validFrom=t.valid, validTo=t.validTo, include_deleted=False)
         return res
 
 def test( Timed2_withDisabled_klas, verbosity =VERBOSE, title= None):

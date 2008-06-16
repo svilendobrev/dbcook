@@ -4,7 +4,7 @@
 def errorer( oserr):
     print oserr
 
-import os, os.path, imp
+import os, os.path, imp, sys
 _DEBUG = 0
 
 PY_SUFFIXES = [ suffix for (suffix,mode,typ) in imp.get_suffixes() if typ == imp.PY_SOURCE ]
@@ -123,10 +123,16 @@ class Module( object):
 
     def _load_module_version( me, modname, fname):
         if _DEBUG: print 'imp', fname
-        name = '.'.join( (me.name, modname))
-
-        root = __import__( name)   #returns root
-        return getattr( root, modname)
+        if 0 and 'linux' in sys.platform:
+            name = '.'.join( (me.name, modname))
+            root = __import__( name)   #returns root
+            return getattr( root, modname)
+        else:
+            modpath = me.name.split( os.path.sep) # ne os.path.split
+            _root = modpath[0]
+            modpath.append( modname)
+            name = '.'.join(modpath)
+            return __import__( name, fromlist= [_root])
 
         root = me._load_root_module()
         p3 = imp.find_module( modname, root.__path__)
@@ -165,6 +171,14 @@ class Module( object):
             #root = me._load_root_module()
             #me.put( root, '0')  #???
 
+        #simulate python.import path lookup
+        pths = [name]*0 + [ os.path.join( p, name) for p in sys.path]
+        #print pths
+        for p in pths:
+            if os.path.isdir( p):
+                name = p
+                break
+
         for p in os.walk( name, onerror= errorer):
             (dirpath, dirnames, filenames) = p
             for f in filenames:
@@ -201,15 +215,20 @@ if __name__ == '__main__':
 
     def testall( test, what):
         Module.LAZY_LOAD=0
+        #module.times are 2006mmdd - cut off the year
+        def _m2time( t):     return int(t[4:])
+        def m2time( me, t):  return _m2time(t)
+        def m2time2( me, trans,valid): return (_m2time(t) for t in (trans,valid))
         if 1 in what:
+            mod2time__1_time_in_fname.maketime = m2time
             import timed1
             m1 = Module( name= 'dod', timedKlas= timed1.Timed1,
-                    module2time_converterKlas=mod2time__1_time_in_fname)
+                    module2time_converterKlas= mod2time__1_time_in_fname)
             import dod._20060901 as r1
             import dod._20061002 as r2
             objects= [r1,r2]
             tst1 = timed1.Test()
-            tst1.input2time = str
+            #tst1.input2time = str
             testmod( tst1, m1, objects= objects)
 
             if 1:   #sametime
@@ -221,11 +240,12 @@ if __name__ == '__main__':
 
         ########
         from timed2 import Timed2
-        test.input2time = lambda (t,v): (str(t),str(v))
+        #test.input2time = lambda (t,v): (str(t),str(v))
         def test2( mod, objects):
             return testmod( test, mod, objects=objects)
 
         if 2 in what:
+            mod2time__all_in_fname___trans_valid.maketime = m2time2
             m2 = Module( name= 'dod2', timedKlas= Timed2,
                         module2time_converterKlas= mod2time__all_in_fname___trans_valid)
             import dod2._20060801_20060901 as p1
@@ -235,6 +255,7 @@ if __name__ == '__main__':
             test2( m2, [p1,p2,p3,p4 ])
 
         if 3 in what:
+            mod2time__trans_in_fname__valid_in_module.maketime = m2time2
             m3 = Module( name= 'dod3', timedKlas= Timed2,
                         module2time_converterKlas= mod2time__trans_in_fname__valid_in_module)
             import dod3._20060801_1 as q1
@@ -244,8 +265,9 @@ if __name__ == '__main__':
             test2( m3, [q1,q2,q3,q4 ])
 
         if 4 in what:
+            mod2time__all_in_module.maketime = m2time2
             m4 = Module( name= 'dod4', timedKlas= Timed2,
-                        module2time_converterKlas= mod2time__all_in_module )
+                        module2time_converterKlas= mod2time__all_in_module)
             import dod4._v as s1
             import dod4._c as s2
             import dod4._b as s3

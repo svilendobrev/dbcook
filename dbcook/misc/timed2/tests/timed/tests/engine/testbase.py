@@ -24,7 +24,6 @@ class BaseTestSample:
     pass
 
 SUBSEP = 10*'-'
-from util.attr import get_itemer
 
 class BaseTestCase( object):
     '''used as base class for app tests
@@ -76,14 +75,24 @@ class BaseTestCase( object):
             me.assertEquals( result, expected)
 
     currentRes = None   #always existing
+    def systemState( me): return None
     def __str__( me):
         ''' Използва се за показване на резултата при грешен/неминал тест. '''
         if me.currentSample:
             res = '\n'.join( str(f) for f in me.initialState )
+            systemState = me.systemState()
+            result = me.currentRes
+            sample = me.currentSample
+            expect = sample.expected
+            sample_name = sample.name
+
+            if systemState: res += '''
+systemState: %(systemState)s'''
             res += '''
-result: %(me.currentRes)s expected: %(me.currentSample.expected)s
-%(me.currentSample)s
-%(me.currentSample.name)r FROM''' % get_itemer( locals() ) #след FROM се показва името на тест case-а
+result: %(result)s
+expect: %(expect)s
+sample: %(sample)s
+%(sample_name)r FROM''' % locals() #след FROM се показва името на тест case-а
             return res
         return ''
 
