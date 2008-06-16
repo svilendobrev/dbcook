@@ -41,7 +41,7 @@ TimeContext: времеви контекст на дадена операция/промяна - дву-временен (bi-temp
 
 '''
 
-class TimeContext( tuple):
+class TimeContext( object):
     '''
     Това е наредена двойка, НО САМО за ускоряване на работата.
     НИКОГА не разчитай на подредбата вътре!
@@ -57,6 +57,7 @@ class TimeContext( tuple):
     времената по които се търси, да са еднакви, Това си остава
     пожелание - не може да се наложи.
     '''
+    __slots__ = 'trans valid'.split()
 
     Time = object
 #    TransTime = None
@@ -67,55 +68,58 @@ class TimeContext( tuple):
     def isTransTime( klas, time): return isinstance( time, getattr( klas, 'TransTime', klas.Time))
     _isTransTime = isTransTime #save it
 
-    def __new__( klas, **kargs):
-        ''' ctor( trans=, valid=)
-            ctor( trans_time=, valid_time=)
-            ctor( time_trans=, time_valid=)
-        '''
-        return klas._ctor2( **kargs)
     @classmethod
     def copy( klas, tm):
         'copy_ctor( another_TimeContext_of_SAME_type)'
         assert isinstance( tm, klas)
-        return tuple.__new__( klas, tm)
+        return klas( valid= tm.valid, trans=tm.trans)
 
-    @classmethod
-    def _ctor1( klas, valid, trans):
-        assert klas.isTime( valid), `valid`
-        assert klas.isTransTime( trans), `trans`
-        return tuple.__new__( klas, (valid,trans))
-    @classmethod
-    def _ctor2( klas, **kargs):
+    def __init__( me, **kargs):
+        ''' constructor( trans=, valid=) '''
+        return me.__init__2( **kargs)
+
+    if 0:
+        ''' ctor( trans=, valid=)
+            ctor( trans_time=, valid_time=)
+            ctor( time_trans=, time_valid=)
+        '''
         valid = trans = None
+        _names4valid = me._names4valid
+        _names4trans = me._names4trans
         for k,v in kargs.iteritems():
-            if k in klas._names4valid:
+            if k in _names4valid:
                 if valid is None: valid = v
-                else: raise TypeError, 'multiple values for time_valid; use only one of ' +klas._names4valid
-            if k in klas._names4trans:
+                else: raise TypeError, 'multiple values fortime_valid; use only keyword arg one of ' + _names4valid
+            if k in _names4trans:
                 if trans is None: trans = v
-                else: raise TypeError, 'multiple values for time_trans; use only one of ' +klas._names4trans
+                else: raise TypeError, 'multiple values for time_trans; use only keyword arg one of ' + _names4trans
         if valid is None:
-            raise TypeError, 'time_valid not specified; use one of ' +klas._names4valid
+            raise TypeError, 'time_valid not specified; use one keyword arg of ' + _names4valid
         if trans is None:
-            raise TypeError, 'time_trans not specified; use one of ' +klas._names4trans
-        return klas._ctor1( valid, trans)
+            raise TypeError, 'time_trans not specified; use one keyword arg of ' + _names4trans
 
-    class _Pickler(object):
-        def __new__( klas, valid,trans):
-            return TimeContext._ctor1( valid,trans)
+        me.__init__2( trans=trans, valid=valid)
+
+    def __init__2( me, valid, trans):
+        assert me.isTime( valid), `valid`
+        assert me.isTransTime( trans), `trans`
+        me.trans = trans
+        me.valid = valid
+
+    class _Pickler( object):
+        def __new__( klas, trans, valid):
+            return TimeContext( valid=valid, trans=trans)
     def __reduce__( me):
         return _Pickler, me.as_trans_valid()
 
-    valid = time_valid = valid_time = property( lambda me: tuple.__getitem__(me,0) ) #me[0] )
-    trans = time_trans = trans_time = property( lambda me: tuple.__getitem__(me,1) ) #me[1] )
+    time_valid = valid_time = property( lambda me: me.valid)
+    time_trans = trans_time = property( lambda me: me.trans)
     _names4valid = 'valid', 'valid_time', 'time_valid'
     _names4trans = 'trans', 'trans_time', 'time_trans'
-    def as_trans_valid( me): return me.trans,me.valid   #tuple.__getitem__(me,1)],me[0] ,me[0]
-    def as_valid_trans( me): return tuple(me)
-    def __str__( me): return 'TimeContext( trans=%r, valid=%r)' % me.as_trans_valid()
+    def as_trans_valid( me): return me.trans, me.valid
+    def as_valid_trans( me): return me.valid, me.trans
+    def __str__( me): return 'TimeContext( trans=%r, valid=%r)' % (me.trans, me.valid)
     __repr__ = __str__
-    def __getitem__( me,*a):
-        raise NotImplementedError, 'DO NOT use direct indexes!'
 
 ####
     if 0:
@@ -163,7 +167,7 @@ class _Timed2overTimeContext( _timed2.Timed2):
     #to Timed2 internal protocol
     def time2key_valid_trans( me, time):
         assert isinstance( time, me.TimeContext)
-        return time
+        return time.as_valid_trans()
 
     #from Timed2 internal protocol
     def key_valid_trans2time( me, (valid, trans) ):
