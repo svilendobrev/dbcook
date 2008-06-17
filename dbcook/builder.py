@@ -307,6 +307,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
             if attr in reflector.attrtypes( base_klas):
                 if dbg: print '  inherited:', attr
                 continue
+        if dbg: print '  own:', attr
 
         #else: 'concrete_table' - each class OWN table
         k = name_prefix + attr
@@ -497,6 +498,8 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                     continue
                 else:
                     if dbg: print '  concrete-inherited-relink:', k
+            else:
+                if dbg: print '  own:', k
             is_substruct = reflector.is_reference_type( typ)
             if is_substruct:
                 attrklas = is_substruct[ 'klas']
