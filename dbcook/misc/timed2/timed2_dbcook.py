@@ -103,15 +103,13 @@ class Timed2Mixin( config.BaseClass4Mixin):
                         times_only = times_only
                 )
     get_obj_history = get_version_history
-
+    @staticmethod
     def key_valid_trans2time( tkey):
         timeValid, timeTrans = tkey
-        return timeTrans,timeValid
-    key_valid_trans2time = staticmethod( key_valid_trans2time)
+        return dict( trans= timeTrans, valid= timeValid)
+    @staticmethod
     def time2key_valid_trans( time):
-        timeTrans, timeValid = time
-        return timeValid,timeTrans
-    time2key_valid_trans = staticmethod( time2key_valid_trans)
+        return time['valid'], time['trans']
 
     def pre_save( me):
         trans = me.now()

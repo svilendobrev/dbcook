@@ -9,43 +9,38 @@ class _Timed2_withDisabled_protocol:
     '''testing only - Timed protocol for tests to use
         ALWAYS USE KEYWORD-ARGS ONLY!
     '''
-    def get( me, trans, valid, include_deleted =False): pass
-    def put( me, value, trans, valid, deleted =False): pass
+    def get( me, trans, valid, with_disabled =False):
+        return None or object
+    def put( me, value, trans, valid, disabled =False):
+        pass
+    def getRange( me, trans, validFrom, validTo, with_disabled =False):
+        return [] or list
 
     #FORCE using keyword-args only
     class EnforcingWrapper( object):
-        __slots__ = ('timed',)
-        def __init__( me, timed_klas ): me.timed = timed_klas()
-        def get( me, **kargs): return me.timed.get( **kargs)
-        def put( me, **kargs): return me.timed.put( **kargs)
-        def __str__( me): return str( me.timed)
-        def __getattr__( me, name): return getattr( me.timed, name)
-
-
-class Customer:
-    "Business object to test with"
-    Timed2_withDisabled_klas = None               #klas with additional get.include_deleted, put.deleted args
-    def __init__( me ):
-        me.age  = _Timed2_withDisabled_protocol.EnforcingWrapper( me.Timed2_withDisabled_klas )
-#    def get( me, **k): return me.age.get( **k)
+        __slots__ = ('org',)
+        def __init__( me, timed_klas ): me.org = timed_klas()
+        def get( me, **kargs): return me.org.get( **kargs)
+        def put( me, **kargs): return me.org.put( **kargs)
+        def getRange( me, **kargs): return me.org.getRange( **kargs)
+        def __str__( me): return str( me.org)
+        def __getattr__( me, name): return getattr( me.org, name)
 
 
 class TimedTestSimpleCase( Case):
-    "can be used as base class for this side of tests in the future"
+    'base4test'
+    Timed2_withDisabled_klas = None     #klas with additional get.with_disabled, put.disabled args
+
     def __init__( me, doc, inputDatabase, testingSamples):
         Case.__init__( me, doc, inputDatabase, testingSamples)
         me._testDefaultTime = False
-        me.obj = Customer()
+        me.obj = _Timed2_withDisabled_protocol.EnforcingWrapper( me.Timed2_withDisabled_klas )
     def setupEach( me, f):
-        me.obj.age.put( value=f.value, trans=f.trans, valid=f.valid, deleted=(f.status == 'd') )
+        me.obj.put( value=f.value, trans=f.trans, valid=f.valid, disabled=(f.status == 'd') )
     def testEach( me, t):
-        res = None
-        if me.obj:
-            if me._testDefaultTime:
-                t.trans = t.valid = datetime.now()
-            res = me.obj.age.get( trans=t.trans, valid=t.valid, include_deleted=False)
-        return res
-    def systemState( me): return str(me.obj.age)
+        if me._testDefaultTime: t.trans = t.valid = datetime.now()
+        return me.obj.get( trans=t.trans, valid=t.valid, with_disabled=False)
+    def systemState( me): return str( me.obj)
 
 
 class TimedCombinationsTestCase( TimedTestSimpleCase):
@@ -54,10 +49,10 @@ class TimedCombinationsTestCase( TimedTestSimpleCase):
         i = 0
         comb.res = []
         for vday, rday in comb.makeCombinations( list(range(1, 20, 2)), 2):
-            valor = datetime( 2006, 2, vday)
-            real  = datetime( 2006, 2, rday)
-            me.obj.age.put( value= i, trans= real, valid= valor)
-            if me.verbosity > 2: print 'DB:', real, valor, ' value', i
+            valid = datetime( 2006, 2, vday)
+            trans = datetime( 2006, 2, rday)
+            me.obj.put( value= i, trans= trans, valid= valid)
+            if me.verbosity > 2: print 'DB:', trans, valid, ' value', i
             i += 1
 
 class TimedDefaultGetTestCase( TimedTestSimpleCase):
@@ -71,13 +66,10 @@ class TimedDefaultGetTestCase( TimedTestSimpleCase):
 
 class TimedRangeTestCase( TimedTestSimpleCase):
     def testEach( me, t):
-        res = None
-        if me.obj:
-            res = me.obj.age.getRange( trans=t.trans, validFrom=t.valid, validTo=t.validTo, include_deleted=False)
-        return res
+        return me.obj.getRange( trans=t.trans, validFrom=t.valid, validTo=t.validTo, with_disabled=False)
 
 def test( Timed2_withDisabled_klas, verbosity =VERBOSE, title= None):
-    Customer.Timed2_withDisabled_klas = Timed2_withDisabled_klas
+    TimedTestSimpleCase.Timed2_withDisabled_klas = Timed2_withDisabled_klas
     import testdata
     t1 = TimedTestSimpleCase(       'test2_idb2',   testdata.idb2,  testdata.test2)
     t2 = TimedTestSimpleCase(       'test0_idb0',   testdata.idb0,  testdata.test0)

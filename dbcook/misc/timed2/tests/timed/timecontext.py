@@ -183,10 +183,13 @@ class _Test( _timed2.Test):
 if __name__ == '__main__':
     try: c = TimeContext( 1,2)
     except TypeError: pass
+    else: assert 0, 'must fail'
     try: c = TimeContext( trans=1)
     except TypeError: pass
+    else: assert 0, 'must fail'
     try: c = TimeContext( valid=1)
     except TypeError: pass
+    else: assert 0, 'must fail'
     c = TimeContext( trans=1,valid=2)
 
     test2 = _Test()

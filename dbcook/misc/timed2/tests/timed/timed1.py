@@ -16,7 +16,6 @@ class Timed1( object):
     изключване/включване (enable=exists/disable=deleted) на нещото трябва да се направи
     като огъвка - състоянието на нещото си е само негова работа.
     '''
-    N_TIMES = 1
     class NOT_FOUND: pass
 
     def __init__( me):
@@ -88,6 +87,8 @@ class Timed1( object):
             return me._result( rkey, robj, only_value)
         return me.NOT_FOUND #None
     __getitem__ = get
+
+    #XXX TODO getRange
 
     def __str__(me):
         return me.__class__.__name__ + '\n ' + '\n '.join( str(f) for f in me.order )

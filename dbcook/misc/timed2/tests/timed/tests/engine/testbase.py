@@ -78,28 +78,27 @@ class BaseTestCase( object):
     def systemState( me): return None
     def __str__( me):
         ''' Използва се за показване на резултата при грешен/неминал тест. '''
-        if me.currentSample:
-            res = '\n'.join( str(f) for f in me.initialState )
-            systemState = me.systemState()
-            result = me.currentRes
-            sample = me.currentSample
-            expect = sample.expected
-            sample_name = sample.name
+        if not me.currentSample: return ''
 
-            if systemState: res += '''
+        res = '\n'.join( str(f) for f in me.initialState )
+        systemState = me.systemState()
+        result = me.currentRes
+        sample = me.currentSample
+        expect = sample.expected
+        sample_name = sample.name
+
+        if systemState: res += '''
 systemState: %(systemState)s'''
-            res += '''
+        res += '''
 result: %(result)s
 expect: %(expect)s
 sample: %(sample)s
 %(sample_name)r FROM''' % locals() #след FROM се показва името на тест case-а
-            return res
-        return ''
+        return res
 
 from testutils import HorTestCase
 class Case( BaseTestCase, HorTestCase):
-    ''' Това е класа, който трябва да бъде наследен от конкретните тестове.
-    В конкретния test case трябва да бъдат имплементирани методите:
+    ''' Това трябва да се наследява от конкретните тестове, където трябва да има методите:
     setupEach или setup (НИКОГА и двата едновременно)
     testEach или test (НИКОГА и двата едновременно)
     xxxEach вариантите се ползват ако съответните начално състояние/ test примери (samples)
@@ -108,7 +107,7 @@ class Case( BaseTestCase, HorTestCase):
     състояния и тестови примери при различни нива на описателност (verbosity).
     Ако се ползват setup/test варианта, потребителят на класа сам се грижи за
     оправяне на изхода. Допустими са варианти setupEach с test или setup с testEach.
-    see: examples in engine/timed/test.py and model/simpleDB.py
+    виж за пример engine/timed/test.py, model/simpleDB.py
     '''
     def __init__( me, doc, inputDatabase, testingSamples):
         HorTestCase.__init__( me)

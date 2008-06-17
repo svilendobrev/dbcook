@@ -25,8 +25,6 @@ class Timed2( Timed1):
     internal 2time (valid,trans), and can be overloaded.
     '''
 
-    N_TIMES = 2
-
     #тези може да се подменят - преводачи от/към ключа и външното време
     #by default, time=(trans,valid)
     @staticmethod

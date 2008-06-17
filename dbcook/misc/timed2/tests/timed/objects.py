@@ -59,20 +59,21 @@ if __name__ == '__main__':
 
 #####
 
-    class Timed_Wrapper4test( TimedObject):
+    from timed_wrapper import test_protocol2Timed_protocol
+
+    class Timed_Wrapper4test( TimedObject, test_protocol2Timed_protocol):
         '''testing purposes only'''
-        def dict2time( time):
-            return TimeContext( valid=time['valid'], trans=time['trans'])
-        dict2time = staticmethod( dict2time)
-        def get( me, trans, valid, include_deleted =False):
-            r = TimedObject.get( me, TimeContext( trans=trans, valid=valid), include_disabled=include_deleted )
-            if r is me.NOT_FOUND: return None
-            return r
-        def getRange( me, trans, validFrom, validTo, include_deleted =False): #not quite clear, but works
-            return TimedObject.getRange( me, TimeContext( trans= trans,valid= validFrom), TimeContext( trans= trans, valid= validTo), include_disabled=include_deleted)
-        def put( me, value, trans, valid, deleted =False):
-            return TimedObject.put( me, value, TimeContext( trans=trans, valid=valid), disabled=deleted)
-        def __str__( me): return 'Timed_Wrapper/'+TimedObject.__str__( me)
+        @staticmethod
+        def _valid_trans2time( valid, trans):
+            return TimeContext( trans=trans, valid=valid)
+        # test_protocol2Timed_protocol:
+        timed_get = TimedObject.get
+        timed_put = TimedObject.put
+        timed_getRange = TimedObject.getRange
+        # test_protocol:
+        get = test_protocol2Timed_protocol.get
+        put = test_protocol2Timed_protocol.put
+        getRange = test_protocol2Timed_protocol.getRange
 
     import test
     test.test( Timed_Wrapper4test)

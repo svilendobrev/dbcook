@@ -1,24 +1,21 @@
 #$Id$
 import unittest
 
-# Tools
-ERR = 1
-FAL = 2
 class HorTestResult( unittest._TextTestResult):
     "our test result respecting verbosity level to not show traceback always"
     def getDescription( me, test):
-        desc = unittest._TextTestResult.getDescription( me, test)
-        return ('\n'*2)+desc
+        return '\n\n' + unittest._TextTestResult.getDescription( me, test)
     def printErrors(me):
         if me.dots or me.showAll:
             me.stream.writeln()
-        me.printErrorList('ERROR', me.errors, ERR)
-        me.printErrorList('FAIL', me.failures)
-    def printErrorList( me, flavour, errors, erkind =FAL):
+        me.printErrorList( me.errors,  False)
+        me.printErrorList( me.failures, True)
+    def printErrorList( me, errors, isfailure):
+        flavour = isfailure and 'FAIL' or 'ERROR'
         for test, err in errors:
             me.stream.writeln( me.separator1)
             me.stream.writeln( "%s: %s" % (flavour,me.getDescription(test)))
-            if me.showAll or ERR == erkind:
+            if me.showAll or not isfailure:
                 me.stream.writeln( me.separator2)
                 me.stream.writeln( str( err) )
 
@@ -34,33 +31,30 @@ class HorTestCase( unittest.TestCase):
     def setUp( me): me.setupMethod()
     def testRun( me): me.testMethod()
     def shortDescription( me):
-        desc = str( me.docString)
-        if desc != me.__class__.__name__: desc += ' ' + me.__class__.__name__
-        doc = "%s %s" % ( me, desc)
+        doc = "%s %s/%s" % ( me, me.docString, me.__class__.__name__)
         return doc.strip()
 
-    def diff( me, result, expected, result_name='result', expected_name ='expected', ):
+    def diff( me, result, expected, result_name ='result', expected_name ='expect', ):
         if result == expected: return False
-        err=0
-        try:
+        if isinstance( result, (tuple,list)) and isinstance( expected, (tuple,list)):
+            keys = range( len(expected))
+        elif isinstance( result, dict) and isinstance( expected, dict):
             keys = expected.iterkeys()
-        except AttributeError:
-            if isinstance( expected, (tuple,list)):
-                keys = range( len(expected))
-        else:
-            print 'diffing by items...'
-            for k in keys:
-                v = expected[k]
-                try:
-                    rv = result[k]
-                except (KeyError,IndexError):
-                    rv = '<NOT-SET>'
-                    ok = False
-                else:
-                    ok = me.diff( rv, v)
-                if not ok:
-                    print 'key', k,':\n', result_name,':',rv, '\n', expected_name,':', v
-                    err +=1
+        else: return True
+        err=0
+        print 'diffing by items...'
+        for k in keys:
+            v = expected[k]
+            try:
+                rv = result[k]
+            except (KeyError,IndexError):
+                rv = '<NOT-SET>'
+                ok = False
+            else:
+                ok = me.diff( rv, v)
+            if not ok:
+                print 'key', k,':\n', result_name,':',rv, '\n', expected_name,':', v
+                err +=1
         if not err:
             print ' WARNING: diff as whole, no diff piece-by-piece ??!!'
         return True

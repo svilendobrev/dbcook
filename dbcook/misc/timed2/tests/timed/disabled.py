@@ -4,6 +4,7 @@
 '''
 възможности за добавяне/помнене на състояние 'изтрит/изключен':
  1: отделна история на Състоянието:
+    - не се пипа Обекта
     - помненето не е заедно с Обекта - може да е проблем (БД/таблици)
     - не може да се изнесе Състоянието навън през Обекта - не знае нищо за него
  2: помни се огъвка на Обекта със Състояние, напр. наредена двойка:
@@ -18,10 +19,11 @@
 
  == дотук се предполага, че изтритият Обект трябва да си пази стойността
     (напр. последната валидна преди изтриването)
- 5: изтриването не се помни като Обект изобщо, а _вместо_ Обект се помни някакъв Символ,
+ 5: изтриването се помни като _вместо_ Обект се слага някакъв Символ,
         означаващ "изтрито състояние"
-    - ако е нужна стойността ПРЕДИ изтриването, тя ще трябва да се търси допълнително,
+    - ако е нужна стойността В МОМЕНТА на изтриването, тя ще трябва да се търси допълнително,
         и резултатът може да не е същия като В МОМЕНТА на изтриването - въпрос на търсене/ключ -
+        (Timed2 може да се направи, но трябва да се търси при т-транс <= т-транс-на-изтриването)
         и ще изисква поддръжка от долното Timed* ниво!
 
 Всъщност тук има 2 различни смисъла на "стойността на изтрития обект":
@@ -57,75 +59,93 @@ eдиният е _точната_ стойност в момента на изтриване (2,3,4 дават това),
 
 '''
 
-#помнене
-_USE_WRAPPER_TUPLE = 0              #2
-_USE_OBJECT_ATTR = 0                #3
-class DisabledState: pass
-_USE_SYMBOL_INSTEAD_OF_OBJECT = 1   #5
-_USE_SEPARATE_HISTORY6 = 0          #6
+class _STORAGE:
+    WRAPPER_TUPLE = 2
+    OBJECT_ATTR = 3
+    SYMBOL_INSTEAD_OF_OBJECT = 5
+    #SEPARATE_HISTORY6 = 6 #... всичко е друго!
 
 #съобщаване/изнасяне
 #? сега е а)
 
 class Disabled4Timed( object):
     __slots__ = ()
-    DisabledKlas = DisabledState
+    _STORAGE = _STORAGE
+
+    STORAGE_TYPE = _STORAGE.WRAPPER_TUPLE
+    DONT_DISABLE_ALREADY_DISABLED = False
+
+    # достъп до Timed* основа:
     #NOT_FOUND = ... from timed
+    #_get_val()
+    #_put_val()
+    #_get_range_val()
 
-    # очаква _get_val() / _put_val() за достъп до Timed* основа
-    def _get( me, time, include_disabled =False, **kargs):
-        value = me._get_val( time, **kargs)
+  #################
+    if STORAGE_TYPE == _STORAGE.SYMBOL_INSTEAD_OF_OBJECT:
+        class Symbol4Disabled: pass
+    @classmethod
+    def _decode( me, value):
+        STORAGE_TYPE = me.STORAGE_TYPE
+        if STORAGE_TYPE == _STORAGE.WRAPPER_TUPLE:
+            value,disabled = value      #value НЯМА да знае дали е disabled !
+        elif STORAGE_TYPE == _STORAGE.OBJECT_ATTR:
+            disabled = value.disabled   #value си носи disabled
+        elif STORAGE_TYPE == _STORAGE.SYMBOL_INSTEAD_OF_OBJECT:
+            disabled = value is me.Symbol4Disabled
+        else: raise NotImplementedError
+        return value,disabled
+
+    #XXX only_value= е явно за да се знае;
+    #XXX иначе (ако отиде в kargs), не се знае какво е по default в _get_val -> какъв е резултата
+    def _get( me, time, with_disabled =False, only_value =True, **kargs):
+        value = me._get_val( time, only_value=only_value, **kargs)
         if value is me.NOT_FOUND:
-            #print 'empty', value
-            return value                # няма записи все-още
+            return value            #none yet
 
-        try:
-            if _USE_WRAPPER_TUPLE:
-                value,disabled = value      #value НЯМА да знае дали е disabled !
-            elif _USE_OBJECT_ATTR:
-                disabled = value.disabled   #value си носи disabled
-            elif _USE_SYMBOL_INSTEAD_OF_OBJECT:
-                disabled = value is me.DisabledKlas
-            else: raise NotImplementedError
-        except (AttributeError, ValueError):
-            disabled = False
-
-        if disabled and not include_disabled:
-            #print 'disabled', value
-            return me.NOT_FOUND         # 'изтрит' - raise
-
-        #if _USE_SYMBOL_INSTEAD_OF_OBJECT:
-            #XXX намери последната валидна стойност ПРЕДИ изтриването.. НУЖНО ли е това?
-            #XXX няма да се намери _точно_ стойността по време на изтриването!
-            #XXX ще изисква поддръжка от долното Timed* ниво!
+        if not only_value: rtime,value = value
+        value,disabled = me._decode( value)
+        if disabled:
+            if not with_disabled:
+                return me.NOT_FOUND
+            assert me.STORAGE_TYPE != _STORAGE.SYMBOL_INSTEAD_OF_OBJECT
+                #XXX при СИМВОЛ: трябва да намери последната валидна стойност ПРЕДИ изтриването.
+                #XXX изисква поддръжка от Timed* нивото!
+        if not only_value: value = rtime,value
         return value
 
-    def _getRange( me, timeFrom, timeTo, include_disabled =False, **kargs): #not quite clear, but works
-        return me._get_range_val( timeFrom, timeTo, **kargs)
-    def _put( me, value, time, disabled =False):
-        if _USE_WRAPPER_TUPLE:
-            value = value,disabled
-        elif _USE_OBJECT_ATTR:
-            value.disabled = disabled
-            #XXX тук трябва да се прави копие!
-            #except AttributeError: #cannot be disabled
-        elif _USE_SYMBOL_INSTEAD_OF_OBJECT:
+    def _getRange( me, timeFrom, timeTo, with_disabled =False, only_value =True, **kargs):
+        r = []
+        for value in me._get_range_val( timeFrom, timeTo, only_value=only_value, **kargs):
+            if not only_value: rtime,value = value
+            value,disabled = me._decode( value)
             if disabled:
-                value = me.DisabledKlas
+                if not with_disabled:
+                    continue
+                assert me.STORAGE_TYPE != _STORAGE.SYMBOL_INSTEAD_OF_OBJECT
+                    #XXX при СИМВОЛ: какво да се сложи тука: r[-1]? или нещо като None?
+            if not only_value: value = rtime,value
+            r.append( value)
+        return r
+
+    def _put( me, value, time, disabled =False):
+        STORAGE_TYPE = me.STORAGE_TYPE
+        if STORAGE_TYPE == _STORAGE.WRAPPER_TUPLE:
+            value = value,disabled
+        elif STORAGE_TYPE == _STORAGE.OBJECT_ATTR:
+            value.disabled = disabled
+            #XXX тук трябва ли да се прави копие?
+            #except AttributeError: #error, cannot be disabled
+        elif STORAGE_TYPE == _STORAGE.SYMBOL_INSTEAD_OF_OBJECT:
+            if disabled: value = me.Symbol4Disabled
         else: raise NotImplementedError
         me._put_val( value, time)
 
-    def delete( me, time):
-        #XXX няма оптимизация за изтриване на вече изтрит;
-        # ако е нужна(???), сложи me._get(..) вместо пряко me._get_val()
-        value = me._get_val( time)
-        if value:
+    def disable( me, time):
+        get_val = me.DONT_DISABLE_ALREADY_DISABLED and me._get or me._get_val
+        value = get_val( time)
+        if value is not me.NOT_FOUND:
             me._put( value, time, disabled=True)
-
-if _USE_SEPARATE_HISTORY6:
-    class Disabled4Timed6( object):
-        def __init__( me, TimedKlas):
-            me.state = TimedKlas()
-        #... всичко е друго!
+    delete = disable
 
 # vim:ts=4:sw=4:expandtab:enc=cp1251:fenc=
