@@ -68,11 +68,8 @@ class TimeContext( object):
     def isTransTime( klas, time): return isinstance( time, getattr( klas, 'TransTime', klas.Time))
     _isTransTime = isTransTime #save it
 
-    @classmethod
-    def copy( klas, tm):
-        'copy_ctor( another_TimeContext_of_SAME_type)'
-        assert isinstance( tm, klas)
-        return klas( valid= tm.valid, trans=tm.trans)
+    def copy( me):
+        return me.__class__( valid= me.valid, trans= me.trans)
 
     def __init__( me, **kargs):
         ''' constructor( trans=, valid=) '''
