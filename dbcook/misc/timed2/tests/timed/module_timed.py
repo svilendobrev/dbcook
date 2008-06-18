@@ -23,14 +23,18 @@ def datetime2dateYYYYMMDD( d):
 class _module2time_converter:
     '''no suffix, no paths here'''
 
-    str2time1 = staticmethod( lambda t: t)              #overload, e.g. dateYYYYMMDD2datetime
-    mod2time1 = staticmethod( lambda t: t)              #overload, e.g. dateYYYYMMDD2datetime
-    def maketime( me, trans, valid): return trans,valid #overload, e.g. TimeContext()
+    def str2time1( me, t): return t     #overload, e.g. dateYYYYMMDD2datetime
+    def mod2time1( me, t): return t     #overload, e.g. dateYYYYMMDD2datetime
 
-    # redefine this
-    #def fname2time( me, modname, loader =None): ..
-    #   time = me.maketime( str2time1( t1),mod2name1( t2),...)
-    #   return time, module         #time трябва да е валидно за използваната Timed основа
+    # redefine these
+    def maketime( me, trans, valid):    #overload, e.g. return TimeContext()
+        return trans,valid              #timed2 by default
+    def fname2time( me, modname, loader =None):
+        raise NotImplementedError
+        if module.needed: module = loader()
+        time = me.maketime( me.str2time1( t1), me.mod2time1( module.t2), whatever-maketime-handles )
+            #time трябва да е валидно за използваната Timed основа
+        return time, module or None
 
     def _fname2times( me, modname):
         'sequence of times in the modname'
@@ -42,7 +46,7 @@ class _module2time_converter:
 
 
 class mod2time__1_time_in_fname( _module2time_converter):
-    def maketime( me, time): return time                #overload, e.g. dateYYYYMMDD2datetime
+    def maketime( me, time): return time
     def fname2time( me, modname, loader =None):
         times = me._fname2times( modname)
         time = times[0]             #ignore the rest
@@ -202,6 +206,8 @@ class Module( object):
 
 if __name__ == '__main__':
     ############# testing ###########
+    #either run from inside tests/ or set PYTHONPATH=tests/ or this below:
+    #sys.path.append( 'tests/')
 
     def testmod( test, mod, **kargs):
         mod.walk()

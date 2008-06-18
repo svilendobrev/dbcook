@@ -42,7 +42,7 @@ config = Config( sam.config )
 sam.config = config
 
 
-from timed.timed_wrapper import test_protocol2Timed_protocol #Timed2_Wrapper4Disabled
+from timed.tests.protocol import test_protocol2Timed_protocol
 class TEST:
     only_days = True
     Time = only_days and Number or Date
