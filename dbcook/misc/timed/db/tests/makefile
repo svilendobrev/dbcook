@@ -4,10 +4,10 @@ now: ../timed_sa.test
 now: test_timed_dbcook.test
 
 timed.test:
-	$(MAKE) -C timed/tests/
+	$(MAKE) -C ../../../timed/tests/
 
 PY?=python
-PP=..:../../../..:../../..:$(PYTHONPATH)
+PP=.:..:../../../..:../../..:$(PYTHONPATH)
 
 %.test: %.py
 	@echo ===============
