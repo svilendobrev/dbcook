@@ -1,7 +1,9 @@
 #$Id$
-
+PY ?= python
 #PYTHONPATH := $(PYTHONPATH):$(shell pwd)/..
 #export PYTHONPATH
+
+#z: tests/other/aboutrel.test
 
 now: test misc static
 test:
@@ -14,7 +16,7 @@ aggr:
 	$(MAKE) -C dbcook/misc/aggregator/
 
 static: dbcook/usage/static_type/test_autoset_lazy.py
-	PYTHONPATH=`pwd`:$(PYTHONPATH) python $< -v $(ARGS)
+	PYTHONPATH=`pwd`:$(PYTHONPATH) $(PY) $< -v $(ARGS)
 
 
 ver: _testver rmpyc now
@@ -25,7 +27,7 @@ _testver:
 
 %.test: %.py
 	@echo ===============
-	PYTHONPATH=`pwd` python $*.py -v $(ARGS)
+	PYTHONPATH=`pwd` $(PY) $*.py -v $(ARGS)
 ##############
 
 EXCLUDE1 = \*pyc \*.result \*.ok \*.tmp .svn  \*.tbz \*.bz2 \*.tar  _t\*.py $(EXCLUDE)

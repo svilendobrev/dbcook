@@ -7,8 +7,8 @@ from distutils.core import setup
 
 setup(
     name= 'dbcook',
-    version= '0.2',
-    description= 'framework to abstract database-mapping of objects/relations as python declarations, completely hiding the DB where possible',
+    version= '0.3',
+    description= 'declarative abstract database-mapping of objects/relations, completely hiding the DB where possible. so far using SQLAlchemy as backend',
     author= 'svilen dobrev',
     author_email= 'svilen_dobrev@users.sourceforge.net',
     url= 'http://dbcook.sf.net',
@@ -33,12 +33,13 @@ DB-related stuff as much as possible, automate all (routine) DB-definition tasks
 still exposing the backend where abstracting is not needed/possible.
 
 The "language/syntax" itself is DB-backend independent.
-Currently the available builder is over SQLAlchemy as backend.
+Currently the available builder is over SQLAlchemy as backend,
+possible addition may be RDFAlchemy (triple-store frontend).
 
 repository: svn co https://dbcook.svn.sf.net/svnroot/dbcook/trunk
 
 Additions:
- * complete bitemporal class-mix-in : trunk/dbcook/misc/timed2/
+ * (~independent) bitemporal library/class-mix-in : trunk/dbcook/misc/timed/
  * (independent) automatic aggregating columns : trunk/dbcook/misc/aggregator*
  * (independent) metadata management (load,copy,diff): trunk/dbcook/misc/metadata/
 
