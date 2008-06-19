@@ -5,7 +5,7 @@ PY ?= python
 	PYTHONPATH=`pwd`/..:$(PYTHONPATH) $(PY) $*.py -v $(ARGS)
 #a: other/expression.test
 #a: ARGS=one
-#now: utilz
+now: utilz
 now: sa
 now: simple
 now: mapper

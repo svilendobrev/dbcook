@@ -415,7 +415,6 @@ def fix_one2many_relations( klas, builder):
         child_tbl.append_column( fk_column)
 
         class assoc_details:
-            #primary_key= True
             nullable= True
             relation_attr= attr_name
         relation._associate( child_klas, klas, assoc_details, fk_column, cacher=builder)

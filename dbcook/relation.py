@@ -62,8 +62,8 @@ class Association( object):
     '''
     __slots__ = ()
     DBCOOK_no_mapping = True
-    #DBCOOK_needs_id= True    #XXX db_id is a must only if table is referred
     DBCOOK_hidden = False
+    #DBCOOK_needs_id= True    #XXX db_id is a must only if table is referred
 
     #DBCOOK_unique_keys= [lists] or functor  #may override - all links by default
     @classmethod
@@ -74,14 +74,12 @@ class Association( object):
     reflector = None
 
     @classmethod
-    def Link( klas, parent_klas, attr =None, #primary_key =True,
-            nullable =False, **kargs4type):
+    def Link( klas, parent_klas, attr =None, nullable =False, **kargs4type):
         '''(in some assoc_klas) declaration of link to parent_klas'''
         typ = klas.Type4Reference( parent_klas, **kargs4type)
-        typ.assoc = _AssocDetails( #primary_key= primary_key,
-                        nullable= nullable, relation_attr= attr )
+        typ.assoc = _AssocDetails( nullable= nullable, relation_attr= attr )
         #the parent_klas is typ.typ (or will be after forward-decl-resolving)
-        #print 'Link', klas, parent_klas, attr, primary_key
+        #print 'Link', klas, parent_klas, attr
         return typ
 
     @classmethod
@@ -169,8 +167,7 @@ def is_association_reference( klas, attrtyp, attrklas):
     if issubclass( klas, Association):
         assoc_details = getattr( attrtyp, 'assoc', None)
         if assoc_details:
-            column_kargs = dict( #primary_key= assoc_details.primary_key,
-                        nullable= assoc_details.nullable )
+            column_kargs = dict( nullable= assoc_details.nullable )
             column_func = lambda column, cacher: _associate( klas, attrklas, assoc_details, column, cacher=cacher)
     return column_kargs, column_func
 
@@ -367,12 +364,6 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
         if dbg: print 'make_relations', m
 
         klas = m.class_
-        if 0:
-            if issubclass( klas, Association):
-                primary_key = m.local_table.primary_key.columns
-                m.allow_null_pks = bool( primary_key and [c for c in primary_key if c.nullable] )
-                if dbg: print '  allow_null_pks:', m.allow_null_pks   #XXX add to m.tstr???
-                continue
 
         fkeys = FKeyExtractor( klas, m.local_table, builder.mapcontext, builder.tables)
 
