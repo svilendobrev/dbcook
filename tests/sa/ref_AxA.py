@@ -239,6 +239,7 @@ class Case_A_B_C_A_X_Y_mincut( Case_A_B_C_A):
 if __name__ == '__main__':
 #    import sys
 #    sys.setrecursionlimit(100)
+    sa_case.sa_gentestbase.setup()
     import unittest
     unittest.main()
 

@@ -22,6 +22,7 @@ engineers = Table('engineers', metadata,
 
 managers = Table('managers', metadata,
    Column('person_id', Integer, ForeignKey('people.person_id'), primary_key=True),
+   Column('color_id',  Integer, ForeignKey('colors.color_id' ), unique=True, nullable=False),
    Column('status', String(30)),
    Column('manager_name', String(50))
    )
@@ -35,6 +36,21 @@ zackers= Table('zackers', metadata,
    Column('person_id', Integer, ForeignKey('hackers.person_id'), primary_key=True),
    Column('third_lang', String(30)),
    )
+
+
+
+colors = Table('colors', metadata,
+   Column('color_id', Integer, primary_key=True),
+   Column('name', String(50)),
+   Column('type', String(30))
+)
+
+paint = Table('paints', metadata,
+   Column('paint_id', Integer, ForeignKey('colors.color_id'), primary_key=True),
+   Column('smell', String(30)),
+)
+
+
 
 metadata.create_all()
 
@@ -98,6 +114,12 @@ q = session.query( Person)
 assert sets.Set( e.name for e in q) == sets.Set(
     ['boss', 'dilbert', 'joesmith', 'wally', 'jsmith', 'bo'])
 print
+
+q = session.query( Engineer)
+assert sets.Set( e.name for e in q) == sets.Set(
+    ['dilbert', 'wally', 'jsmith', 'bo'])
+print
+
 
 #print ' > check identity between inheritance levels'
 jsmith_s = [ session.query( P).get_by( name='jsmith')
