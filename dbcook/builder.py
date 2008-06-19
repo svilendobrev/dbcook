@@ -353,6 +353,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
     #   all else wanna-be-primary-keys become just unique constraints
     # note: sqlite cannot have composite partialy-autoincrementing primary key
 
+    uniques = []
     primary_key = [ c for c in columns if c.primary_key]
     needs_id_primary_key = is_joined_table or mapcontext.needs_id( klas) # needs such, because of being referenced / inherits via joined_table
     #XXX subtle: mapcontext.needs_id may return None,False,True
@@ -367,12 +368,14 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
             columns.append( c)
             if primary_key:     #convert it to just uniq constraint
                 for c in primary_key: c.primary_key = False
-                columns.append( sa.UniqueConstraint( *[d.name for d in primary_key]))
+                if dbg: print '  uniq-from-primarykey:', key
+                uniques.append( sa.UniqueConstraint( *[d.name for d in primary_key]))
 
     for u in mapcontext.uniques( klas):
         key = [ getattr( c, 'name', c) for c in u ]
         key = [ (k in id_columns and column4ID.ref_make_name( k) or k) for k in key ]
-        columns.append( sa.UniqueConstraint( *key) )
+        if dbg: print '  uniq:', key
+        uniques.append( sa.UniqueConstraint( *key) )
 
     ## check for duplicate column-names/constraint-names
     chk = set()
@@ -381,7 +384,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
         assert key not in chk, 'multiple columns named '+repr( key)
         chk.add( key)
 
-    return columns
+    return columns + uniques
 
 def make_table( klas, metadata, builder, **kargs):
     dbg = 'table' in config.debug

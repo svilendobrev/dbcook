@@ -106,22 +106,16 @@ class MappingContext:
         return bool( DBCOOK_has_instances)
 
     def getattr_local_or_nonmappable_base( me, klas, attr, *default):
-        assert klas
-        base_klas = me.base_klas
-        while klas is not base_klas:
+            # allow non-mapped classes to declare DBCOOK_configs for their children
+        klas0 = klas
+        for klas in klas.__mro__:
             r = getattr_local_instance_only( klas, attr, _NOTFOUND)
             if r is not _NOTFOUND:
-                #XXX tricky: klas.__dict__['xyz'] is not klas.xyz, esp. for classmethods/descriptors
+                if klas is not klas0 and me.mappable( klas):
+                    break   #not found
+                #XXX tricky: klas.__dict__['xyz'] is not klas.xyz, esp. classmethods/descriptors
                 #this is the only place so far, it is safe to getattr
-                return getattr( klas, attr)
-
-            for base in klas.__bases__:
-                if issubclass( base, base_klas): break
-            else:
-                assert 0, '%(klas)s does not inherit baseklas %(base_klas)s' % locals()
-            if me.mappable( base): break
-            # allow non-mapped classes to declare DBCOOK_configs for their children
-            klas = base
+                return getattr( klas0, attr)
         if default: return default[0]
         raise AttributeError, 'no attr %(attr)s in %(klas)s' % locals()
 

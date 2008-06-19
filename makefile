@@ -9,9 +9,9 @@ now: test misc static
 test:
 	$(MAKE) -C tests/
 
-misc: timed2 aggr
-timed2:
-	$(MAKE) -C dbcook/misc/timed2/tests/
+misc: timed aggr
+timed:
+	$(MAKE) -C dbcook/misc/timed/db/tests/
 aggr:
 	$(MAKE) -C dbcook/misc/aggregator/
 

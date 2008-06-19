@@ -65,10 +65,10 @@ class Association( object):
     #DBCOOK_needs_id= True    #XXX db_id is a must only if table is referred
     DBCOOK_hidden = False
 
-    #DBCOOK_unique_keys= list or functor  #may override - all links by default
+    #DBCOOK_unique_keys= [lists] or functor  #may override - all links by default
     @classmethod
     def DBCOOK_unique_keys( klas):
-        return [ k for k,kklas in klas.walk_links() ]
+        return [ [ k for k,kklas in klas.walk_links() ] ]
 
     Type4Reference = None
     reflector = None
