@@ -14,7 +14,7 @@ class Case_A_A_self( sa_case.SACase):
                 Column('id', Integer, primary_key=True),
                 Column('t_id', Integer,
                             ForeignKey('table1.id',
-                                #use_alter=True, name='zt1id_fk'
+                                use_alter=True, name='zt1id_fk'
                             )
                     ),
             )
