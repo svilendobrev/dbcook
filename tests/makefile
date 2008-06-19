@@ -22,11 +22,15 @@ mapper: mapper/test4mapper.test
 mapper: mapper/test_inh_types.test
 mapper: abc
 mapper: mapper/freegen/main.test
+
 assoc:   mapper/association.test
 collect: mapper/collection.test
+rel: assoc collect aboutrel
+aboutrel: override ARGS=
+aboutrel: other/aboutrel.test
+
 expr:    other/expression.test
-mapper: assoc collect expr
-mapper: other/aboutrel.test
+mapper: rel expr
 
 #abc: ARGS= zno_sisters Binhs=A Cinhs=B Clinks=None doC zdummy
 GG= generate=failed,one
