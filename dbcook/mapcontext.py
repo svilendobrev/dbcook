@@ -87,6 +87,7 @@ $ settings:
 # XXX assert not( DBCOOK_no_mapping and DBCOOK_has_instances) ???
 
 from dbcook.util.attr import getattr_local_instance_only, issubclass
+class _NOTFOUND: pass
 
 class MappingContext:
     base_klas = None  #_Base or something else
@@ -104,16 +105,40 @@ class MappingContext:
         DBCOOK_has_instances = getattr_local_instance_only( klas, 'DBCOOK_has_instances', None)
         return bool( DBCOOK_has_instances)
 
+    def getattr_local_or_nonmappable_base( me, klas, attr, *default):
+        assert klas
+        base_klas = me.base_klas
+        while klas is not base_klas:
+            r = getattr_local_instance_only( klas, attr, _NOTFOUND)
+            if r is not _NOTFOUND:
+                #XXX tricky: klas.__dict__['xyz'] is not klas.xyz, esp. for classmethods/descriptors
+                #this is the only place so far, it is safe to getattr
+                return getattr( klas, attr)
+
+            for base in klas.__bases__:
+                if issubclass( base, base_klas): break
+            else:
+                assert 0, '%(klas)s does not inherit baseklas %(base_klas)s' % locals()
+            if me.mappable( base): break
+            # allow non-mapped classes to declare DBCOOK_configs for their children
+            klas = base
+        if default: return default[0]
+        raise AttributeError, 'no attr %(attr)s in %(klas)s' % locals()
+
     def needs_id( me, klas):
         return getattr_local_instance_only( klas, 'DBCOOK_needs_id', None)
 
     def uniques( me, klas):
         'list of lists of (column-names or columns  (having .name) )'
-        return getattr_local_instance_only( klas, 'DBCOOK_unique_keys', () )
+        #association must see attrs belonging to base non-mappable classes
+        r = me.getattr_local_or_nonmappable_base( klas, 'DBCOOK_unique_keys', () )
+        if callable( r): r = r()
+        return r
 
     def base( me, klas):
         '''дава (първия) базов валиден клас, None ако няма такъв. т.е. на или отвъд валидния корен
          $ get (first) base that is mappable, None if no such, i.e. at or under root-mappable'''
+        #TODO optimize via __mro__
         assert klas
         base_klas = me.base_klas
         while klas is not base_klas:

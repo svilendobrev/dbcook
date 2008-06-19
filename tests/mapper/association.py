@@ -23,7 +23,7 @@ class X( Base):
     x_ab = Base4Association.Relation( 'IntermediateAB')
 
 class IntermediateAB( Base4Association):    #color
-    DBCOOK_needs_id=True
+#    DBCOOK_needs_id=True
     color = Text()
     a_link = Base4Association.Link( 'A')
     b_boza = Base4Association.Link( 'B', attr= 'all_ba')

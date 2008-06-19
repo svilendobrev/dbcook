@@ -52,40 +52,6 @@ import warnings
 from config import config
 import itertools
 
-def _associate( klas, parentklas, assoc_details, column, cacher ):
-    dbg = 'relation' in config.debug
-    #XXX removed? if not assoc_details.primary_key: return
-
-    relation_attr = assoc_details.relation_attr
-    if dbg:
-        print 'relate parent:', parentklas, 'to child:', klas
-        print '  attrname:', relation_attr, 'column:', column
-
-    ### collect relation_attr to be created by make_relation() if not already done explicitly
-    lcache = cacher.assoc_links = getattr( cacher, 'assoc_links', {})
-    links = lcache.setdefault( parentklas, set() )
-    link = (klas, relation_attr)
-    assert link not in links, '''
-        duplicate definition of assoc_link %(klas)s.%(relation_attr)s to %(parentklas)s'''.strip() % locals()
-    links.add( link )
-
-    ### collect foreign_keys
-    fcache = cacher.foreign_keys = getattr( cacher, 'foreign_keys', {})
-    foreign_keys = fcache.setdefault( klas, {})
-    kk = foreign_keys.setdefault( parentklas, {} )
-    key = relation_attr
-
-    if key is not None:
-        assert key not in kk, '''
-            duplicate/ambigious association to %(parentklas)s in %(klas)s;
-            specify attr=<assoc_relation_attr> explicitly
-            key=%(key)s
-            kk=%(kk)s'''.strip() % locals()
-    else:
-        if key in kk:
-            warnings.warn( '''duplicate/ambigious/empty association to %(parentklas)s in %(klas)s; specify attr=>assoc_relation_attr> explicitly''' % locals() )
-    kk[ key ] = column
-
 class Association( object):
     ''' serve as description of the association table and
     storage of association arguments - names and klases -
@@ -97,17 +63,23 @@ class Association( object):
     __slots__ = ()
     DBCOOK_no_mapping = True
     #DBCOOK_needs_id= True    #XXX db_id is a must only if table is referred
-    #DBCOOK_unique_keys= ...  #primary key consist of which fields; all by default
     DBCOOK_hidden = False
+
+    #DBCOOK_unique_keys= list or functor  #may override - all links by default
+    @classmethod
+    def DBCOOK_unique_keys( klas):
+        return [ k for k,kklas in klas.walk_links() ]
 
     Type4Reference = None
     reflector = None
 
     @classmethod
-    def Link( klas, parent_klas, attr =None, primary_key =True, nullable =False, **kargs4type):
+    def Link( klas, parent_klas, attr =None, #primary_key =True,
+            nullable =False, **kargs4type):
         '''(in some assoc_klas) declaration of link to parent_klas'''
         typ = klas.Type4Reference( parent_klas, **kargs4type)
-        typ.assoc = _AssocDetails( primary_key= primary_key, nullable= nullable, relation_attr= attr )
+        typ.assoc = _AssocDetails( #primary_key= primary_key,
+                        nullable= nullable, relation_attr= attr )
         #the parent_klas is typ.typ (or will be after forward-decl-resolving)
         #print 'Link', klas, parent_klas, attr, primary_key
         return typ
@@ -150,7 +122,7 @@ class Association( object):
             is_substruct = klas.reflector.is_reference_type( typ)
             if is_substruct:
                 assoc_details = getattr( typ, 'assoc', None)
-                if assoc_details: # and assoc_details.primary_key:
+                if assoc_details:
                     r = attr, is_substruct['klas']
                     if with_typ: r = r + (typ,)
                     yield r
@@ -197,9 +169,43 @@ def is_association_reference( klas, attrtyp, attrklas):
     if issubclass( klas, Association):
         assoc_details = getattr( attrtyp, 'assoc', None)
         if assoc_details:
-            column_kargs = dict( primary_key= assoc_details.primary_key, nullable= assoc_details.nullable )
+            column_kargs = dict( #primary_key= assoc_details.primary_key,
+                        nullable= assoc_details.nullable )
             column_func = lambda column, cacher: _associate( klas, attrklas, assoc_details, column, cacher=cacher)
     return column_kargs, column_func
+
+def _associate( klas, parentklas, assoc_details, column, cacher ):
+    dbg = 'relation' in config.debug
+
+    relation_attr = assoc_details.relation_attr
+    if dbg:
+        print 'relate parent:', parentklas, 'to child:', klas
+        print '  attrname:', relation_attr, 'column:', column
+
+    ### collect relation_attr to be created by make_relation() if not already done explicitly
+    lcache = cacher.assoc_links = getattr( cacher, 'assoc_links', {})
+    links = lcache.setdefault( parentklas, set() )
+    link = (klas, relation_attr)
+    assert link not in links, '''
+        duplicate definition of assoc_link %(klas)s.%(relation_attr)s to %(parentklas)s'''.strip() % locals()
+    links.add( link )
+
+    ### collect foreign_keys
+    fcache = cacher.foreign_keys = getattr( cacher, 'foreign_keys', {})
+    foreign_keys = fcache.setdefault( klas, {})
+    kk = foreign_keys.setdefault( parentklas, {} )
+    key = relation_attr
+
+    if key is not None:
+        assert key not in kk, '''
+            duplicate/ambigious association to %(parentklas)s in %(klas)s;
+            specify attr=<assoc_relation_attr> explicitly
+            key=%(key)s
+            kk=%(kk)s'''.strip() % locals()
+    else:
+        if key in kk:
+            warnings.warn( '''duplicate/ambigious/empty association to %(parentklas)s in %(klas)s; specify attr=>assoc_relation_attr> explicitly''' % locals() )
+    kk[ key ] = column
 
 
 class _Unspecified: pass
@@ -361,11 +367,12 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
         if dbg: print 'make_relations', m
 
         klas = m.class_
-        if issubclass( klas, Association):
-            primary_key = m.local_table.primary_key.columns
-            m.allow_null_pks = bool( primary_key and [c for c in primary_key if c.nullable] )
-            if dbg: print '  allow_null_pks:', m.allow_null_pks   #XXX add to m.tstr???
-            continue
+        if 0:
+            if issubclass( klas, Association):
+                primary_key = m.local_table.primary_key.columns
+                m.allow_null_pks = bool( primary_key and [c for c in primary_key if c.nullable] )
+                if dbg: print '  allow_null_pks:', m.allow_null_pks   #XXX add to m.tstr???
+                continue
 
         fkeys = FKeyExtractor( klas, m.local_table, builder.mapcontext, builder.tables)
 
