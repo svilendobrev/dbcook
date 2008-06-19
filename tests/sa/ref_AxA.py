@@ -14,7 +14,7 @@ class Case_A_A_self( sa_case.SACase):
                 Column('id', Integer, primary_key=True),
                 Column('t_id', Integer,
                             ForeignKey('table1.id',
-                                use_alter=True, name='zt1id_fk'
+                                #use_alter=True, name='zt1id_fk'
                             )
                     ),
             )
@@ -213,7 +213,10 @@ class Case_A_B_C_A_X_Y_mincut( Case_A_B_C_A):
 
         alltbl = me.meta.tables.values() #[t1,t2,t3, t11,t12]
         print '----'
-        r = fix_table_circular_deps( alltbl, dbg=1)
+        r = fix_table_circular_deps( alltbl,
+                            count_multiples = True,
+                            exclude_selfrefs= False,
+                            dbg= True)
         print '===='
         me.meta.create_all()
 
