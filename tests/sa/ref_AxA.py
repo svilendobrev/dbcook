@@ -14,7 +14,7 @@ class Case_A_A_self( sa_case.SACase):
                 Column('id', Integer, primary_key=True),
                 Column('t_id', Integer,
                             ForeignKey('table1.id',
-                                #use_alter=True, name='zt1id_fk'
+                                use_alter=True, name='zt1id_fk'
                             )
                     ),
             )
@@ -55,7 +55,7 @@ class Case_A_A1( Case_A_A_self):
 class Case_A_B_A( sa_case.SACase):
     def make_tables( me):
         t1 = Table('table1', me.meta,
-                Column('name', Integer, ),
+                Column('name', Text, ),
                 Column('id', Integer, primary_key=True),
                 Column('t2_id', Integer,
                             ForeignKey('table2.id',)
@@ -63,7 +63,7 @@ class Case_A_B_A( sa_case.SACase):
             )
 
         t2 = Table('table2', me.meta,
-                Column('name', Integer, ),
+                Column('name', Text, ),
                 Column('id', Integer, primary_key=True),
                 Column('t1_id', Integer,
                             ForeignKey('table1.id',
@@ -101,7 +101,7 @@ class Case_A_B_A( sa_case.SACase):
 class Case_A_B_C_A( sa_case.SACase):
     def make_tables( me):
         t1 = Table('table1', me.meta,
-                Column('name', Integer, ),
+                Column('name', Text, ),
                 Column('id', Integer, primary_key=True),
                 Column('t2_id', Integer,
                             ForeignKey('table2.id',)
@@ -109,7 +109,7 @@ class Case_A_B_C_A( sa_case.SACase):
             )
 
         t2 = Table('table2', me.meta,
-               Column('name', Integer, ),
+               Column('name', Text, ),
                Column('id', Integer, primary_key=True),
                Column('t3_id', Integer,
                             ForeignKey('table3.id',)
@@ -117,7 +117,7 @@ class Case_A_B_C_A( sa_case.SACase):
             )
 
         t3 = Table('table3', me.meta,
-               Column('name', Integer, ),
+               Column('name', Text, ),
                Column('id', Integer, primary_key=True),
                Column('t1_id', Integer,
                             ForeignKey('table1.id',
@@ -166,7 +166,7 @@ from dbcook.table_circular_deps import fix_table_circular_deps
 class Case_A_B_C_A_X_Y_mincut( Case_A_B_C_A):
     def make_tables( me):
         t11 = Table('table11', me.meta,
-                Column('name', Integer, ),
+                Column('name', Text, ),
                 Column('id', Integer, primary_key=True),
                 Column('t12_id', Integer,
                             ForeignKey('table12.id',)
@@ -174,7 +174,7 @@ class Case_A_B_C_A_X_Y_mincut( Case_A_B_C_A):
             )
 
         t12 = Table('table12', me.meta,
-                Column('name', Integer, ),
+                Column('name', Text, ),
                 Column('id', Integer, primary_key=True),
                 Column('t11_id', Integer,
                             ForeignKey('table11.id',)
@@ -185,7 +185,7 @@ class Case_A_B_C_A_X_Y_mincut( Case_A_B_C_A):
             )
 
         t1 = Table('table1', me.meta,
-                Column('name', Integer, ),
+                Column('name', Text, ),
                 Column('id', Integer, primary_key=True),
                 Column('t2_id', Integer,
                             ForeignKey('table2.id',)
@@ -193,7 +193,7 @@ class Case_A_B_C_A_X_Y_mincut( Case_A_B_C_A):
             )
 
         t2 = Table('table2', me.meta,
-               Column('name', Integer, ),
+               Column('name', Text, ),
                Column('id', Integer, primary_key=True),
                Column('t3_id', Integer,
                             ForeignKey('table3.id',)
@@ -204,7 +204,7 @@ class Case_A_B_C_A_X_Y_mincut( Case_A_B_C_A):
             )
 
         t3 = Table('table3', me.meta,
-               Column('name', Integer, ),
+               Column('name', Text, ),
                Column('id', Integer, primary_key=True),
                Column('t1_id', Integer,
                             ForeignKey('table1.id',)
