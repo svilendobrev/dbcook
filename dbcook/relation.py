@@ -77,7 +77,7 @@ class Association( object):
     def Link( klas, parent_klas, attr =None, nullable =False, **kargs4type):
         '''(in some assoc_klas) declaration of link to parent_klas'''
         typ = klas.Type4Reference( parent_klas, **kargs4type)
-        typ.assoc = _AssocDetails( nullable= nullable, relation_attr= attr )
+        typ.assoc = _AssocDetails( nullable= nullable, relation_attr= attr, relation_klas=parent_klas )
         #the parent_klas is typ.typ (or will be after forward-decl-resolving)
         #print 'Link', klas, parent_klas, attr
         return typ
@@ -131,6 +131,7 @@ class Association( object):
             if l_klas is parent_klas: #... and l_attr
                 yield l_attr
 
+from config import table_namer
 def resolve_assoc_hidden( builder, klasi):
     dbg = 'assoc' in config.debug or 'relation' in config.debug
     mapcontext = builder.mapcontext
@@ -143,7 +144,21 @@ def resolve_assoc_hidden( builder, klasi):
                 DBCOOK_hidden = True
                 right = Assoc.Link( other_side_klas, attr= other_side_attr)
                 left  = Assoc.Link( klas, attr= attr)
-
+                @classmethod
+                def DBCOOK_dbname( klas):
+                    uk = dict( klas.walk_links() )
+                    #this sees forward-resolved
+                    this_side_k  = uk['left']  #.assoc .relation_klas
+                    other_side_k = uk['right'] #.assoc
+                    #this does not see forward-resolved
+                    this_side_a  = klas.left.assoc
+                    other_side_a = klas.right.assoc
+                    r = '_'.join( ('_Assoc',
+                            table_namer( this_side_k ), this_side_a.relation_attr,
+                            table_namer( other_side_k), other_side_a.relation_attr,
+                        ))
+                    print 22222, r
+                    return r
             #???? resolve forward-decl ? should work?
             #TODO test
 
@@ -151,8 +166,8 @@ def resolve_assoc_hidden( builder, klasi):
 
             #change __name__ - see __name__DYNAMIC
             klasname = '_'.join( ('_Assoc',
-                klas.__name__, attr,
-                isinstance( other_side_klas, str) and other_side_klas or other_side_klas.__name__,
+                table_namer( klas), attr,
+                isinstance( other_side_klas, str) and other_side_klas or table_namer( other_side_klas),
                 other_side_attr ))
             assoc_klas.__name__ = klasname
 
