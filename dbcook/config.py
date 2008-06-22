@@ -119,7 +119,6 @@ def table_namer( klas):
     'table auto-naming'
     r = getattr_local_instance_only( klas, 'DBCOOK_dbname', klas.__name__)
     if isinstance( r, classmethod): r = klas.DBCOOK_dbname()
-    #print 1111111, r
     return r
 
 # vim:ts=4:sw=4:expandtab

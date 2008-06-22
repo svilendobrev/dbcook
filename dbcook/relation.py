@@ -146,6 +146,7 @@ def resolve_assoc_hidden( builder, klasi):
                 left  = Assoc.Link( klas, attr= attr)
                 @classmethod
                 def DBCOOK_dbname( klas):
+                    #XXX TODO fix this mess
                     uk = dict( klas.walk_links() )
                     #this sees forward-resolved
                     this_side_k  = uk['left']  #.assoc .relation_klas
@@ -157,7 +158,6 @@ def resolve_assoc_hidden( builder, klasi):
                             table_namer( this_side_k ), this_side_a.relation_attr,
                             table_namer( other_side_k), other_side_a.relation_attr,
                         ))
-                    print 22222, r
                     return r
             #???? resolve forward-decl ? should work?
             #TODO test

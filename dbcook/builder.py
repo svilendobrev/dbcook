@@ -300,6 +300,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
     reflector = mapcontext.reflector
     base_klas, inheritype = mapcontext.base4table_inheritance( klas)
     is_joined_table = (inheritype == table_inheritance_types.JOINED)
+    indexes = mapcontext.indexes( klas)
     assert base_klas or not is_joined_table
     for attr,typ in reflector.attrtypes( klas).iteritems():
         if is_joined_table:
@@ -334,7 +335,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
             mt = mt.copy()      #just for the sake of it
             constraints = mt.pop( 'constraints', ())
             type = mt.pop( 'type' )
-            c = sa.Column( k, type, *constraints, **mt )
+            c = sa.Column( k, type, index= k in indexes, *constraints, **mt )
             if dbg: print '    = ', repr(c)
             columns.append( c)
 

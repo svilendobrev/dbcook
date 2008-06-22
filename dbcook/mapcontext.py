@@ -73,11 +73,26 @@ $ settings:
         (see DBCOOK_unique_keys), for example because other classes are pointing it directly.
         Applies only locally.
 
+    DBCOOK_dbname = име-на-БД-таблицата или classmethod който го прави
+        Важи само локално за класа
+      $ name-of-DB-table or classmethod to make it
+        Applies only locally
+
     DBCOOK_unique_keys = списък от списъци от (имена на полета или полета (търси се .name) )
-                   $ list of lists of (field-names or fields (.name wanted) )
-                   default = () #nothing
-        Важи само локално за класа.
-      $ Applies only locally.
+                          или classmethod който връща такъв
+                          default = () #нищо
+        Важи само локално за класа, или в наследените ако класът няма БД-съответствие
+      $ list of lists of (field-names or fields (.name wanted) )
+                          or classmethod which returns such
+                          default = () #nothing
+        Applies only locally, or in subclases if class is non-mappable (a-la mixin).
+
+    DBCOOK_indexes = списък от списъци от (имена на полета или полета (търси се .name) )
+                        $ list of lists of (field-names or fields (.name wanted) )
+                          default = () #nothing
+        Важи само локално за класа, или в наследените ако класът няма БД-съответствие
+      $ Applies only locally, or in subclases if class is non-mappable (a-la mixin).
+
     '''
     #__slots__ = [ column4ID.name ]     #db_id is automatic
     #DBCOOK_inheritance = 'concrete_table'  #default
@@ -106,7 +121,7 @@ class MappingContext:
         return bool( DBCOOK_has_instances)
 
     def getattr_local_or_nonmappable_base( me, klas, attr, *default):
-            # allow non-mapped classes to declare DBCOOK_configs for their children
+            # allow non-mapped classes to declare certain DBCOOK_xxxxxxx for their children
         klas0 = klas
         for klas in klas.__mro__:
             r = getattr_local_instance_only( klas, attr, _NOTFOUND)
@@ -119,14 +134,28 @@ class MappingContext:
         if default: return default[0]
         raise AttributeError, 'no attr %(attr)s in %(klas)s' % locals()
 
-    def needs_id( me, klas):
+    @staticmethod
+    def needs_id( klas):
         return getattr_local_instance_only( klas, 'DBCOOK_needs_id', None)
+
+    @staticmethod
+    def dbname( klas):
+        import config   #XXX ~hack
+        return config.table_namer( klas)
 
     def uniques( me, klas):
         'list of lists of (column-names or columns  (having .name) )'
         #association must see attrs belonging to base non-mappable classes
         r = me.getattr_local_or_nonmappable_base( klas, 'DBCOOK_unique_keys', () )
         if callable( r): r = r()
+        return r
+
+    def indexes( me, klas):
+        'list of (column-names or columns  (having .name) )'
+        #association must see attrs belonging to base non-mappable classes
+        r = me.getattr_local_or_nonmappable_base( klas, 'DBCOOK_indexes', () )
+        if callable( r): r = r()
+        for a in r: assert isinstance( a, str) #composites not implemented
         return r
 
     def base( me, klas):
