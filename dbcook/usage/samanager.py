@@ -163,14 +163,18 @@ class SAdb:
     def session( me):
         return sqlalchemy.orm.create_session( echo_uow= 'transact' in me.log_sa)
 
-    def saveall( me, session, *args):
-        ''' usages:
-                saveall( session, obj1,...)
-                saveall( session, somedict) #or_namespace
-                saveall( session, *iterable)
-            do session.save over all proper objects in args/namespace_or_iterable,
-            i.e. those which are mapped and has_instances.
-            calls obj.pre_save() if available (just before session.save)
+    def saveall( me, session, *args, **kargs):
+        ''' kargs:
+            pre_save_name= methodname to call on all objects before save;
+                           defaults to "pre_save"; empty disables it
+        usages:
+            saveall( session, obj1,...)
+            saveall( session, somedict) #or_namespace
+            saveall( session, *iterable)
+        do session.save over all proper objects in args/namespace_or_iterable,
+        i.e. those which are mapped and has_instances.
+        calls obj.pre_save() if available (just before session.save)
+        kargs: pre_save
         '''
         if not args: return
         itervalues = args
@@ -179,13 +183,15 @@ class SAdb:
             except AttributeError: pass #itervalues = namespace_or_iterable   #or iterable
         mapcontext = me.mapcontext
         base_klas = mapcontext.base_klas
+        pre_save_name = kargs.get( 'pre_save_name', 'pre_save')
         for x in itervalues:
             if isinstance( x, base_klas) and mapcontext.has_instances( x.__class__):
-                pre = getattr( x, 'pre_save', None)
-                if pre:
-                    #_setup_state(x)    #XXX not needed?
-                    #print 'pre_save', object.__repr__( x)
-                    pre()
+                if pre_save_name:
+                    pre = getattr( x, pre_save_name, None)
+                    if pre:
+                        #_setup_state(x)    #XXX not needed?
+                        #print 'pre_save', object.__repr__( x)
+                        pre()
 
                 session.save_or_update( x)
 
