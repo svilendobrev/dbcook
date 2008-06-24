@@ -165,8 +165,10 @@ class SAdb:
 
     def saveall( me, session, *args, **kargs):
         ''' kargs:
-            pre_save_name= methodname to call on all objects before save;
-                           defaults to "pre_save"; empty disables it
+            pre_save= methodname to call on all objects before session.save;
+                        empty disables it;
+                        a list of names will try for alternatives;
+                        defaults to "pre_save"
         usages:
             saveall( session, obj1,...)
             saveall( session, somedict) #or_namespace
@@ -183,11 +185,12 @@ class SAdb:
             except AttributeError: pass #itervalues = namespace_or_iterable   #or iterable
         mapcontext = me.mapcontext
         base_klas = mapcontext.base_klas
-        pre_save_name = kargs.get( 'pre_save_name', 'pre_save')
+        pre_save_names = kargs.get( 'pre_save', 'pre_save' )
+        if not isinstance( pre_save_names, (list,tuple)): pre_save_names = [ pre_save_names ]
         for x in itervalues:
             if isinstance( x, base_klas) and mapcontext.has_instances( x.__class__):
-                if pre_save_name:
-                    pre = getattr( x, pre_save_name, None)
+                for fname in pre_save_names:
+                    pre = getattr( x, fname, None)
                     if pre:
                         #_setup_state(x)    #XXX not needed?
                         #print 'pre_save', object.__repr__( x)
