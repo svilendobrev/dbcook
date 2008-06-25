@@ -319,6 +319,9 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
                 if dbg: print '  as_reference', k,typ
 #                print klas.__name__, k, typ
                 assoc_kargs, assoc_columner= relation.is_association_reference( klas, typ, attrklas, )
+                nullable = is_substruct[ 'nullable']
+                if nullable =='default': nullable = True
+                assoc_kargs.update( nullable=nullable)
                 c = make_table_column4struct_reference( klas, k, attrklas, mapcontext, **assoc_kargs)
                 if assoc_columner: assoc_columner( c, cacher=builder)
                 columns.append( c)
@@ -416,7 +419,7 @@ def fix_one2many_relations( klas, builder):
         child_tbl.append_column( fk_column)
 
         class assoc_details:
-            nullable= True
+            #nullable= True
             relation_attr= attr_name
         relation._associate( child_klas, klas, assoc_details, fk_column, cacher=builder)
 

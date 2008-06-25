@@ -24,10 +24,11 @@ NO_CLEANUP = False
 
 class Type( object): pass
 class Type4Reference( Type):
-    def __init__( me, klas, lazy ='default', as_value =False):
+    def __init__( me, klas, lazy ='default', nullable ='default', as_value =False):
         assert not as_value
         me.itemklas = klas
         me.lazy = lazy
+        me.nullable = nullable
         me.as_value = False
     @staticmethod
     def resolve_forward1( typ, *namespaces):
@@ -82,7 +83,9 @@ class Reflector4sa( builder.Reflector):
     def is_reference_type( me, typ):
         if not isinstance( typ, Type4Reference):
             return None
-        return dict( klas= typ.itemklas, lazy= typ.lazy, as_value= typ.as_value)
+        return dict( klas= typ.itemklas, as_value= typ.as_value,
+                        lazy= typ.lazy, nullable= typ.nullable,
+                    )
 
 
     ##############

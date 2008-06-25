@@ -74,10 +74,10 @@ class Association( object):
     reflector = None
 
     @classmethod
-    def Link( klas, parent_klas, attr =None, nullable =False, **kargs4type):
+    def Link( klas, parent_klas, attr =None, **kargs4type):
         '''(in some assoc_klas) declaration of link to parent_klas'''
         typ = klas.Type4Reference( parent_klas, **kargs4type)
-        typ.assoc = _AssocDetails( nullable= nullable, relation_attr= attr, relation_klas=parent_klas )
+        typ.assoc = _AssocDetails( relation_attr= attr, relation_klas=parent_klas )
         #the parent_klas is typ.typ (or will be after forward-decl-resolving)
         #print 'Link', klas, parent_klas, attr
         return typ
@@ -182,7 +182,7 @@ def is_association_reference( klas, attrtyp, attrklas):
     if issubclass( klas, Association):
         assoc_details = getattr( attrtyp, 'assoc', None)
         if assoc_details:
-            column_kargs = dict( nullable= assoc_details.nullable )
+            #column_kargs = dict( nullable= assoc_details.nullable )
             column_func = lambda column, cacher: _associate( klas, attrklas, assoc_details, column, cacher=cacher)
     return column_kargs, column_func
 
