@@ -24,7 +24,7 @@ def test( attr, other={}, **this):
     other.setdefault( 'has_many', not this['has_many'])
     for o,oexpect in [[a.thisside,this], [a.otherside,other]]:
         target = dict( (k,getattr(o,k)) for k in oexpect)
-        assert target == oexpect, '%s:\n %r ?=\n %r' % (o, target, oexpect)
+        assert target == oexpect, '%(o)s:\n result: %(target)r\n expect: %(oexpect)r' % locals()
 
 
 
@@ -134,7 +134,7 @@ if 'nodbcook' not in sys.argv:
                 if not backref_work:
                     work = o2r.Reference( Work)
                 if 1:#not backref_club:
-                    club = o2r.Association.Hidden( Club, 'members')
+                    club = o2r.Association.Hidden( Club, backref_club and 'members' or '')
                 kids = o2r.Collection( Kid, backref=backref_kids)
                 friend = o2r.Reference( 'Mama')
                 papa   = o2r.Reference( 'Papa') #not yet,  backref=backref_papa)

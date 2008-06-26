@@ -466,8 +466,8 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                     except KeyError: pass
                 #explicit - as SA does if backref is str
                 pj = rel_kargs[ 'primaryjoin']
-                sj = rel_kargs[ 'secondaryjoin']
-                if rel_kargs.get('secondary'): pj,sj=sj,pj
+                sj = rel_kargs.get( 'secondaryjoin')
+                if rel_kargs.get( 'secondary') and sj: pj,sj=sj,pj
                 backref = sa_backref_factory(
                             #secondary = secondary,
                             primaryjoin  = pj,
