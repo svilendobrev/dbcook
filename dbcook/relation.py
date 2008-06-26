@@ -65,32 +65,18 @@ class Association( object):
     DBCOOK_hidden = False
     #DBCOOK_needs_id= True    #XXX db_id is a must only if table is referred
 
-    #DBCOOK_unique_keys= [lists] or functor  #may override - all links by default
+    #DBCOOK_unique_keys= [lists] or classmethod     #may override - all links by default
     @classmethod
     def DBCOOK_unique_keys( klas):
         return [ [ k for k,kklas in klas.walk_links() ] ]
-
-    Type4Reference = None
-    reflector = None
 
     @classmethod
     def Link( klas, parent_klas, attr =None, **kargs4type):
         '''(in some assoc_klas) declaration of link to parent_klas'''
         typ = klas.Type4Reference( parent_klas, **kargs4type)
         typ.assoc = _AssocDetails( relation_attr= attr, relation_klas=parent_klas )
-        #the parent_klas is typ.typ (or will be after forward-decl-resolving)
         #print 'Link', klas, parent_klas, attr
         return typ
-
-    @classmethod
-    def _is_valid( klas):
-        n=0
-        for whatever in klas.walk_links():
-            n+=1
-        return n>=1 #has at least 1 Link
-        #for k in dir( klas):
-        #    if not k.startswith( '__') and hasattr( getattr( klas, k), 'assoc'):
-        #        return True     #has at least 1 Link
 
     @classmethod
     def Relation( klas, assoc_klas =None, **kargs):
@@ -102,20 +88,22 @@ class Association( object):
         return _Relation( assoc_klas, **kargs)
 
     @classmethod
-    def _CollectionFactory( klas):
-        m = _AssocDetails.MyCollection()
-        m.factory = klas
-        #m.assoc_attr           #assoc side
-        #m.owner, m.owner_attr  #owner side
-        return m
+    def Hidden( klas, other_side_klas, other_side_attr ='', backref =''):
+        #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
+        return _Relation4AssocHidden( (klas, other_side_klas), backref= backref or other_side_attr)
+
 
     @classmethod
-    def Hidden( klas, other_side_klas, other_side_attr, backref =None ): #other_side_attr=''
-        #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
-        return _Relation4AssocHidden( (klas, other_side_klas, other_side_attr), backref=backref )
+    def get_link_info( klas, attr):
+        #sees parent_klas after forward-decl-resolving
+        if isinstance( attr, str):
+            attr = getattr( klas, attr)
+        is_substruct = klas.reflector.is_reference_type( attr)
+        return is_substruct[ 'klas'], attr.assoc.relation_attr
 
     @classmethod
     def walk_links( klas, with_typ =False ):
+        #sees parent_klasi after forward-decl-resolving
         for attr,typ in klas.reflector.attrtypes( klas).iteritems():
             is_substruct = klas.reflector.is_reference_type( typ)
             if is_substruct:
@@ -131,6 +119,33 @@ class Association( object):
             if l_klas is parent_klas: #... and l_attr
                 yield l_attr
 
+
+    ######## these must be setup by reflector types
+    Type4Reference = None
+    reflector = None
+
+    _used = False       #for hidden m2m: set on first found side, to avoid duplication
+
+    ######## internal interface
+    @classmethod
+    def _is_valid( klas):
+        n=0
+        for whatever in klas.walk_links():
+            n+=1
+        return n>=1 #has at least 1 Link
+        #for k in dir( klas):
+        #    if not k.startswith( '__') and hasattr( getattr( klas, k), 'assoc'):
+        #        return True     #has at least 1 Link
+
+    @classmethod
+    def _CollectionFactory( klas):
+        m = _AssocDetails.MyCollection()
+        m.factory = klas
+        #m.assoc_attr           #assoc side
+        #m.owner, m.owner_attr  #owner side
+        return m
+
+
 from config import table_namer
 def resolve_assoc_hidden( builder, klasi):
     dbg = 'assoc' in config.debug or 'relation' in config.debug
@@ -138,25 +153,22 @@ def resolve_assoc_hidden( builder, klasi):
     news = {}
     for k,klas in klasi.iteritems():
         for attr, rel_typ in mapcontext.iter_attr_local( klas, attr_base_klas= _Relation4AssocHidden, dbg=dbg ):
-            Assoc, other_side_klas, other_side_attr = rel_typ.assoc_klas
+            Assoc, other_side_klas = rel_typ.assoc_klas
+            other_side_attr = rel_typ.backrefname
             if dbg: print 'assoc_hidden: ', klas, '.'+attr, '<->', other_side_klas, '.'+other_side_attr
             class AssocHidden( mapcontext.base_klas, Assoc):
                 DBCOOK_hidden = True
-                right = Assoc.Link( other_side_klas, attr= other_side_attr)
                 left  = Assoc.Link( klas, attr= attr)
+                right = Assoc.Link( other_side_klas, attr= other_side_attr)
                 @classmethod
                 def DBCOOK_dbname( klas):
-                    #XXX TODO fix this mess
-                    uk = dict( klas.walk_links() )
                     #this sees forward-resolved
-                    this_side_k  = uk['left']  #.assoc .relation_klas
-                    other_side_k = uk['right'] #.assoc
-                    #this does not see forward-resolved
-                    this_side_a  = klas.left.assoc
-                    other_side_a = klas.right.assoc
+                    this_side_klas,  this_side_attr  = klas.get_link_info( 'left')
+                    other_side_klas, other_side_attr = klas.get_link_info( 'right')
                     r = '_'.join( ('_Assoc',
-                            table_namer( this_side_k ), this_side_a.relation_attr,
-                            table_namer( other_side_k), other_side_a.relation_attr,
+                            table_namer( this_side_klas ), this_side_attr,
+                            '2',
+                            table_namer( other_side_klas), other_side_attr
                         ))
                     return r
             #???? resolve forward-decl ? should work?
@@ -167,6 +179,7 @@ def resolve_assoc_hidden( builder, klasi):
             #change __name__ - see __name__DYNAMIC
             klasname = '_'.join( ('_Assoc',
                 table_namer( klas), attr,
+                '2',
                 isinstance( other_side_klas, str) and other_side_klas or table_namer( other_side_klas),
                 other_side_attr ))
             assoc_klas.__name__ = klasname
@@ -183,13 +196,12 @@ def is_association_reference( klas, attrtyp, attrklas):
         assoc_details = getattr( attrtyp, 'assoc', None)
         if assoc_details:
             #column_kargs = dict( nullable= assoc_details.nullable )
-            column_func = lambda column, cacher: _associate( klas, attrklas, assoc_details, column, cacher=cacher)
+            column_func = lambda column, cacher: relate( klas, attrklas, assoc_details.relation_attr,
+                                                            column, cacher=cacher)
     return column_kargs, column_func
 
-def _associate( klas, parentklas, assoc_details, column, cacher ):
+def relate( klas, parentklas, relation_attr, column, cacher ):
     dbg = 'relation' in config.debug
-
-    relation_attr = assoc_details.relation_attr
     if dbg:
         print 'relate parent:', parentklas, 'to child:', klas
         print '  attrname:', relation_attr, 'column:', column
@@ -198,25 +210,27 @@ def _associate( klas, parentklas, assoc_details, column, cacher ):
     lcache = cacher.assoc_links = getattr( cacher, 'assoc_links', {})
     links = lcache.setdefault( parentklas, set() )
     link = (klas, relation_attr)
-    assert link not in links, '''
-        duplicate definition of assoc_link %(klas)s.%(relation_attr)s to %(parentklas)s'''.strip() % locals()
+    assert link not in links, '''duplicate definition
+            of assoc_link %(klas)s.%(relation_attr)s to %(parentklas)s''' % locals()
     links.add( link )
 
     ### collect foreign_keys
+    #parentklas.column is pointed by klas.relation_attr
+    #dict( klas: dict( parentklas: dict( relation_attr:column)))
     fcache = cacher.foreign_keys = getattr( cacher, 'foreign_keys', {})
     foreign_keys = fcache.setdefault( klas, {})
     kk = foreign_keys.setdefault( parentklas, {} )
     key = relation_attr
 
     if key is not None:
-        assert key not in kk, '''
-            duplicate/ambigious association to %(parentklas)s in %(klas)s;
+        assert key not in kk, '''duplicate/ambigious association to %(parentklas)s in %(klas)s;
             specify attr=<assoc_relation_attr> explicitly
             key=%(key)s
-            kk=%(kk)s'''.strip() % locals()
+            kk=%(kk)s''' % locals()
     else:
         if key in kk:
-            warnings.warn( '''duplicate/ambigious/empty association to %(parentklas)s in %(klas)s; specify attr=>assoc_relation_attr> explicitly''' % locals() )
+            warnings.warn( '''duplicate/ambigious/empty association to %(parentklas)s in %(klas)s;
+                specify attr=>assoc_relation_attr> explicitly''' % locals() )
     kk[ key ] = column
 
 
@@ -231,6 +245,8 @@ class _Relation( object):
     def __init__( me, assoc_klas, backref =None, rel_kargs ={}):
         me.assoc_klas = assoc_klas
         me.rel_kargs = rel_kargs
+        if backref and not isinstance( backref, dict):
+            backref = dict( name= backref)
         me.backref = backref
     def __str__( me):
         return me.__class__.__name__+'/'+str(me.assoc_klas)
@@ -247,15 +263,15 @@ class _Relation( object):
         dbg = 'relation' in config.debug
         me.resolve( builder)
         assoc_klas = me.assoc_klas
-        if dbg: print ' ' , me, klas, '.', name
-        assert name, 'relation/association %(assoc_klas)r relates to %(klas)r but no attrname specified anywhere' % locals()
+        if dbg: print ' ' , me, '->', klas, '.', name or None
 
         foreign_keys = builder.foreign_keys[ assoc_klas]
         if dbg: print ' ', me, 'assoc_fkeys:', foreign_keys
 
         try: fks = foreign_keys[ klas ]
-        except KeyError: assert 0, '''missing declaration of link in association %(klas)s.%(name)s <- %(assoc_klas)s''' % locals()
+        except KeyError: assert 0, '''missing declaration of link in association %(assoc_klas)s -> %(klas)s.%(name)s ''' % locals()
 
+        assert name, 'relation/association %(assoc_klas)r relates to %(klas)r but no attrname specified anywhere' % locals()
         for key in (name, None):
             try:
                 fk = fks[ key]
@@ -286,6 +302,9 @@ Check for double-declaration with different names''' % locals()
             cannot be DBCOOK_hidden (which one to give as other side?)'''
 
         if getattr( assoc_klas, 'DBCOOK_hidden', None):
+            if assoc_klas._used:
+                return None
+            assoc_klas._used = True
             if len(fks)==2:     #2 diff links to same klas
                 #print 'same klas x2'
                 assert len(foreign_keys) == 1, ERR_CANNOT_HIDE_ASSOC % locals()
@@ -342,7 +361,9 @@ class _AssocDetails:
         @sqlalchemy.orm.collections.collection.appender
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
-class _Relation4AssocHidden( _Relation): pass
+class _Relation4AssocHidden( _Relation):
+    @property
+    def backrefname( me): return me.backref and me.backref['name'] or ''
 
 ##############################
 
@@ -356,8 +377,6 @@ class Collection( _Relation):
                     backref =None,   #backref name or dict( name, **rel_kargs)
                     #unique =False,  #   ??
                     **rel_kargs ):   #order_by =None, etc
-        if backref and not isinstance( backref, dict):
-            backref = dict( name= backref)
         _Relation.__init__( me, child_klas, backref, rel_kargs)
         me.backrefname = None   #decided later
     def setup_backref( me, parent_klas, parent_attr):
@@ -412,33 +431,47 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
 
         relations = {}
 
-        iter_assoc_implicit_rels = [ (rel_attr, _Relation( assoc_klas))
-                                        for assoc_klas, rel_attr in assoc_links ]
+        #XXX this may invent wrong (backref) relation !
+        assoc_implicit_rels = [ (rel_attr, _Relation( assoc_klas))
+                                    for assoc_klas, rel_attr in assoc_links
+                                    if rel_attr and not getattr( assoc_klas, 'DBCOOK_hidden', None)
+                                        #if no name on this side: nothing here, all at other side
+                                        #if DBCOOK_hidden: nothing here, all at other/explicit side
+                                ]
+        if dbg and assoc_links: print '  association-implied valid implicit relations:', assoc_implicit_rels
+
         iter_rels = builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation, dbg=dbg )
 
-        for name,typ in itertools.chain( iter_rels, iter_assoc_implicit_rels ):
-            rel_klas, rel_klas_actual, rel_kargs = typ.make( builder, klas, name)    #any2many
-            if not rel_klas_actual: rel_klas_actual = rel_klas
+        for name,typ in itertools.chain( iter_rels, assoc_implicit_rels ):
+            rel_info = typ.make( builder, klas, name)    #any2many
+            if not rel_info:
+                if dbg: print '  DONE ON OTHERSIDE:', name
+                assert 0, 'must not come here???'
+                #continue
+            rel_klas, rel_klas_actual, rel_kargs = rel_info
+            #if not rel_klas_actual: rel_klas_actual = rel_klas
 
             #forward link
             r = fkeys.get_relation_kargs( name)
-            if dbg: print '  FORWARD', name, r, fkeys
+            if dbg: print '  FORWARD:', name, r, fkeys
             rel_kargs.update( r)
 
             #backward link 1:n
             backref = typ.backref
             if backref:
                 r = fkeys.get_relation_kargs( typ.backrefname)
-                if dbg: print '  BACKREF', typ.backrefname, r
-                if 0:
-                    backref.update( r)
-                else:
-                    for p in 'post_update remote_side'.split():
-                        try: backref[ p] = r[p]
-                        except KeyError: pass
+                if dbg: print '  BACKREF:', typ.backrefname, r, backref
+                for p in 'post_update remote_side'.split():
+                    try: backref[ p] = r[p]
+                    except KeyError: pass
+                #explicit - as SA does if backref is str
+                pj = rel_kargs[ 'primaryjoin']
+                sj = rel_kargs[ 'secondaryjoin']
+                if rel_kargs.get('secondary'): pj,sj=sj,pj
                 backref = sa_backref_factory(
-                            #explicit - as SA does if backref is str
-                            primaryjoin= rel_kargs[ 'primaryjoin'],
+                            #secondary = secondary,
+                            primaryjoin  = pj,
+                            secondaryjoin= sj,
                             ##XXX uselist= False, #??? goes wrong if selfref - both sides become lists
                             **backref)
                 rel_kargs[ 'backref'] = backref

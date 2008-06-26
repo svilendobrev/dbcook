@@ -30,7 +30,9 @@ class Reflector:
         raise NotImplementedError
     def is_reference_type( me, typ):
         raise NotImplementedError
-        return None or dict( klas= typ.itemklas, as_value= bool,
+        return None or dict(
+                klas= typ.itemklas,
+                as_value= bool,
                 lazy= bool or None or 'default',
                 nullable = bool or 'default',
             )

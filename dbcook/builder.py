@@ -418,10 +418,7 @@ def fix_one2many_relations( klas, builder):
         child_tbl = builder.tables[ child_klas]
         child_tbl.append_column( fk_column)
 
-        class assoc_details:
-            #nullable= True
-            relation_attr= attr_name
-        relation._associate( child_klas, klas, assoc_details, fk_column, cacher=builder)
+        relation.relate( child_klas, klas, attr_name, fk_column, cacher=builder)
 
 
 def make_mapper( klas, table, **kargs):
@@ -531,14 +528,6 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                     rel_kargs[ 'uselist'] = False
                     if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
                     m.add_property( k, sa_relation( attrklas, **rel_kargs))
-
-            #if reflector.is_collection_type( typ):
-            #    raise NotImplementedError
-            #    m.add_property( k+'_multi',
-            #        sa_relation( typ.itemtype,
-            #            uselist=True    #??typ.forward?
-            #        )
-            #    )
 
 
 class _MapExt( sqlalchemy.orm.MapperExtension):
