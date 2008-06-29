@@ -29,7 +29,7 @@ class NamespaceGen( object):
                     if clasname_from_link( link) == klas: #make only my own link
                         if target_class not in me.classes_descr: # like A1, B2, C1 ...
                             target_class = target_class[0]
-                        dyn_attrs[ link] = me.context.SubStruct( target_class)
+                        dyn_attrs[ link] = me.context.Reference( target_class)
             dyn_attrs['ime'+klas] = me.context.Text()
 
             inh_type, base_name = inh_data

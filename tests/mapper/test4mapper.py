@@ -52,10 +52,10 @@ def test_struct_embedded( context):
         cvet = context.Text()
     class B( MasValue):
         ime = context.Text()
-        c = context.SubStruct( C)
+        c = context.Reference( C)
     class A( context.Base):
         ime = context.Text()
-        a = context.SubStruct( B)
+        a = context.Reference( B)
 
     def populate():
         a = A()
@@ -72,10 +72,10 @@ def test_struct_ref( context):
         ime = context.Text()
     class A( context.Base):
         ime = context.Text()
-        c = context.SubStruct( C)
+        c = context.Reference( C)
     class B( context.Base):
         ime = context.Text()
-        a = context.SubStruct( A)
+        a = context.Reference( A)
 
     def populate():
         c = C()
@@ -92,11 +92,11 @@ def test_forw_ref( context):
     class D( context.Base):
         auto_set = False
         ime = context.Text()
-        aforward = context.SubStruct('C')
+        aforward = context.Reference('C')
     class C( context.Base):
         auto_set = False
         ime = context.Text()
-        aback = context.SubStruct( D)
+        aback = context.Reference( D)
 
     def populate():
         c = C()
@@ -112,15 +112,15 @@ def test_forw_ref_A_B_C_A( context):
     class C( context.Base):
         auto_set = False
         ime = context.Text()
-        aforward = context.SubStruct('A')
+        aforward = context.Reference('A')
     class B( context.Base):
         auto_set = False
         ime = context.Text()
-        aback = context.SubStruct( C)
+        aback = context.Reference( C)
     class A( context.Base):
         auto_set = False
         ime = context.Text()
-        aback = context.SubStruct( B)
+        aback = context.Reference( B)
 
     def populate():
         c = C()
@@ -139,7 +139,7 @@ def test_forw_ref_self( context):
     class C( context.Base):
         auto_set = False
         ime = context.Text()
-        aself = context.SubStruct('C')
+        aself = context.Reference('C')
 
     def populate():
         c1 = C()
@@ -154,8 +154,8 @@ def test_self_ref_2list( context):
     class A( context.Base):
         auto_set = False
         ime = context.Text()
-        prev = context.SubStruct('A')
-        next = context.SubStruct('A')
+        prev = context.Reference('A')
+        next = context.Reference('A')
 
     def populate():
         a0 = A()
@@ -176,8 +176,8 @@ def test_self_ref_tree( context):
     class A( context.Base):
         auto_set = False
         ime = context.Text()
-        parent = context.SubStruct('A')
-        #children = context.Sequence( context.SubStruct('A') )     #ТОВА е дървото; иначе е просто ref-self
+        parent = context.Reference('A')
+        #children = context.Sequence( context.Reference('A') )     #ТОВА е дървото; иначе е просто ref-self
 
     def populate():
         a0 = A()
@@ -367,12 +367,12 @@ def test_B_inh_A_ref( context, inh, refs):
         DBCOOK_has_instances = True
         auto_set = False
         if 'A' in refs:
-            aref = context.SubStruct( refs['A'])
+            aref = context.Reference( refs['A'])
         DBCOOK_inheritance = CONCRETE
         imea = context.Text()
     class B( A):
         if 'B' in refs:
-            bref = context.SubStruct( refs['B'])
+            bref = context.Reference( refs['B'])
         DBCOOK_inheritance = inh
         imeb = context.Text()
     def populate():
@@ -416,7 +416,7 @@ class %(clas)s( %(base)s):
     DBCOOK_has_instances = True
     DBCOOK_inheritance='%(inh)s'
     %(lower)sime  = context.Text()
-    %(lower)slink = context.SubStruct('%(ref)s')
+    %(lower)slink = context.Reference('%(ref)s')
 ''' % locals()
         return class_gen
 

@@ -13,18 +13,15 @@ except ValueError: pass
 else: USE_STATIC_TYPE = 1
 
 if USE_STATIC_TYPE:
-    from dbcook.usage.static_type.sa2static import Builder, Base, Type4Reference
-        #Type4Reference (x,auto_set=False): x=string->context.ForwardSubStruct; x=class->DirectSubStruct
+    from dbcook.usage.static_type.sa2static import Builder, Base, Reference
     from static_type.types.atomary import Text
     from static_type.types.atomary import Number as Int
 #    def qstr(q, **str_kargs): return q.__str__( **str_kargs)
 else:
-    from dbcook.usage.plainwrap import Builder, Base, Type4Reference, Type
+    from dbcook.usage.plainwrap import Builder, Base, Reference, Type
     class Text( Type): pass
     class Int(  Type): pass
 #    def qstr(q, **str_kargs): return str(q)
-
-Reference = SubStruct = Type4Reference
 
 from dbcook.usage.samanager import SAdb
 
