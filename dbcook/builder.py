@@ -519,10 +519,13 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                             or issubclass( klas, attrklas)  #seems not supported by SA + crash
                         ):
                         lazy = True
-                    elif config.force_lazy: lazy = True
+                    elif config.force_lazy:
+                        lazy = True
                     else:
-                        lazy = is_substruct[ 'lazy']
-                        if lazy == 'default': lazy = False  ##XXXXXX config? sa_default is lazy
+                        lazy = getattr( attrklas, 'DBCOOK_reference_lazy', False
+                                        ) or is_substruct[ 'lazy']
+                        if lazy == 'default':
+                            lazy = False  ##XXXXXX config? sa_default is lazy
 
                     rel_kargs[ 'lazy'] = lazy
                     rel_kargs[ 'uselist'] = False
@@ -594,7 +597,10 @@ class Builder:
             me.klasi = me.DICT( sorted( me.klasi.items() ))
 
         if isinstance( fieldtype_mapper, dict):
-            fm = lambda typ: fieldtype_mapper[ typ.__class__ ]
+            def fm( typ):
+                r = fieldtype_mapper[ typ.__class__ ]
+                if callable(r): r = r( typ)
+                return r
         else: fm = fieldtype_mapper
 
         #work
