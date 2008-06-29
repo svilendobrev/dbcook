@@ -9,10 +9,13 @@ import sys
 '''
 _debug = 0
 
+def _pipe(x): return x
+
 def walker( namespace, reflector, baseklas):
     'aliases are ignored; same-name items are overwritten'
     klasi = {}
-    for k,klas in namespace.iteritems():
+    dbgsorted = _debug and sorted or _pipe
+    for k,klas in dbgsorted( namespace.iteritems() ):
         if not issubclass( klas, baseklas): continue
 
         name = klas.__name__
@@ -22,7 +25,7 @@ def walker( namespace, reflector, baseklas):
             continue
         if _debug: print 'walk:  got', name, klas.__module__
         klasi[ key ] = klas, 'namespace'
-    if _debug: print 'walk 0', '\n'.join( str(kv) for kv in klasi.iteritems() )
+    if _debug: print '\n  '.join( ['walk 0'] + [str(kv) for kv in dbgsorted( klasi.iteritems() )])
 
     pas = 0
     new = 1
@@ -30,16 +33,16 @@ def walker( namespace, reflector, baseklas):
         pas +=1
         if _debug: print 'walk: ------ pass', pas
         new = 0
-        for (kname,kmod),(klas,isnamespace) in klasi.items(): #copy
+        for (kname,kmod),(klas,isnamespace) in dbgsorted( klasi.items() ): #copy
             if isinstance( klas, str): continue
             new += walk1( klas,isnamespace, kname,kmod, klasi, reflector, namespace)
-        if _debug: print 'eopass', '\n       '.join( str(kv) for kv in klasi.iteritems() )
+        if _debug: print '\n      '.join( ['eopass'] + [ str(kv) for kv in dbgsorted( klasi.iteritems() )])
 
-    for (kname,kmod),(klas,isnamespace) in klasi.items(): #copy
+    for (kname,kmod),(klas,isnamespace) in dbgsorted( klasi.items() ): #copy
         add_bases( klas, klasi, baseklas)
 
     r = dict( (kname,klas) for (kname,kmod),(klas,isnamespace) in klasi.iteritems() )
-    if _debug: print r
+    if _debug: print dbgsorted(r)
     if _debug: print 'walk: end'
     return r
 
@@ -68,13 +71,14 @@ def ownerbase( klas, attr, reflector):
 
 _level = 0
 def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
+    dbgsorted = _debug and sorted or _pipe
     new = 0
     global _level
     ind = '    '*_level
     if _debug: print ind, 'klas:', `klas`
     _level+=1
     ind += '    '
-    for attr,typ in reflector.attrtypes( klas).iteritems():
+    for attr,typ in dbgsorted( reflector.attrtypes( klas).iteritems() ):
         is_substruct = reflector.is_reference_type( typ)
         if not is_substruct:
             if _debug: print ind, attr, 'ignoring non-ref:', typ
@@ -84,20 +88,28 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
 
         if isinstance( oklas, str):
             name = oklas
-            mod = klas.__module__
+            if '.' in name:
+                mod,name = name.rsplit('.',1)
+            else:
+                mod = klas.__module__
             key = name,mod
             kk = klasi.get( key )
             if kk:
-                if _debug: print ind, '  resolvable:', oklas, 'from', mod, '->', `kk`
+                if _debug: print ind, '  resolvable:', name, 'of', mod, '->', `kk`
                 isnamespace = kk[1]
                 if isnamespace:
-                    if _debug: print ind, '  ->resolve', oklas, 'from namespace'
+                    if _debug: print ind, '  ->resolve', name, 'from namespace'
                     dict = namespace
                 else:
                     #трябва да гледа в дълбочина на наследяванията, т.е. ако ref('B') е дошло от базовия клас, да се гледа там...
                     base = ownerbase( klas, attr, reflector)
-                    mod = sys.modules[ base.__module__]
-                    if _debug: print ind, '  ->resolve', oklas, 'from', mod
+                    if '.' in oklas:
+                        mod0 = base.__module__
+                        modname = '.'.join( mod0.split('.')[:-1] + mod.split('.') )
+                        mod = sys.modules[ modname]
+                    else:
+                        mod = sys.modules[ base.__module__]
+                    if _debug: print ind, '  ->resolve', name, 'from', mod
                     dict = mod.__dict__
                 r = reflector._resolve_forward_reference1( typ, dict)
                 klasi[ key ] = r,isnamespace

@@ -36,7 +36,9 @@ class Type4Reference( Type):
         assert isinstance( typ.itemklas, str)
         for namespace in namespaces:
             try:
-                r = typ.itemklas = namespace[ typ.itemklas]
+                name = typ.itemklas
+                if '.' in name: mod,name = name.rsplit('.',1)   #XXX ignore mod???
+                r = typ.itemklas = namespace[ name]
                 return r
             except KeyError: pass
         raise KeyError, typ.itemklas
@@ -108,25 +110,28 @@ reflector = Reflector4sa()
 class Base( object):
     def __str__( me): return reflector.obj2str( me, Base, builder.column4ID.name)
     __repr__ = __str__
+    @classmethod
+    def Reference( klas, **kargs): return Reference( klas, **kargs)
 
 class Association( builder.relation.Association):
+    __slots__ = ()
     Type4Reference = Type4Reference
     reflector = reflector
 
 class Collection( builder.relation.Collection):
-    Type4Reference = Type4Reference
+    __slots__ = ()
     reflector = reflector
 
 
-def setup( s):
+def bsetup( s):
     s.reflector = reflector
-    s.Reference = s.Type4Reference = Type4Reference
     s.Base = Base
-    s.Association = Association
-    s.Collection = Collection
+    #s.Type4Reference = Type4Reference
+    #s.Association = Association
+    #s.Collection = Collection
 
 class Builder( builder.Builder): pass
-setup( Builder)
+bsetup( Builder)
 
 #############################################
 
