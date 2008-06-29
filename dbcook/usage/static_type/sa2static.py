@@ -21,20 +21,7 @@ from dbcook import builder
 table_inheritance_types = builder.table_inheritance_types
 
 class Reflector4StaticType( builder.Reflector):
-    class DICT( object):
-        __slots__ = ( 'st', )
-        def __init__( me, st): me.st = st
-        def iterkeys( me):      return me.st.iterkeys()
-        def itervalues( me):    return me.st.itervalues()
-        def __contains__( me,k):  return me.st.__contains__(k)
-        def iteritems( me):     return me.st.itertypes()
-        if 0:
-            def iter_attr_type_klas( me):
-                for k,v in me.st.itertypes():
-                    if isinstance( v, _static_type.SubStruct):
-                        yield k, v.typ, v.typ.typ
-
-    def attrtypes( me, klas): return me.DICT( klas.StaticType )
+    def attrtypes( me, klas): return klas.StaticType
     def cleanup( me, klas):     #XXX nothing so far... maybe _order_Statics_cache
         pass
 

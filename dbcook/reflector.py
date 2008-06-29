@@ -11,11 +11,13 @@ class Reflector:
         return dict-like-thing
     if 0:
         class dictLike:
-            '(the attr belonging to klas+bases)'
+            'all {attr:type} belonging to klas+bases'
             def __contains__(): return 'bool( attr belongs to klas+bases)'
             def iterkeys():     return 'yield attr_name '
             def iteritems():    return 'yield (attr_name, attr_type) '
             def itervalues():   return 'yield attr_type '
+            def get( key, default): return attr_type/default
+            def __getitem__( key):  return attr_type/default
             #def iter_klasi():       return 'yield attr_type.klas '
             #def iter_attr_klas():   return 'yield (attr_name, attr_type.klas) '
             #def iter_attr_type_klas():  return 'yield (attr_name, attr_type, attr_type.klas) '
