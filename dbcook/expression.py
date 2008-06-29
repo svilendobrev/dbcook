@@ -16,6 +16,12 @@ elif hasattr( sqlalchemy.orm.Mapper, '_get_equivalent_columns'):
 
 def joincopy( c): return c._clone()
 
+class _NOTFOUND: pass
+def foreign_keys( prop):
+    r = getattr( prop, 'foreign_keys',
+        getattr( prop, '_foreign_keys', _NOTFOUND))
+    assert r is not _NOTFOUND
+    return r
 
 from dbcook.util.attr import find_valid_fullname_import, import_fullname
 
@@ -109,7 +115,7 @@ def join_via( keys, mapper, must_alias =None):
 
         c = prop_get_join( prop, mapper)
 
-        forkey = prop.foreign_keys
+        forkey = foreign_keys( prop)
 
         parent_table = self_table
         self_table = prop.target
@@ -221,7 +227,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
         lastcol = prop.columns[0]
 
     elif isinstance( prop, sqlalchemy.orm.properties.PropertyLoader):
-        for c in prop.foreign_keys:
+        for c in foreign_keys( prop):
             lastcol = c
             break
     else:
