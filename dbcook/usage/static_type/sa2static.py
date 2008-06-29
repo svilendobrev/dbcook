@@ -43,7 +43,7 @@ class Reflector4StaticType( builder.Reflector):
 #        return isinstance( typ, Sequence)
 
     #checker4substruct_as_value = None
-    def is_reference_type(  me, typ):
+    def is_reference_type( me, typ):
         if not isinstance( typ, _static_type.SubStruct):
             return None
         klas = typ.typ
@@ -52,8 +52,10 @@ class Reflector4StaticType( builder.Reflector):
         return dict( klas=klas, lazy=lazy, as_value=False, nullable=nullable)
         #as_value = callable( me.checker4substruct_as_value) and me.checker4substruct_as_value( klas)
 
-    def _resolve_forward_references( me, namespace, base_klas):
-        _static_type.ForwardSubStruct.resolve( namespace )
+    def resolve_forward_references( me, namespace, base_klas):
+        _static_type.ForwardSubStruct.resolve( namespace, base_klas)
+    def resolve_forward_reference1( me, typ, namespace):
+        _static_type.ForwardSubStruct.resolve1( typ, namespace )
 
 
 class _Base( _static_type.StaticStruct):
@@ -297,7 +299,7 @@ class Collection( builder.relation.Collection):
 def bsetup( s):
     s.reflector = reflector
     s.Base = Base
-    #s.Type4Reference = staticmethod( Type4Reference)
+    #s.Reference = staticmethod( Reference)
     #s.Association = Association
     #s.Collection = Collection
 

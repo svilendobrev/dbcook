@@ -16,8 +16,7 @@ via Builder.xxxx, or directly from here.
 from dbcook import builder
 table_inheritance_types = builder.table_inheritance_types
 NO_CLEANUP = False
-#XXX TODO cleanup() below makes all
-# repeateable-over-same-clas plainwrap tests FAIL
+#XXX TODO cleanup() below makes all repeating-over-same-clas plainwrap tests FAIL
 # because mapper+clear_mappers() wipes the Type-definitions in the classes
 # Needs restoration procedure ?? put all back from the cache before erasing it?
 # for now, use NO_CLEANUP = True where needed
@@ -30,24 +29,6 @@ class Type4Reference( Type):
         me.lazy = lazy
         me.nullable = nullable
         me.as_value = False
-    @staticmethod
-    def resolve_forward1( typ, *namespaces):
-        assert isinstance( typ, Type4Reference)
-        assert isinstance( typ.itemklas, str)
-        for namespace in namespaces:
-            try:
-                name = typ.itemklas
-                if '.' in name: mod,name = name.rsplit('.',1)   #XXX ignore mod???
-                r = typ.itemklas = namespace[ name]
-                return r
-            except KeyError: pass
-        raise KeyError, typ.itemklas
-    @staticmethod
-    def resolve_forwards( namespace, klas_attrvalue_iterator, namespace2 ={}):
-        for typ in klas_attrvalue_iterator:
-            if isinstance( typ, Type4Reference):
-                if isinstance( typ.itemklas, str):
-                    Type4Reference.resolve_forward1( typ, namespace, namespace2)
     def __str__( me):
         return me.__class__.__name__ + '/'+repr(me.itemklas)
 
@@ -89,26 +70,35 @@ class Reflector4sa( builder.Reflector):
                         lazy= typ.lazy, nullable= typ.nullable,
                     )
 
-
     ##############
-    def _resolve_forward_references( me, namespace, base_klas):
-        import sys
-        for klas in namespace.itervalues():
-            if not builder.issubclass( klas, base_klas): continue
-            Type4Reference.resolve_forwards( namespace,
-                    me.attrtypes( klas).itervalues(),
-                    sys.modules[ klas.__module__].__dict__ )
+    def resolve_forward_references( me, namespace, base_klas):
+        return _resolver.resolve( namespace, base_klas )
         #this can also remove all Type4Reference's from klas
-    def _resolve_forward_reference1( me, klas, namespace):
-        return Type4Reference.resolve_forward1( klas, namespace)
-
+    def resolve_forward_reference1( me, typ, namespace):
+        return _resolver.resolve1( typ, namespace)
 
 
 Reference = Type4Reference
 reflector = Reflector4sa()
 
+from dbcook.util.forward_resolver import Resolver
+class Resolver( Resolver):
+    def finisher( me, typ, resolved_klas):
+        typ.itemklas = resolved_klas
+    def klas_reftype_iterator( me, klas):
+        for t in reflector.attrtypes( klas).itervalues():
+            if isinstance( t, Type4Reference):
+                yield t
+    def is_forward_decl( me, typ):
+        assert isinstance( typ, Type4Reference)
+        return isinstance( typ.itemklas, str) and typ.itemklas
+_resolver = Resolver()
+
+
 class Base( object):
-    def __str__( me): return reflector.obj2str( me, Base, builder.column4ID.name)
+    vstr = str
+    def __str__( me):
+        return reflector.obj2str( me, Base, idname=builder.column4ID.name, vstr=me.__class__.vstr)
     __repr__ = __str__
     @classmethod
     def Reference( klas, **kargs): return Reference( klas, **kargs)

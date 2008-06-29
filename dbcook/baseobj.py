@@ -1,7 +1,7 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
-def obj2str( obj, base_klas, attrname_iterator, idname, refname ='name'):
+def obj2str( obj, base_klas, attrname_iterator, idname, refname ='name', vstr=str):
     '''nice str(obj), cuts recursion in references.
     Uses obj.idname, attrname_iterator(obj), and obj.refname (if available) for references
 '''
@@ -10,7 +10,7 @@ def obj2str( obj, base_klas, attrname_iterator, idname, refname ='name'):
         v = getattr( obj, k, '<notset>')
         if isinstance( v, base_klas):
             v = v.__class__.__name__ +'/id'+ str( getattr( v, idname)) + '/'+ str( getattr( v, refname,''))
-        r += ' '+k+'='+str(v)
+        r += ' '+k+'='+vstr(v)
     return r+' )'
 
 

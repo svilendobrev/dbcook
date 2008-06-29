@@ -111,7 +111,7 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
                         mod = sys.modules[ base.__module__]
                     if _debug: print ind, '  ->resolve', name, 'from', mod
                     dict = mod.__dict__
-                r = reflector._resolve_forward_reference1( typ, dict)
+                r = reflector.resolve_forward_reference1( typ, dict)
                 klasi[ key ] = r,isnamespace
                 new += 1
                 continue

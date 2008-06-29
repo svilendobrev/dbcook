@@ -36,16 +36,19 @@ class Reflector:
                 lazy= bool or None or 'default',
                 nullable = bool or 'default',
             )
-    def _resolve_forward_references( me, namespace, base_klas):
+    def resolve_forward_references( me, namespace, base_klas):
+        raise NotImplementedError
+    def resolve_forward_reference1( me, typ, namespace):
         raise NotImplementedError
 
-    def obj2str( me, obj, base_klas, idname, refname ='name'):
+    def obj2str( me, obj, base_klas, idname, refname ='name', **kargs):
         from baseobj import obj2str
-        '''nice str(obj), cuts recursion. Uses obj.refname for references (if available)'''
+        '''nice str(obj), cuts recursion. Uses v.idname and obj.refname for references (if available)'''
         return obj2str( obj, base_klas,
                     attrname_iterator= lambda o: me.attrtypes( o.__class__).iterkeys() ,
                     idname = idname,
                     refname= refname,
+                    **kargs
                 )
 
 # vim:ts=4:sw=4:expandtab

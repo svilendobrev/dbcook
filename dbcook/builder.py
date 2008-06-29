@@ -589,9 +589,9 @@ class Builder:
         namespace = walkklas.walker( namespace, reflector, base_klas)
 
         me._load_klasi( namespace)
-        me._cleanup_klasi()     #here? or after _resolve_forward_references?
+        me._cleanup_klasi()     #here? or after resolve_forward_references?
         relation.resolve_assoc_hidden( me, me.klasi)
-        reflector._resolve_forward_references( me.klasi, base_klas)
+        reflector.resolve_forward_references( me.klasi, base_klas)
 
         if force_ordered:
             me.klasi = me.DICT( sorted( me.klasi.items() ))
