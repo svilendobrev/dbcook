@@ -3,12 +3,19 @@
 import sys
 
 class Config:
-    def __init__( me, chain =None):
-        me._chain = chain
+    def __init__( me, *chain):
+        me._chain = list(chain)
     def __getattr__( me, a):
-        return getattr( me._chain, a)
+        for c in me._chain:
+            try: return getattr( c, a)
+            except AttributeError: pass
+        raise AttributeError
+
     def __str__( me):
-        all = sorted( set( dir(me)) | set( dir( me._chain)) )
+        all = set( dir(me) )
+        for c in me._chain:
+            all = all | set( dir( c))
+        all = sorted( all)
         return ', '.join( '%s=%s' % (k,getattr(me,k))
                     for k in all
                     if not k.startswith('_') and not callable( getattr(me,k))
@@ -17,11 +24,10 @@ class Config:
     def allhelp( me):
         'ignoring duplicate entries; first is used'
         h = ''
-        c = me
-        while c:
+        chain = [ me ] + me._chain
+        for c in chain:
             try: h += c._help
             except AttributeError: pass
-            c = c._chain
 
         ikeys = []
         out = []
@@ -88,8 +94,8 @@ class Config:
                         val = val.split(',')
                     setattr( me, k, val)
 
-        if me._chain:
-            me._chain._getopt( help, use_own)    #having _chain and not use_own ... useless - argv is empty
+        for c in me._chain:
+            c._getopt( help, use_own)    #having _chain and not use_own ... useless - argv is empty
 
 Config.Config = Config  #easy available as cfg.Config, instead of cfg.__base__[0].__class__...
 
