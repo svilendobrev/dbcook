@@ -3,14 +3,13 @@
 from tests.util.context import *
 if USE_STATIC_TYPE:
     Base.auto_set = False
-orm = Builder
-from dbcook.builder import relation
-class Base( orm.Base):
-    __init__ = relation.setkargs
+else:
+    from dbcook.util.attr import setattr_kargs
+    class Base( Base):
+        __init__ = setattr_kargs
 
 SAdb.config.getopt()
 print 'config:', SAdb.config
-
 
 def tsingle():
     class Kid( Base): name = Text()

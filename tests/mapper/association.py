@@ -6,10 +6,10 @@
 from tests.util.context import *
 if USE_STATIC_TYPE:
     Base.auto_set = False
-orm = Builder
-from dbcook.builder import relation
-class Base( orm.Base):
-    __init__ = relation.setkargs
+else:
+    from dbcook.util.attr import setattr_kargs
+    class Base( Base):
+        __init__ = setattr_kargs
 
 SAdb.config.getopt()
 print 'config:', SAdb.config
@@ -26,7 +26,7 @@ class IntermediateAB( Base4Association):    #color
     color = Text()
     a_link = Base4Association.Link( 'A')
     b_boza = Base4Association.Link( 'B', attr= 'all_ba')
-#    a = orm.Reference('A')     #plain reference - nothing to do with the AB association
+#    a = Reference('A')     #plain reference - nothing to do with the AB association
     a2_link = Base4Association.Link( 'A', attr= 'alla2', nullable= True)
     c_link = Base4Association.Link( 'C', 'cccc' )
     x_link = Base4Association.Link( X, nullable= True )
@@ -48,14 +48,14 @@ class A( Base):
     all_ab  = IntermediateAB.Relation()
 #    all_abc = IntermediateABC2.Relation()
 #    all_ade = IntermedADE.Relation()
-#    x = orm.Reference( 'A')
+#    x = Reference( 'A')
     alla2   = IntermediateAB.Relation()
 
 class B( Base):
     name    = Text()
 #    my_ab   = IntermediateAB.Relation()  #override -> error
 #    all_ab2 = Base4Association.Relation( 'IntermediateAB2' )
-#        a = orm.Reference( A)#.Instance()
+#        a = Reference( A)#.Instance()
 #    all_ba  = IntermediateAB.Relation()
 
 if 10:

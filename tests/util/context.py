@@ -13,15 +13,18 @@ except ValueError: pass
 else: USE_STATIC_TYPE = 1
 
 if USE_STATIC_TYPE:
-    from dbcook.usage.static_type.sa2static import Builder, Base, Reference
+    import dbcook.usage.static_type.sa2static as orm
     from static_type.types.atomary import Text
     from static_type.types.atomary import Number as Int
 #    def qstr(q, **str_kargs): return q.__str__( **str_kargs)
 else:
-    from dbcook.usage.plainwrap import Builder, Base, Reference, Type
-    class Text( Type): pass
-    class Int(  Type): pass
+    import dbcook.usage.plainwrap as orm
+    class Text( orm.Type): pass
+    class Int(  orm.Type): pass
 #    def qstr(q, **str_kargs): return str(q)
+Builder = orm.Builder
+Base = orm.Base
+Reference = orm.Reference
 
 from dbcook.usage.samanager import SAdb
 
