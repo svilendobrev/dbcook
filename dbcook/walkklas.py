@@ -57,8 +57,13 @@ def add_bases( klas, klasi, baseklas):
             if _debug: print 'walk: add base', b
         b = b.__bases__
 
-def ownerbase( klas, attr, reflector):
-    'откъде идва даден атрибут'
+def find_owner_baseklas( klas, attr, reflector):
+    'from which level in hierarchy of klas comes the attr'
+    def getattr( klas, a, *dv):
+        'use reflector cache -- not really needed, a workaround similar to plainwrap.NO_CLEANUP'
+        rcache = reflector.attrtypes( klas)
+        if dv: return rcache.get( a, *dv)
+        return rcache[a]
     value = getattr( klas, attr)
     base = klas
     while base:
@@ -102,7 +107,7 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
                     dict = namespace
                 else:
                     #трябва да гледа в дълбочина на наследяванията, т.е. ако ref('B') е дошло от базовия клас, да се гледа там...
-                    base = ownerbase( klas, attr, reflector)
+                    base = find_owner_baseklas( klas, attr, reflector)
                     if '.' in oklas:
                         mod0 = base.__module__
                         modname = '.'.join( mod0.split('.')[:-1] + mod.split('.') )
@@ -124,7 +129,7 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
             else:
                 if _debug: print ind, '  namespace changed', oklas
 
-        if ownerbase( klas, attr, reflector) != klas:
+        if find_owner_baseklas( klas, attr, reflector) != klas:
             if _debug: print ind, '  ignore non-own extern-ref', `oklas`, '/', (name,mod)
             continue
 
