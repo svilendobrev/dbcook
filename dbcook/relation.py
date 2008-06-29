@@ -236,10 +236,6 @@ def relate( klas, parentklas, relation_attr, column, cacher ):
 
 class _Unspecified: pass
 
-def setkargs( me, **kargs):
-    for k,v in kargs.iteritems():
-        setattr( me, k,v)
-
 class _Relation( object):
     __slots__ = [ 'rel_kargs', 'assoc_klas', 'backref' ]
     def __init__( me, assoc_klas, backref =None, rel_kargs ={}):
@@ -341,9 +337,10 @@ Check for double-declaration with different names''' % locals()
         if dbg: print ' ', me, 'made:', assoc_klas, assoc_klas_actual, rel_kargs
         return assoc_klas, assoc_klas_actual, rel_kargs
 
+from dbcook.util.attr import setattr_kargs
 
 class _AssocDetails:
-    __init__ = setkargs
+    __init__ = setattr_kargs
 
     #do not pollute Association' namespace
     class MyCollection( list):

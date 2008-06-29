@@ -47,7 +47,7 @@ class Reflector4StaticType( builder.Reflector):
         if not isinstance( typ, _static_type.SubStruct):
             return None
         klas = typ.typ
-        lazy = getattr( klas, 'DB_must_be_reference', False) or getattr( typ, 'lazy', 'default')
+        lazy = getattr( typ, 'lazy', 'default')
         nullable = getattr( typ, 'nullable', 'default')
         return dict( klas=klas, lazy=lazy, as_value=False, nullable=nullable)
         #as_value = callable( me.checker4substruct_as_value) and me.checker4substruct_as_value( klas)
@@ -282,28 +282,27 @@ def Type4Reference( klas, lazy ='default', nullable= 'default', **kargs):
     r.nullable = nullable
     return r
 
-class Association( builder.relation.Association):
-    __slots__ = ()
-    Type4Reference = staticmethod( Type4Reference)
-
-class Collection( builder.relation.Collection):
-    __slots__ = ()
-    Type4Reference = staticmethod( Type4Reference)
-
 Reference = Type4Reference
 Type = _static_type.StaticType
 reflector = Reflector4StaticType()
-Association.reflector = Collection.reflector = reflector
 
-def setup( s):
+class Association( builder.relation.Association):
+    __slots__ = ()
+    reflector = reflector
+    Type4Reference = staticmethod( Type4Reference)
+class Collection( builder.relation.Collection):
+    __slots__ = ()
+    reflector = reflector
+
+def bsetup( s):
     s.reflector = reflector
-    s.Reference = s.Type4Reference = staticmethod( Type4Reference)
     s.Base = Base
-    s.Association = Association
-    s.Collection = Collection
+    #s.Type4Reference = staticmethod( Type4Reference)
+    #s.Association = Association
+    #s.Collection = Collection
 
 class Builder( builder.Builder): pass
-setup( Builder)
+bsetup( Builder)
 
 #######
 
