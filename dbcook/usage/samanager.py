@@ -160,8 +160,8 @@ class SAdb:
         mostBaseMappableKlas = me.mapcontext.root( klas)
         return me.tables[ mostBaseMappableKlas]
 
-    def session( me):
-        return sqlalchemy.orm.create_session( echo_uow= 'transact' in me.log_sa)
+    def session( me, **kargs):
+        return sqlalchemy.orm.create_session( echo_uow= 'transact' in me.log_sa, **kargs)
 
     def saveall( me, session, *args, **kargs):
         ''' kargs:

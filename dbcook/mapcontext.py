@@ -80,18 +80,29 @@ $ settings:
 
     DBCOOK_unique_keys = списък от списъци от (имена на полета или полета (търси се .name) )
                           или classmethod който връща такъв
-                          default = () #нищо
+                          default = ()
         Важи само локално за класа, или в наследените ако класът няма БД-съответствие
       $ list of lists of (field-names or fields (.name wanted) )
                           or classmethod which returns such
-                          default = () #nothing
         Applies only locally, or in subclases if class is non-mappable (a-la mixin).
 
-    DBCOOK_indexes = списък от списъци от (имена на полета или полета (търси се .name) )
-                        $ list of lists of (field-names or fields (.name wanted) )
+    DBCOOK_indexes = списък от имена на полета, или classmethod който връща такъв
+                        $ list of field-names, or classmethod returning such
                           default = () #nothing
         Важи само локално за класа, или в наследените ако класът няма БД-съответствие
       $ Applies only locally, or in subclases if class is non-mappable (a-la mixin).
+
+    DBCOOK_defaults = речник от (име на поле: стойност-или-функция ), или classmethod който връща такъв
+                        $ dict of (field-names: value-or-func), or classmethod returning such
+                          default = {} #nothing
+        стойности / функции даващи стойност по подразбиране за сътветното поле при запис на нов обект
+        Важи само локално за класа, или в наследените ако класът няма БД-съответствие
+      $ values / functions returning values to use as default of the field on insert
+        Applies only locally, or in subclases if class is non-mappable (a-la mixin).
+
+    DBCOOK_defaults_on_update =
+        същото като DBCOOK_defaults но за on_update - при запис на промяна на обекта
+      $ same as DBCOOK_defaults but for on_update
 
     '''
     #__slots__ = [ column4ID.name ]     #db_id is automatic
@@ -120,7 +131,7 @@ class MappingContext:
         DBCOOK_has_instances = getattr_local_instance_only( klas, 'DBCOOK_has_instances', None)
         return bool( DBCOOK_has_instances)
 
-    def getattr_local_or_nonmappable_base( me, klas, attr, *default):
+    def __getattr_local_or_nonmappable_base( me, klas, attr, *default):
             # allow non-mapped classes to declare certain DBCOOK_xxxxxxx for their children
         klas0 = klas
         for klas in klas.__mro__:
@@ -143,20 +154,29 @@ class MappingContext:
         import config   #XXX ~hack
         return config.table_namer( klas)
 
-    def uniques( me, klas):
-        'list of lists of (column-names or columns  (having .name) )'
+    def _getattr_local_or_nonmappable_base_list( me, klas, name, default =()):
         #association must see attrs belonging to base non-mappable classes
-        r = me.getattr_local_or_nonmappable_base( klas, 'DBCOOK_unique_keys', () )
+        r = me.__getattr_local_or_nonmappable_base( klas, name, default)
         if callable( r): r = r()
         return r
 
+    def uniques( me, klas):
+        'list of lists of (column-names or columns  (having .name) )'
+        return me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_unique_keys' )
+
     def indexes( me, klas):
-        'list of (column-names or columns  (having .name) )'
-        #association must see attrs belonging to base non-mappable classes
-        r = me.getattr_local_or_nonmappable_base( klas, 'DBCOOK_indexes', () )
-        if callable( r): r = r()
-        for a in r: assert isinstance( a, str) #composites not implemented
+        'list of column-names'
+        r = me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_indexes' )
+        for a in r: assert isinstance( a, str)  #composites not implemented
         return r
+
+    def defaults( me, klas):
+        'dict of column-name:func'
+        return me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_defaults', default= {} )
+
+    def defaults_on_update( me, klas):
+        'dict of column-name:func'
+        return me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_defaults_on_update', default= {} )
 
     def base( me, klas):
         '''дава (първия) базов валиден клас, None ако няма такъв. т.е. на или отвъд валидния корен
