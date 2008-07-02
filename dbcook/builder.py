@@ -302,6 +302,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
     is_joined_table = (inheritype == table_inheritance_types.JOINED)
     indexes = mapcontext.indexes( klas)
     defaults = mapcontext.defaults( klas)
+    nonnullables = mapcontext.nonnullables( klas)
 
     assert base_klas or not is_joined_table
     for attr,typ in reflector.attrtypes( klas).iteritems():
@@ -322,8 +323,8 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
 #                print klas.__name__, k, typ
                 assoc_kargs, assoc_columner= relation.is_association_reference( klas, typ, attrklas, )
                 nullable = is_substruct[ 'nullable']
-                if nullable =='default': nullable = True
-                assoc_kargs.update( nullable=nullable)
+                if nullable !='default':
+                    assoc_kargs.update( nullable=nullable)
                 c = make_table_column4struct_reference( klas, k, attrklas, mapcontext, **assoc_kargs)
                 if assoc_columner: assoc_columner( c, cacher=builder)
                 columns.append( c)
@@ -343,6 +344,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
             c = sa.Column( k, type,
                     index= k in indexes,
                     default= defaults.get( k, None),
+                    nullable = k not in nonnullables,
                     *constraints, **mt )
             if dbg: print '    = ', repr(c)
             columns.append( c)
@@ -542,6 +544,7 @@ class _MapExt( sqlalchemy.orm.MapperExtension):
     def __init__( me, klas): me.klas = klas
     def before_insert( me, mapper, connection, instance):
         assert instance.__class__ is not me.klas, 'load_only_object - no save: ' + str( me.klas)+ ':'+ str( instance.__class__) + ' via ' + str(mapper)
+        return sqlalchemy.orm.EXT_CONTINUE
     before_update = before_delete = before_insert
 
 class Builder:

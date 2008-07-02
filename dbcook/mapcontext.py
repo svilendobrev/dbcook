@@ -178,6 +178,10 @@ class MappingContext:
         'dict of column-name:func'
         return me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_defaults_on_update', default= {} )
 
+    def nonnullables( me, klas):
+        'list of column-names'
+        return me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_nonnullables' )
+
     def base( me, klas):
         '''дава (първия) базов валиден клас, None ако няма такъв. т.е. на или отвъд валидния корен
          $ get (first) base that is mappable, None if no such, i.e. at or under root-mappable'''

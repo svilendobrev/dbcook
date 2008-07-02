@@ -69,6 +69,19 @@ class Association( object):
     @classmethod
     def DBCOOK_unique_keys( klas):
         return [ [ k for k,kklas in klas.walk_links() ] ]
+        '''
+mssql refused to have unique constraints other than the primary key
+>Here's the TSQL for a unique index:
+> CREATE UNIQUE NONCLUSTERED INDEX IX_UQ_Sample ON Sample (
+> first ASC, other ASC, something ASC)
+>
+>I defined Sample as:
+> CREATE TABLE Sample( first int NOT NULL, something int NULL, other bit NULL)
+>
+> I don't know how you'd get SqlAlchemy to generate this when it makes tables for you.
+
+theres a ddl() construct used for this. docs at: http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html#docstrings_sqlalchemy.schema_DDL
+        '''
 
     @classmethod
     def Link( klas, parent_klas, attr =None, **kargs4type):
