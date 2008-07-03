@@ -2,14 +2,16 @@
 # -*- coding: cp1251 -*-
 from dbcook.aboutrel import about_relation
 
-def test( attr, other={}, **this):
-    def eq( me,o):
-        for k in '_klas_attr has_many name klas attr'.split():
-            my= getattr( me,k); other= getattr( o,k)
-            if k == 'name': r = (my == other)
-            else: r = (my is other)
-            if not r: return False
-        return True
+def eq( me,o):
+    for k in '_klas_attr has_many name klas attr'.split():
+        my= getattr( me,k)
+        other= getattr( o,k)
+        if k == 'name': r = (my == other)
+        else: r = (my is other)
+        if not r: return False
+    return True
+
+def test( attr, other={}, about_relation= about_relation, **this):
     about_relation.__eq__ = eq
     a = about_relation( attr)
     print a
@@ -25,6 +27,7 @@ def test( attr, other={}, **this):
     for o,oexpect in [[a.thisside,this], [a.otherside,other]]:
         target = dict( (k,getattr(o,k)) for k in oexpect)
         assert target == oexpect, '%(o)s:\n result: %(target)r\n expect: %(oexpect)r' % locals()
+    return a
 
 
 
@@ -56,10 +59,11 @@ class AboutRel( object):
             other=dict( name=me.backref_work, klas=me.Work)
         )
     def test_mama_club_n_n( me):
-        test( me.Mama.club,
+        a = test( me.Mama.club,
             name='club', klas=me.Mama, has_many=True,
             other=dict( name=me.backref_club, klas=me.Club, has_many=True)
         )
+        assert a.midthis.klas is a.midother.klas
     def test_mama_friend_self_n_1( me):
         Mama = me.Mama
         test( Mama.friend,
@@ -93,13 +97,17 @@ class AboutRel_backref( AboutRel):
             other=dict( name='work', klas=me.Mama)
         )
     def test_club_members_n_n_back( me):
-        test( me.Club.members,
+        a=test( me.Club.members,
             name='members', klas=me.Club, has_many=True,
             other=dict( name='club', klas=me.Mama, has_many=True)
         )
+        assert a.midthis.klas is a.midother.klas
 
 
 import sys
+try: sys.argv.remove('debug'); debug=True
+except: debug=False
+
 if 'nodbcook' not in sys.argv:
     import dbcook.usage.plainwrap as o2r
     class Text( o2r.Type): pass
@@ -116,6 +124,7 @@ if 'nodbcook' not in sys.argv:
             backref_club = me.backref_club
             backref_work = me.backref_work
             backref_papa = me.backref_papa
+            backref = me.BACKREF
 
             class Work( o2r.Base):
                 name = Text()
@@ -138,15 +147,26 @@ if 'nodbcook' not in sys.argv:
                 kids = o2r.Collection( Kid, backref=backref_kids)
                 friend = o2r.Reference( 'Mama')
                 papa   = o2r.Reference( 'Papa') #not yet,  backref=backref_papa)
+                if 1: #not yet without this
+                    skills = o2r.Association.Relation( 'SkillMap', backref='mama')
             class Papa( o2r.Base):
                 name = Text()
-
+            class Skill( o2r.Base):
+                name = Text()
+                if backref:
+                    actors = o2r.Association.Relation( 'SkillMap', backref='skill')
+            class SkillMap( o2r.Association, o2r.Base):
+                #cannot be helped if no Mama.skills...
+                #mama = o2r.Association.Link( Mama, 'skills') #not yet just this
+                if not backref:
+                    skill = o2r.Association.Link( Skill)
+                level = Text()
             namespace = locals().copy()
             mkids = Mama.kids
             meta = MetaData()
             o2r.Builder( meta, namespace, fieldtype_mapper= fieldtype_mapper,
                     only_declarations =True,
-                    #debug='mapper,relation.table'
+                    debug= debug and 'mapper,relation.table' or ''
                 )
 
             from dbcook import config
@@ -156,6 +176,20 @@ if 'nodbcook' not in sys.argv:
             me.Club = Club
             me.Work = Work
             me.Papa = Papa
+            me.Skill = Skill
+            me.SkillMap = SkillMap
+
+        def test_skills_n_n_explicit( me):
+            from dbcook.aboutrel import about_relation_assoc_explicit
+            a=test( me.Mama.skills,
+                about_relation = lambda *a,**k: about_relation_assoc_explicit( about_relation( *a,**k)),
+                name='skills', klas=me.Mama, has_many=True,
+                other=dict( name=me.BACKREF and 'actors' or None, klas=me.Skill, has_many=True)
+            )
+            assert a.midthis.klas is a.midother.klas
+            assert a.midthis.klas is me.SkillMap
+            assert a.midthis.name == 'mama'
+            assert a.midother.name == 'skill'
 
     class t3_dbcook_nobackref( dbcook_setup, AboutRel, unittest.TestCase ):
         pass

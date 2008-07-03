@@ -162,6 +162,24 @@ class about_relation( object):
             other.name = None
         other.attr = other.name and getattr( other.klas, other.name) or None
 
+def about_relation_assoc_explicit( ab):
+    assocklas = ab.otherside.klas
+    midthis_attr = ab.otherside.name
+    assert midthis_attr, 'cannot guess otherside, unknown midthis: %(ab)s' % locals()
+    oattr = None
+    from sqlalchemy.orm.properties import PropertyLoader
+    for attr in ab.thisside.attr.property.mapper.iterate_properties: #assocklas.walk_links():
+        if not isinstance( attr, PropertyLoader): continue
+        if attr.key == midthis_attr: continue
+        else:
+            assert not oattr, 'cannot guess otherside for more than 2 links in %(assocklas)s' % locals()
+            oattr = attr.key
+    assert oattr, '%(oattr)r, %(xx)s' % locals()
+    other = about_relation( assocklas, oattr)
+    ab.midthis = ab.otherside
+    ab.midother= other.thisside
+    ab.otherside = other.otherside
+    return ab
 
 
 #return parent_klas._DBCOOK_relations[ attr]   #needs flatening from all the inh-classes
