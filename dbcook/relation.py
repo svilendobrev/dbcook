@@ -98,7 +98,7 @@ theres a ddl() construct used for this. docs at: http://www.sqlalchemy.org/docs/
         if not isinstance( assoc_klas, str):
             assert issubclass( assoc_klas, Association)
             assert assoc_klas._is_valid(), 'empty explicit association %(assoc_klas)r' % locals()
-        return _Relation( assoc_klas, **kargs)
+        return Collection( assoc_klas, **kargs)
 
     @classmethod
     def Hidden( klas, other_side_klas, other_side_attr ='', backref =''):
@@ -117,6 +117,7 @@ theres a ddl() construct used for this. docs at: http://www.sqlalchemy.org/docs/
     @classmethod
     def walk_links( klas, with_typ =False ):
         #sees parent_klasi after forward-decl-resolving
+        #does not see implied links, e.g. by A.asoc = Assoc.Relation( backref='a_ptr')
         for attr,typ in klas.reflector.attrtypes( klas).iteritems():
             is_substruct = klas.reflector.is_reference_type( typ)
             if is_substruct:
@@ -265,7 +266,9 @@ class _Relation( object):
         assoc_klas = me.assoc_klas
         if isinstance( assoc_klas, str):
             try: me.assoc_klas = builder.klasi[ assoc_klas]
-            except KeyError: assert 0, '''undefined relation/association class %(assoc_klas)r''' % locals()
+            except KeyError: assert 0, '''\
+undefined relation/association class %(assoc_klas)r -
+maybe it does not inherit a mappable base?''' % locals()
 
     def make( me, builder, klas, name ):
         'return relation_klas, actual_relation_klas, relation_kargs'
