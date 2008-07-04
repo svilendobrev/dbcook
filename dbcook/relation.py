@@ -105,7 +105,7 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
     def Hidden( klas, other_side_klas, other_side_attr ='', backref =''):
         #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
         return _Relation4AssocHidden( (klas, other_side_klas), backref= backref or other_side_attr)
-
+    HIDDEN_NAME_PREFIX = '_Assoc'
 
     @classmethod
     def get_link_info( klas, attr):
@@ -184,7 +184,12 @@ def resolve_assoc_hidden( builder, klasi):
             Assoc, other_side_klas = rel_typ.assoc_klas
             other_side_attr = rel_typ.backrefname
             if dbg: print 'assoc_hidden: ', klas, '.'+attr, '<->', other_side_klas, '.'+other_side_attr
-            class AssocHidden( mapcontext.base_klas, Assoc):
+
+            class AssocHidden( Assoc):
+                def __metaclass__( name, bases, dict):
+                    if not issubclass( Assoc, mapcontext.base_klas):
+                        bases = (mapcontext.base_klas,) + bases
+                    return type( name, bases, dict)
                 DBCOOK_hidden = True
                 left  = Assoc.Link( klas, attr= attr)
                 right = Assoc.Link( other_side_klas, attr= other_side_attr)
@@ -193,7 +198,8 @@ def resolve_assoc_hidden( builder, klasi):
                     #this sees forward-resolved
                     this_side_klas,  this_side_attr  = klas.get_link_info( 'left')
                     other_side_klas, other_side_attr = klas.get_link_info( 'right')
-                    r = '_'.join( ('_Assoc',
+                    r = '_'.join( (
+                            klas.HIDDEN_NAME_PREFIX,
                             table_namer( this_side_klas ), this_side_attr,
                             '2',
                             table_namer( other_side_klas), other_side_attr
@@ -205,7 +211,8 @@ def resolve_assoc_hidden( builder, klasi):
             rel_typ.assoc_klas = assoc_klas = AssocHidden
 
             #change __name__ - see __name__DYNAMIC
-            klasname = '_'.join( ('_Assoc',
+            klasname = '_'.join( (
+                Assoc.HIDDEN_NAME_PREFIX,
                 table_namer( klas), attr,
                 '2',
                 isinstance( other_side_klas, str) and other_side_klas or table_namer( other_side_klas),

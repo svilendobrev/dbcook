@@ -134,6 +134,7 @@ if __name__ == '__main__':
         print '========= generated SA set-up'
         print b.generator.out
         print '========= eo generated SA set-up'
+        #XXX TODO Relation.backrefs are not shown well
 
     from sqlalchemy.orm import create_session
     s = create_session()
