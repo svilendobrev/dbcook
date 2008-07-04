@@ -252,11 +252,15 @@ this is not used for now, as it is not clear how it combines in branched trees.
 
 
 ###############################
+def get_DBCOOK_references( klas):
+    refs = getattr( klas, '_DBCOOK_references', {} )
+    klas._DBCOOK_references = refs
+    return refs
 
 def make_table_column4id_fk( column_name, other_klas,
                             type =None, fk_kargs ={}, **column_kargs):
     dbg = 'column' in config.debug
-    if dbg: print 'make_table_column4id_fk', column_name, other_klas.__name__
+    if dbg: print 'make_table_column4id_fk', column_name, '->', other_klas.__name__
     assert type
     assert other_klas
     fk = sa.ForeignKey(
@@ -279,6 +283,8 @@ def make_table_column4struct_reference( klas, attrname, attrklas, mapcontext, **
 #    print '  as_reference', attrname,attrklas
     #if column_kargs.get( 'primary_key') and column_kargs.get( 'nullable'):
     #    column_kargs.update( column4ID.typemap4pkfk)
+    dbg = 'column' in config.debug
+    if dbg: print klas,':',
     c = make_table_column4id_fk(
             column4ID.ref_make_name( attrname),
             other_klas = attrklas,
@@ -304,6 +310,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
     defaults = mapcontext.defaults( klas)
     nonnullables = mapcontext.nonnullables( klas)
 
+    refs = get_DBCOOK_references( klas)
     assert base_klas or not is_joined_table
     for attr,typ in reflector.attrtypes( klas).iteritems():
         if is_joined_table:
@@ -329,6 +336,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
                 if assoc_columner: assoc_columner( c, cacher=builder)
                 columns.append( c)
                 id_columns.add( k)
+                refs[k] = attrklas
             else:   #inline_inside_table/embedded
                 #... разписване на колоните на подструктурата като колони тука
                 if dbg: print '  as_value', k,typ
@@ -382,11 +390,13 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
                 if dbg: print '  uniq-from-primarykey:', key
                 uniques.append( sa.UniqueConstraint( *[d.name for d in primary_key]))
 
-    for u in mapcontext.uniques( klas):
-        key = [ getattr( c, 'name', c) for c in u ]
-        key = [ (k in id_columns and column4ID.ref_make_name( k) or k) for k in key ]
-        if dbg: print '  uniq:', key
-        uniques.append( sa.UniqueConstraint( *key) )
+    if 0:   #uniques may not be ready yet - assoc.walk_links??
+        #make_table_uniques( klas)
+        for u in mapcontext.uniques( klas):
+            key = [ getattr( c, 'name', c) for c in u ]
+            key = [ (k in id_columns and column4ID.ref_make_name( k) or k) for k in key ]
+            if dbg: print '  uniq:', table, ':', key
+            uniques.append( sa.UniqueConstraint( *key) )
 
     ## check for duplicate column-names/constraint-names
     chk = set()
@@ -396,6 +406,22 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
         chk.add( key)
 
     return columns + uniques
+
+def make_table_uniques( klas, mapcontext, table =None ):
+    dbg = 'table' in config.debug
+    if dbg: print 'make_table_uniques', klas
+    uniques = []
+    id_columns = get_DBCOOK_references( klas)
+    for u in mapcontext.uniques( klas):
+        key = [ getattr( c, 'name', c) for c in u ]
+        key = [ (k in id_columns and column4ID.ref_make_name( k) or k) for k in key ]
+        if dbg: print '  uniq:', table or '', ':', key
+        uc = sa.UniqueConstraint( *key)
+        uniques.append( uc)
+    if table:
+        for uc in uniques:
+            table.append_constraint( uc)
+    return uniques
 
 def make_table( klas, metadata, builder, **kargs):
     dbg = 'table' in config.debug
@@ -407,7 +433,7 @@ def make_table( klas, metadata, builder, **kargs):
     return t
 
 def fix_one2many_relations( klas, builder):
-    dbg = 'table' in config.debug or 'relation' in config.debug
+    dbg = 'table' in config.debug or 'relation' in config.debug or 'column' in config.debug
     if dbg: print 'make_one2many_table_columns', klas
     mapcontext = builder.mapcontext
     for attr_name,collection in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
@@ -420,12 +446,13 @@ def fix_one2many_relations( klas, builder):
 
         backrefname = collection.setup_backref( klas, attr_name)
         fk_column_name = backrefname
-        fk_column = make_table_column4struct_reference( klas, fk_column_name, klas, mapcontext)
-        if dbg: print '  attr:', attr_name, 'child_klas:', repr(child_klas), 'fk_column:', repr(fk_column)
+        fk_column = make_table_column4struct_reference( child_klas, fk_column_name, klas, mapcontext)
+        if dbg: print '  attr:', attr_name, 'of child:', child_klas, '.', fk_column_name, '; fk_column:', repr(fk_column)
         child_tbl = builder.tables[ child_klas]
         child_tbl.append_column( fk_column)
 
         relation.relate( child_klas, klas, attr_name, fk_column, cacher=builder)
+        get_DBCOOK_references( child_klas)[ backrefname] = klas
 
 
 def make_mapper( klas, table, **kargs):
@@ -494,6 +521,8 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
 
     need_mplain = bool( not config_components.non_primary_mappers_dont_need_props
                     and mapper.plain is not mapper.polymorphic_all)
+
+    refs = get_DBCOOK_references( klas)
     for m in [mapper.polymorphic_all] + need_mplain*[ mapper.plain]:
         if dbg: print 'make_mapper_props for:', klas.__name__, m
         table = m.local_table
@@ -532,13 +561,13 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                         lazy = getattr( attrklas, 'DBCOOK_reference_lazy', False
                                         ) or is_substruct[ 'lazy']
                         if lazy == 'default':
-                            lazy = False  ##XXXXXX config? sa_default is lazy
+                            lazy = config.default_lazy
 
                     rel_kargs[ 'lazy'] = lazy
                     rel_kargs[ 'uselist'] = False
                     if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
                     m.add_property( k, sa_relation( attrklas, **rel_kargs))
-
+                    assert refs[k] == attrklas
 
 class _MapExt( sqlalchemy.orm.MapperExtension):
     def __init__( me, klas): me.klas = klas
@@ -661,10 +690,11 @@ class Builder:
     def make_tables( me, metadata, only_table_defs =False, **kargs):
         me.tables = me.DICT()
         for klas in me.iterklasi():
-             me.tables[ klas] = make_table( klas, metadata, me, **kargs)
+            me.tables[ klas] = make_table( klas, metadata, me, **kargs)
         for klas in me.iterklasi(): #to be sure all tables exists already
-             fix_one2many_relations( klas, me)
-
+            fix_one2many_relations( klas, me)
+        for klas in me.iterklasi(): #to be sure all tables+references exists already
+            make_table_uniques( klas, me.mapcontext, me.tables[ klas])
 
         from table_circular_deps import fix_table_circular_deps
         cut_fkeys = fix_table_circular_deps(

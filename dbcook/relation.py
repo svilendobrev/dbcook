@@ -68,6 +68,7 @@ class Association( object):
     #DBCOOK_unique_keys= [lists] or classmethod     #may override - all links by default
     @classmethod
     def DBCOOK_unique_keys( klas):
+        return [ klas._DBCOOK_references.keys() ]
         return [ [ k for k,kklas in klas.walk_links() ] ]
         '''
 mssql refused to have unique constraints other than the primary key
@@ -80,7 +81,7 @@ mssql refused to have unique constraints other than the primary key
 >
 > I don't know how you'd get SqlAlchemy to generate this when it makes tables for you.
 
-theres a ddl() construct used for this. docs at: http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html#docstrings_sqlalchemy.schema_DDL
+theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html#docstrings_sqlalchemy.schema_DDL
         '''
 
     @classmethod
@@ -97,7 +98,7 @@ theres a ddl() construct used for this. docs at: http://www.sqlalchemy.org/docs/
         if not assoc_klas: assoc_klas = klas
         if not isinstance( assoc_klas, str):
             assert issubclass( assoc_klas, Association)
-            assert assoc_klas._is_valid(), 'empty explicit association %(assoc_klas)r' % locals()
+            #assert assoc_klas._is_valid(), 'empty explicit association %(assoc_klas)r' % locals()
         return Collection( assoc_klas, **kargs)
 
     @classmethod
@@ -116,16 +117,29 @@ theres a ddl() construct used for this. docs at: http://www.sqlalchemy.org/docs/
 
     @classmethod
     def walk_links( klas, with_typ =False ):
-        #sees parent_klasi after forward-decl-resolving
-        #does not see implied links, e.g. by A.asoc = Assoc.Relation( backref='a_ptr')
-        for attr,typ in klas.reflector.attrtypes( klas).iteritems():
-            is_substruct = klas.reflector.is_reference_type( typ)
-            if is_substruct:
-                assoc_details = getattr( typ, 'assoc', None)
-                if assoc_details:
-                    r = attr, is_substruct['klas']
-                    if with_typ: r = r + (typ,)
-                    yield r
+        if not klas.DBCOOK_hidden:
+            #only works after mapping - i.e. not at table level
+            from sqlalchemy.orm import class_mapper
+            from sqlalchemy.orm.properties import PropertyLoader
+            for prop in class_mapper( klas).iterate_properties:
+                if not isinstance( prop, PropertyLoader): continue
+                key = prop.key
+                r = key, prop.mapper.class_
+                if with_typ:
+                    typ = klas.reflector.attrtypes( klas).get( key, None)
+                    r = r + (typ,)
+                yield r
+        else:
+            #sees parent_klasi after forward-decl-resolving
+            #does not see implied links, e.g. by A.asoc = Assoc.Relation( backref='a_ptr')
+            for attr,typ in klas.reflector.attrtypes( klas).iteritems():
+                is_substruct = klas.reflector.is_reference_type( typ)
+                if is_substruct:
+                    assoc_details = getattr( typ, 'assoc', None)
+                    if assoc_details:
+                        r = attr, is_substruct['klas']
+                        if with_typ: r = r + (typ,)
+                        yield r
 
     @classmethod
     def find_links( klas, parent_klas):  #, parent_name):
@@ -214,37 +228,40 @@ def is_association_reference( klas, attrtyp, attrklas):
                                                             column, cacher=cacher)
     return column_kargs, column_func
 
-def relate( klas, parentklas, relation_attr, column, cacher ):
+def relate( klas, parent_klas, parent_attr, column, cacher ):
     dbg = 'relation' in config.debug
     if dbg:
-        print 'relate parent:', parentklas, 'to child:', klas
-        print '  attrname:', relation_attr, 'column:', column
+        print 'relate parent:', parent_klas, 'to child:', klas
+        print '  parent.attr:', parent_attr, 'child.column:', column
 
-    ### collect relation_attr to be created by make_relation() if not already done explicitly
+    ### collect parent_attr to be created by make_relation() if not already done explicitly
     lcache = cacher.assoc_links = getattr( cacher, 'assoc_links', {})
-    links = lcache.setdefault( parentklas, set() )
-    link = (klas, relation_attr)
-    assert link not in links, '''duplicate definition
-            of assoc_link %(klas)s.%(relation_attr)s to %(parentklas)s''' % locals()
+    links = lcache.setdefault( parent_klas, set() )
+    link = (klas, parent_attr)
+    link_already_there = link in links
+    if link_already_there:
+        warnings.warn( '''duplicate definition
+            of assoc_link %(klas)s <- %(parent_klas)s.%(parent_attr)s''' % locals() )
     links.add( link )
 
     ### collect foreign_keys
-    #parentklas.column is pointed by klas.relation_attr
-    #dict( klas: dict( parentklas: dict( relation_attr:column)))
+    #parent_klas.parent_attr is pointed by klas.column
+    #dict( klas: dict( parent_klas: dict( parent_attr:column)))
     fcache = cacher.foreign_keys = getattr( cacher, 'foreign_keys', {})
     foreign_keys = fcache.setdefault( klas, {})
-    kk = foreign_keys.setdefault( parentklas, {} )
-    key = relation_attr
+    kk = foreign_keys.setdefault( parent_klas, {} )
+    key = parent_attr
 
     if key is not None:
-        assert key not in kk, '''duplicate/ambigious association to %(parentklas)s in %(klas)s;
-            specify attr=<assoc_relation_attr> explicitly
-            key=%(key)s
-            kk=%(kk)s''' % locals()
+        if key in kk:
+            if link_already_there: return
+            assert 0, '''duplicate/ambigious association %(parent_klas)s.%(key)s -> %(klas)s;
+                specify attr=<assoc_relation_attr> explicitly
+                kk=%(kk)s''' % locals()
     else:
         if key in kk:
-            warnings.warn( '''duplicate/ambigious/empty association to %(parentklas)s in %(klas)s;
-                specify attr=>assoc_relation_attr> explicitly''' % locals() )
+            warnings.warn( '''duplicate/ambigious/empty association %(parent_klas)s.%(key)s -> %(klas)s;
+                specify attr=<assoc_relation_attr> explicitly ''' % locals() )
     kk[ key ] = column
 
 
@@ -275,7 +292,7 @@ maybe it does not inherit a mappable base?''' % locals()
         dbg = 'relation' in config.debug
         me.resolve( builder)
         assoc_klas = me.assoc_klas
-        if dbg: print ' ' , me, '->', klas, '.', name or None
+        if dbg: print ' ' , me, 'prop:', klas, '.', name or None
 
         foreign_keys = builder.foreign_keys[ assoc_klas]
         if dbg: print ' ', me, 'assoc_fkeys:', foreign_keys
@@ -384,22 +401,32 @@ class Collection( _Relation):
     '''define one2many relations - in the 'one' side of the relation
     (parent-to-child/ren relations in terms of R-DBMS).
     '''
-    __slots__ = [ 'backrefname' ]
+    __slots__ = [ '_backrefname' ]
 
     def __init__( me, child_klas,
                     backref =None,   #backref name or dict( name, **rel_kargs)
                     #unique =False,  #   ??
                     **rel_kargs ):   #order_by =None, etc
         _Relation.__init__( me, child_klas, backref, rel_kargs)
-        me.backrefname = None   #decided later
+        me._backrefname = None   #decided later
+    @property
+    def backrefname( me):
+        b = me._backrefname
+        return b
     def setup_backref( me, parent_klas, parent_attr):
         from config import column4ID
-        backref = me.backref
-        if backref:
-            backrefname = backref[ 'name']
+
+        if me.backref:
+            backrefname = me.backref[ 'name']
+            #XXX save as functor to allow multiple-usage of same relation-def
+            # in many inheriting classes - re-exec there
+            me._backrefname = backrefname
+            if callable( backrefname):
+                backrefname = backrefname( parent_klas, parent_attr)
         else:
+            #make once and save - no reexec
             backrefname = column4ID.backref_make_name( parent_klas, parent_attr)
-        me.backrefname = backrefname
+            me._backrefname = backrefname
         return backrefname
 
 def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtractor ):
@@ -411,11 +438,8 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
         if dbg: print 'make_relations', m
 
         klas = m.class_
-
         fkeys = FKeyExtractor( klas, m.local_table, builder.mapcontext, builder.tables)
-
         assoc_links = getattr( builder, 'assoc_links', {}).get( klas, () )
-
         if assoc_links:
             #match assoc-links with real rels
             assoc_links_names = dict( (rel_attr, assoc_klas) for assoc_klas, rel_attr in assoc_links )
@@ -472,8 +496,12 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
             #backward link 1:n
             backref = typ.backref
             if backref:
-                r = fkeys.get_relation_kargs( typ.backrefname)
-                if dbg: print '  BACKREF:', typ.backrefname, r, backref
+                backrefname = typ.backrefname
+                if callable( backrefname): backrefname = backrefname( klas, name)
+                r = fkeys.get_relation_kargs( backrefname)
+                backref = backref.copy()
+                backref['name'] = backrefname
+                if dbg: print '  BACKREF:', backrefname, r, backref
                 for p in 'post_update remote_side'.split():
                     try: backref[ p] = r[p]
                     except KeyError: pass

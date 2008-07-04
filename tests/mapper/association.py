@@ -49,7 +49,7 @@ class A( Base):
 #    all_abc = IntermediateABC2.Relation()
 #    all_ade = IntermedADE.Relation()
 #    x = Reference( 'A')
-    alla2   = IntermediateAB.Relation()
+    alla2   = IntermediateAB.Relation( backref='bza' )      #TODO backref != a2_link must fail
 
 class B( Base):
     name    = Text()
@@ -91,6 +91,8 @@ a.all_ab.append( IntermediateAB( b_boza= b1, color='green', a2_link = a3, c_link
 a.all_ab.append( b_boza= b2, color='rrrr', a2_link = None, c_link= c)
 #b1.all_ab2.append( IntermediateAB2( a= a, ) )
 print '1111', [i.b_boza for i in a.all_ab]
+print '2222', [i.a2_link for i in a.all_ab]
+print '3333', [i.bza for i in a.all_ab]
 
 s= sa.session()
 sa.saveall( s, locals() )
