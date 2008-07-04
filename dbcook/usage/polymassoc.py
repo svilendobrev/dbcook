@@ -94,7 +94,7 @@ if __name__ == '__main__':
     class _ColorOwner( Base): # mixin
         DBCOOK_no_mapping = True
         #manual
-        #values = Association.Relation( ColorOwnership, backref= lambda klas,attr: '_'+klas.__name__)
+        #colors = Association.Relation( ColorOwnership, backref= lambda klas,attr: '_'+klas.__name__)
 
     #Estates hierarchy
     class Estate( Base):
@@ -102,6 +102,8 @@ if __name__ == '__main__':
         area = Int()
     class House( Estate, _ValueOwner, _ColorOwner):
         floors = Int()
+        colors = Association.Relation( ColorOwnership, backref= '_house')
+
     class Forest( Estate, _ValueOwner):
         treetype = Text()
 
@@ -110,8 +112,10 @@ if __name__ == '__main__':
         lifetime = Int()
     class Bag( Item, _ValueOwner, _ColorOwner):
         material = Text()
+        colors = Association.Relation( ColorOwnership, backref= '_bag')
     class Car( Item, _ValueOwner, _ColorOwner):
         wheels = Int()
+        colors = Association.Relation( ColorOwnership, backref= '_car')
     class BankAccount( Item, _ValueOwner):
         bank = Text()
     #...
