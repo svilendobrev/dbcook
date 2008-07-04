@@ -70,6 +70,7 @@ if __name__ == '__main__':
     class Int( Type): pass
     Base.DBCOOK_inheritance = 'joined'   #for subclasses
 
+    #value aspect
     class ValueOwnership( Base, Association, PolymorphicAssociation):
         config__non_owner_linknames = [ 'value']
         which_owner = Text()
@@ -79,22 +80,42 @@ if __name__ == '__main__':
         currency = Text()
     class _ValueOwner( Base): # mixin
         DBCOOK_no_mapping = True
+        #automatic as of class-name
         values = Association.Relation( ValueOwnership,
                     backref= lambda klas,attr: '_'+klas.__name__)
 
+    #color aspect
+    class ColorOwnership( Base, Association, PolymorphicAssociation):
+        config__non_owner_linknames = [ 'color']
+        which_owner = Text()
+    class Color( Base):
+        owners = Association.Relation( ColorOwnership, backref= 'color')
+        paint = Text()
+    class _ColorOwner( Base): # mixin
+        DBCOOK_no_mapping = True
+        #manual
+        #values = Association.Relation( ColorOwnership, backref= lambda klas,attr: '_'+klas.__name__)
+
+    #Estates hierarchy
     class Estate( Base):
         name = Text()
         area = Int()
-    class House( Estate, _ValueOwner):
+    class House( Estate, _ValueOwner, _ColorOwner):
         floors = Int()
+    class Forest( Estate, _ValueOwner):
+        treetype = Text()
 
+    #Items hierarchy
     class Item( Base):
-        color= Text()
-    class Bag( Item, _ValueOwner):
-        paint = Text()
-    class Car( Item, _ValueOwner):
+        lifetime = Int()
+    class Bag( Item, _ValueOwner, _ColorOwner):
+        material = Text()
+    class Car( Item, _ValueOwner, _ColorOwner):
         wheels = Int()
+    class BankAccount( Item, _ValueOwner):
+        bank = Text()
     #...
+
     from sqlalchemy import String, Integer, MetaData, create_engine
     fieldtypemap = {
         Text: dict( type= String(100), ),
