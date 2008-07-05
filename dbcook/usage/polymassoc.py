@@ -21,6 +21,10 @@ class PolymorphicAssociation( object):  #cfg.Base):
     1-to-many variant:
     http://wiki.rubyonrails.org/rails/pages/UnderstandingPolymorphicAssociations
     sqlalchemy/examples/poly_assoc/
+
+    beware: these are not equivalent anymore as in plain SA:
+        1: this.owner = someowner   #works ok via selector
+        2: someowner.ownedthings.append( this)  #works low-level but misses higher: which_owner selector etc
     '''
     __slots__ = ()
     DBCOOK_no_mapping = True
@@ -28,8 +32,25 @@ class PolymorphicAssociation( object):  #cfg.Base):
     #owned_thing = Association.Link( OwnedClass, attr= 'owners')    #into OwnedClass
     config__non_owner_linknames = ()    #at least the one pointing to Owned_Thing
 
-    #type-selector
+    #type-selector - in principle could do without it but is difficult,
+    #   needs walking all refs finding a non-zero one, and that fires lazy-loads.
+    #   should be done just once somehow, at column-level. TODO: maybe mapperExt @ populate instance
     which_owner = None  #Text() - some textual Type #cfg.which_owner_TextType
+
+    @property
+    def zwhich_owner( me):
+        try: return me._which_owner
+        except AttributeError:
+            from dbcook.aboutrel import about_relation
+            for selector in me.possible_owners():
+                ab = about_relation( me.__class__, selector)
+                col = ab.thisside.column
+                if getattr( me, column.key) is not None:
+                    me._which_owner = selector
+                    break
+            else: selector = None
+        return selector
+
 
     _possible_owners = None
     @classmethod
