@@ -102,9 +102,10 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
         return Collection( assoc_klas, **kargs)
 
     @classmethod
-    def Hidden( klas, other_side_klas, other_side_attr ='', backref =''):
+    def Hidden( klas, other_side_klas, other_side_attr ='', backref ='', dbname =None):
         #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
-        return _Relation4AssocHidden( (klas, other_side_klas), backref= backref or other_side_attr)
+        return _Relation4AssocHidden( other_side_klas, backref= backref or other_side_attr,
+                    dbname= dbname, assoc_base= klas )
     HIDDEN_NAME_PREFIX = '_Assoc'
 
     @classmethod
@@ -181,8 +182,10 @@ def resolve_assoc_hidden( builder, klasi):
     news = {}
     for k,klas in klasi.iteritems():
         for attr, rel_typ in mapcontext.iter_attr_local( klas, attr_base_klas= _Relation4AssocHidden, dbg=dbg ):
-            Assoc, other_side_klas = rel_typ.assoc_klas
+            other_side_klas = rel_typ.assoc_klas
+            Assoc = rel_typ.assoc_base
             other_side_attr = rel_typ.backrefname
+            dbname = rel_typ.dbname
             if dbg: print 'assoc_hidden: ', klas, '.'+attr, '<->', other_side_klas, '.'+other_side_attr
 
             class AssocHidden( Assoc):
@@ -193,19 +196,21 @@ def resolve_assoc_hidden( builder, klasi):
                 DBCOOK_hidden = True
                 left  = Assoc.Link( klas, attr= attr)
                 right = Assoc.Link( other_side_klas, attr= other_side_attr)
-                @classmethod
-                def DBCOOK_dbname( klas):
-                    #this sees forward-resolved
-                    this_side_klas,  this_side_attr  = klas.get_link_info( 'left')
-                    other_side_klas, other_side_attr = klas.get_link_info( 'right')
-                    r = '_'.join( (
-                            klas.HIDDEN_NAME_PREFIX,
-                            table_namer( this_side_klas ), this_side_attr,
-                            '2',
-                            table_namer( other_side_klas), other_side_attr
-                        ))
-                    return r
-            #???? resolve forward-decl ? should work?
+                if dbname:
+                    DBCOOK_dbname = dbname
+                else:
+                    @classmethod
+                    def DBCOOK_dbname( klas):
+                        #this sees forward-resolved
+                        this_side_klas,  this_side_attr  = klas.get_link_info( 'left')
+                        other_side_klas, other_side_attr = klas.get_link_info( 'right')
+                        r = '_'.join( (
+                                klas.HIDDEN_NAME_PREFIX,
+                                table_namer( this_side_klas ), this_side_attr,
+                                '2',
+                                table_namer( other_side_klas), other_side_attr
+                            ))
+                        return r
             #TODO test
 
             rel_typ.assoc_klas = assoc_klas = AssocHidden
@@ -399,6 +404,11 @@ class _AssocDetails:
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
 class _Relation4AssocHidden( _Relation):
+    def __init__( me, assoc_klas, backref =None, rel_kargs ={},
+            assoc_base= Association, dbname =None):
+        me.assoc_base = assoc_base
+        me.dbname = dbname
+        _Relation.__init__( me, assoc_klas, backref, rel_kargs)
     @property
     def backrefname( me): return me.backref and me.backref['name'] or ''
 
