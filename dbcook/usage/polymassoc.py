@@ -10,9 +10,9 @@ class PolymorphicAssociation( object):  #cfg.Base):
     Requires participating owner-classes and the owned_thing to have
     Association.Relation()s to this.
 
-    probably will not work if participating classes inherit each other.
+    setup config__owner_order if some participating classes inherit each other - put them there.
 
-    owner is made as union/discriminator/switch to allow any object classes to
+    owner is made as union/switch to allow any object classes to
     be owners, not really having common inheritance base/tree.
     It's a sort of multiple aspects, like simulating multiple inheritance but one level only.
     Each aspect is represented by different PolymorphicAssociation-heir,
@@ -30,31 +30,40 @@ class PolymorphicAssociation( object):  #cfg.Base):
     DBCOOK_no_mapping = True
 
     #owned_thing = Association.Link( OwnedClass, attr= 'owners')    #into OwnedClass
-    config__non_owner_linknames = ()    #at least the one pointing to Owned_Thing
+    config__non_owner_linknames = ()    #at least the one above pointing to OwnedClass
+    config__owner_order = ()     #put classes that inherit each-other here, in child-to-root order
 
-    #type-selector - in principle could do without it but is difficult,
-    #   needs walking all refs finding a non-zero one, and that fires lazy-loads.
-    #   should be done just once somehow, at column-level. TODO: maybe mapperExt @ populate instance
-    which_owner = None  #Text() - some textual Type #cfg.which_owner_TextType
+    #type-selector
+    if 0:
+        #db-written: easy but could do without it
+        which_owner = None  #Text() - some textual Type #cfg.which_owner_TextType
+    else:
+        # implicit: needs walking all refs once-per-load, finding a non-zero one.
+        #   that fires lazy-loads if done on attr-level.
+        #   now done walking refs at column-level; maybe mapperExt @ populate_instance
+        NEEDS__slots__ = ['_which_owner']   #add this yourself to the inherting class
 
-    @property
-    def zwhich_owner( me):
-        try: return me._which_owner
-        except AttributeError:
-            from dbcook.aboutrel import about_relation
-            for selector in me.possible_owners():
-                ab = about_relation( me.__class__, selector)
-                col = ab.thisside.column
-                if getattr( me, column.key) is not None:
-                    me._which_owner = selector
-                    break
-            else: selector = None
-        return selector
-
+        def get_which_owner( me):
+            try: return me._which_owner
+            except AttributeError:
+                from dbcook.aboutrel import about_relation
+                for selector in me.possible_owners():
+                    ab = about_relation( me.__class__, selector)
+                    column = ab.thisside.column
+                    if getattr( me, column.key) is not None:
+                        me._which_owner = selector
+                        break
+                else:
+                    selector = None
+            return selector
+        def set_which_owner( me, v):
+            me._which_owner = v
+        which_owner = property( get_which_owner, set_which_owner)
 
     _possible_owners = None
     @classmethod
     def possible_owners( me):
+        'forward name->klas'
         r = me._possible_owners
         if r is None:
             r = dict( (k,v) for k,v in me._DBCOOK_references.iteritems()
@@ -62,13 +71,37 @@ class PolymorphicAssociation( object):  #cfg.Base):
             me._possible_owners = r
         return r
 
+    _possible_owners2 = None
+    @classmethod
+    def possible_owners2( me):
+        'backward klas->name'
+        r = me._possible_owners2
+        if r is None:
+            r1 = me.possible_owners()
+            r = dict( (v,k) for k,v in r1.iteritems() )
+            assert len(r) == len(r1)
+            me._possible_owners2 = r
+        return r
+
     @classmethod
     def find_which_owner( me, someowner, is_class =False):
-        #обратното пряко съответствие нa possible_owners не върши работа, трябва isinstance/issubclass
+        #the backward mapping _possible_owners2 won't do direct, must use isinstance/issubclass
         func = is_class and issubclass or isinstance
-        for selector, klas in me.possible_owners().iteritems():
-            if func( someowner, klas):
-                return selector
+        r1 = me.possible_owners()
+        r2 = me.possible_owners2()
+        #these can be either classes or selector-names
+        prefered_order = me.config__owner_order
+        #p = [ isinstance( i, str) and r1[i] or i for i in prefered_order]
+        for item in prefered_order:
+            if isinstance( item, str):
+                if func( someowner, r1[ item]): return item
+            else:
+                klas = item
+                assert klas in r2
+                if func( someowner, klas): return r2[ klas]
+        for klas, selector in r2.iteritems():
+            #if klas not in prefered_order and selector not in prefered_order:  not really needed
+                if func( someowner, klas): return selector
         return None
 
     'exactly one of owner-links must exist'
@@ -77,7 +110,7 @@ class PolymorphicAssociation( object):  #cfg.Base):
     def set_owner( me, someowner):
         #print 'set_owner', object.__repr__( someowner)
         selector = me.find_which_owner( someowner)
-        assert selector, '%s.owner cannot be %s, but one of %s' % ( me.__class__, someowner.__class__, me.possible_owners() )
+        assert selector, '%s.owner cannot be %s, but one of %s' % ( me.__class__, someowner.__class__, me.possible_owners2().keys() )
         for sel in me.possible_owners():
             if sel != selector:
                 setattr( me, sel, None)
