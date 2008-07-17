@@ -49,18 +49,23 @@ import sqlalchemy
 class _column4( object):
     'used as a function with subclassable default args'
     @classmethod
-    def get_column( klas, selectable):
-        name = klas.name
+    def get_column( me, selectable):
+        name = me.name
         try:
             return getattr( selectable.c, name)
         except AttributeError, e:
             e.args = [e.args[0] + '\n:: %(selectable)s .%(name)s' % locals() ]
             raise
-    def __new__( klas, selectable): return klas.get_column( selectable)
+    def __new__( me, selectable): return me.get_column( selectable)
 
     @classmethod
-    def typemap_( klas):
-        t = klas.typemap.copy()
+    def get_attr( me, klas):
+        name = me.name
+        return getattr( klas, name)
+
+    @classmethod
+    def typemap_( me):
+        t = me.typemap.copy()
         t[ 'type_' ] = t.pop('type')
         return t
 
@@ -69,21 +74,22 @@ class column4ID( _column4):
     'use as column4ID( selectable)'
     name = 'db_id'
     typemap = dict( type= sqlalchemy.Integer, primary_key= True)
+    pytype = int    #just for reference, not used here
 
     special_reference_ext = '_id'
     special_back_reference_ext = '_back'
     @classmethod
-    def ref_make_name( klas, name): return name + klas.special_reference_ext
+    def ref_make_name( me, name): return name + me.special_reference_ext
     #@classmethod
-    #def ref_is_name( klas, name): return name.endswith( klas.special_reference_ext)
+    #def ref_is_name( me, name): return name.endswith( me.special_reference_ext)
     @classmethod
-    def ref_strip_name( klas, name):
-        ext = klas.special_reference_ext
+    def ref_strip_name( me, name):
+        ext = me.special_reference_ext
         assert name.endswith( ext)
         return name[: -len( ext)]
     @classmethod
-    def backref_make_name( klas, parent_klas, name):
-        return name + '_' + parent_klas.__name__ + klas.special_back_reference_ext
+    def backref_make_name( me, parent_klas, name):
+        return name + '_' + parent_klas.__name__ + me.special_back_reference_ext
 
     #XXX e.g. postgres does not want nulls in a primarykey composed of foreignkeys
     #XXX the default value must exist (stub record?) else the foreignkeys constraint fails

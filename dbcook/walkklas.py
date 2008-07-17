@@ -88,7 +88,7 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
         if not is_substruct:
             if _debug: print ind, attr, 'ignoring non-ref:', typ
             continue
-        if _debug: print ind, attr, is_substruct
+        if _debug: print ind, attr, is_substruct, typ
         oklas = is_substruct[ 'klas']
 
         if isinstance( oklas, str):
