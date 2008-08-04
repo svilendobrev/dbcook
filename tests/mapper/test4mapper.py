@@ -453,7 +453,7 @@ import os, os.path
 SHOW_DEFAULT_QUERY_RESULTS = False
 
 import sys
-if 'no_repeat_hack' not in sys.argv:
+if 'repeat_hack' in sys.argv:
     ## XXX HACK за повтаряемост на теста, подменя Set/dict на OrderedSet/Dict
     ## XXX НЕ забравяй SAdb също да е подреден!!! force_ordered=True
     from dbcook.usage.sa_hack4repeatability import hack4repeat

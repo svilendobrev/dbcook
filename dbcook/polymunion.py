@@ -2,6 +2,9 @@
 
 import sqlalchemy
 sql = sqlalchemy.sql
+try:
+    from sqlalchemy.util import Set as set  #<0.5
+except ImportError: pass
 
 def polymorphic_union( table_map, typecolname, aliasname ='pu',
             allow_empty_typecolname =True,
@@ -18,7 +21,7 @@ def polymorphic_union( table_map, typecolname, aliasname ='pu',
     if not allow_empty_typecolname:
         assert typecolname
 
-    colnames = sqlalchemy.util.Set()
+    colnames = set()
     colnamemaps = {}
     types = {}
     for key in table_map.keys():

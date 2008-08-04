@@ -66,8 +66,8 @@ if 'sa' not in sys.argv:
     s = SAdb( 'sqlite')
     s.open( recreate=False)
 
-    from dbcook.usage.sa_hack4repeatability import hack4repeat
-    hack4repeat()
+    #from dbcook.usage.sa_hack4repeatability import hack4repeat
+    #hack4repeat()
     s.bind( locals(), fieldtypemap=fmap, builder=saw.Builder, base_klas= Element, force_ordered=True)
     #s.query_all_tables()
     session = s.session()
