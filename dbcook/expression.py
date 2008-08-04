@@ -1,15 +1,16 @@
 #$Id$
 # -*- coding: cp1251 -*-
 import sqlalchemy
-import sqlalchemy.orm
+from sqlalchemy import orm
 
 _debug = 0
 
+object_mapper = orm.object_mapper
 def base_mapper(m): return m.base_mapper
 
-if hasattr( sqlalchemy.orm.Mapper, '_equivalent_columns'):
+if hasattr( orm.Mapper, '_equivalent_columns'):
     def equivs( parent): return parent._equivalent_columns
-elif hasattr( sqlalchemy.orm.Mapper, '_get_equivalent_columns'):
+elif hasattr( orm.Mapper, '_get_equivalent_columns'):
     def equivs( parent): return parent._get_equivalent_columns()
 #else:
 #    def equivs( parent): return getattr( parent, '_Mapper__get_equivalent_columns')()
@@ -42,7 +43,6 @@ import_fullname( 'sqlalchemy.sql.expression._corresponding_column_or_error', las
 
 def prop_get_join( self, parent, primary=True, secondary=True):
     ''' from PropertyLoader.get_join(), no cache, no polymorphic joins '''
-    from sqlalchemy.orm import sync
 
     parent_equivalents = equivs( parent)
     primaryjoin = joincopy( self.primaryjoin)
@@ -53,6 +53,7 @@ def prop_get_join( self, parent, primary=True, secondary=True):
         secondaryjoin = None
 
     if 0:   #if this IS needed, it must happen only on first of a self.manager.manager.manager chain
+        sync = orm.sync
         adapt = None
         if self.direction is sync.ONETOMANY:
             adapt = dict( exclude=self.foreign_keys)
@@ -216,17 +217,17 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
         print 'AAA', q._joinpoint, q._criterion, q._from_obj
 
         #needs the query's mapper; for now assume primary
-    mapper0 = sqlalchemy.orm.class_mapper( root_value)
+    mapper0 = orm.class_mapper( root_value)
     clause, mapper, lasttable = join_via( via_names, mapper0, must_alias= must_alias4root.get( root_name,None) )
 #    prop = mapper.props[ attr_name]
     prop = mapper.get_property( attr_name)
     if _debug: print 'cols/joins:', mapper, prop, 'lasttable:', lasttable, 'clause:', clause
 
         #hope for the first if many...
-    if isinstance( prop, sqlalchemy.orm.properties.ColumnProperty):
+    if isinstance( prop, orm.properties.ColumnProperty):
         lastcol = prop.columns[0]
 
-    elif isinstance( prop, sqlalchemy.orm.properties.PropertyLoader):
+    elif isinstance( prop, orm.properties.PropertyLoader):
         for c in foreign_keys( prop):
             lastcol = c
             break
@@ -258,6 +259,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
 
 from dbcook.util import expr
 from sqlalchemy import sql
+
 
 class Translator( expr.Expr.Visitor):
     class SAVisitor( sql.ClauseVisitor):
@@ -294,13 +296,13 @@ class Translator( expr.Expr.Visitor):
     def const( me, value):
         if _debug: print '?const', value
         if value is None: return sql.null()
-        #XXX TODO must be redone; db_id may not be valid; needs primarykey( value)
-        from sqlalchemy.orm import mapperlib
         try:
-            mapperlib.object_mapper( value)
-        except: pass
+            m = object_mapper( value)
+        except Exception, e:
+            #print 'XXXXXXXXXXXXXX', e
+            pass
         else:
-            return value.db_id
+            return m.primary_key_from_instance( value) [0] #XXX composites??
         if isinstance( value, (list, tuple)): return value
         return sql.literal( value)
 

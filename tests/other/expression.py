@@ -497,7 +497,9 @@ for combina in combinator():
 
                 q = session.query( Human.DBCOOK_no_mapping and Person or Human)
 
-                q = q.filter(sae).all()
+                q = q.filter(sae)
+                #print 111111111111111, q
+                q = q.all()
 
                 sres,sres1 = strres( q, 'result')
                 sexp,sexp1 = strres( expected, 'expect')
