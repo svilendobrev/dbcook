@@ -3,7 +3,8 @@ PY ?= python
 #PYTHONPATH := $(PYTHONPATH):$(shell pwd)/..
 #export PYTHONPATH
 
-#z: tests/other/aboutrel.test
+#z: static
+#ARGS= debug=mapper
 
 now: test misc static
 test:
@@ -15,7 +16,8 @@ timed:
 aggr:
 	$(MAKE) -C dbcook/misc/aggregator/
 
-static: dbcook/usage/static_type/test_autoset_lazy.py
+static: dbcook/usage/static_type/test_autoset_lazy.static dbcook/usage/static_type/sa2static.static
+%.static: %.py
 	PYTHONPATH=`pwd`:$(PYTHONPATH) $(PY) $< -v $(ARGS)
 
 

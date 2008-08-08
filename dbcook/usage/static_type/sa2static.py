@@ -24,6 +24,11 @@ class Reflector4StaticType( builder.Reflector):
     def attrtypes( me, klas): return klas.StaticType
     def cleanup( me, klas):     #XXX nothing so far... maybe _order_Statics_cache
         pass
+    def before_mapping( me, klas):
+        'kill static_type descriptors @klas'
+        for k in klas.StaticType:
+            if isinstance( getattr( klas,k), _static_type.StaticType ):
+                setattr( klas, k, None)
 
 #    def is_collection_type( me, typ):
 #        from static_type.types.sequence import Sequence
@@ -84,7 +89,11 @@ _debug = 0*'dict'
 #   now, if _newAttrAutoset, autoset/defaultvalue goes above as lazy-callable
 
 import sqlalchemy.orm.attributes
-_noInstanceState = not hasattr( sqlalchemy.orm.attributes, 'InstanceState')    #>v3463
+assert hasattr( sqlalchemy.orm.attributes, 'InstanceState')    #>v3463
+_v05 = hasattr( sqlalchemy.orm.attributes, 'ClassManager')
+_nameof_InstanceState = _v05 and '_sa_instance_state' or '_state'
+def getstate( obj): return getattr( obj, _nameof_InstanceState)
+
 def _triggering( state):
     try:
         return bool( state.trigger)   #pre ~v3970
@@ -97,12 +106,19 @@ class AutoSetter( object):
         me.descr4static = descr4static
         me.instr4sa = instr4sa
         me.chain = instr4sa.callable_
+
     def autoset( me, obj):
+        if _v05:
+            state =obj
+            obj = state.obj()
+        else:
+            state = getstate( obj)
         value = me.descr4static._set_default_value( obj)
         if isinstance( me.instr4sa, sqlalchemy.orm.attributes.ScalarObjectAttributeImpl):
-            me.instr4sa.fire_replace_event( obj._state, value, None, initiator=None)
-        obj._state.modified = True
+            me.instr4sa.fire_replace_event( state, value, None, initiator=None)
+        state.modified = True
         return sqlalchemy.orm.attributes.ATTR_WAS_SET
+
     def __call__( me, obj):
         if me.chain:
             r = me.chain( obj)
@@ -133,10 +149,14 @@ class dict_via_attr( object):
         except KeyError: return False
         return True
     __contains__ = has_key
+    def iterkeys( me):
+        for k in me.src.StaticType: yield k
+        for k in getattr( me.src, '_my_sa_stuff', ()): yield k
+
     def __getitem__( me,k, *defaultvalue):
         src = me.src
         dbg = 'dict' in _debug
-        if dbg: print 'dict get', me.src.__class__, k, defaultvalue
+        if dbg: print 'dict get', id(me.src), me.src.__class__, k, defaultvalue
 
         if k in Base.__slots__:
             try:
@@ -144,7 +164,7 @@ class dict_via_attr( object):
             except AttributeError:
                 raise KeyError,k
 
-        if _triggering( src._state):    #same must be if brand new obj/autoset?
+        if _triggering( getstate( src) ):    #same must be if brand new obj/autoset?
             if defaultvalue: return defaultvalue[0]
             raise KeyError,k
 
@@ -228,22 +248,14 @@ class Base( _Base):
     __metaclass__ = _Meta2check_dict
     __slots__ = [ '__weakref__',
             '_sa_session_id',
-            '_sa_insert_order',
-            '_instance_key',
-            '_entity_name',
 
-            #'_foostate',    #0.5
-
-            _noInstanceState and '_my_state' or '_state',
+            _nameof_InstanceState,
             '_my_sa_stuff',
+    ] + (not _v05) * [
+            '_entity_name',
+            '_instance_key',
+            '_sa_insert_order',
     ]
-    if _noInstanceState:
-        def _lazy_mystate( me):
-            try: return me._my_state
-            except AttributeError:
-                m = me._my_state = {}
-                return m
-        _state = property( _lazy_mystate)
     __dict__ = property( dict_via_attr )
 
     __doc__ = '''
@@ -256,7 +268,6 @@ SA-mapper-related attributes are hence split into these categories:
     plain attributes:   go where they should, in the object via get/set attr
 
 this exercise would be a lot easier if:
-    - _state didn't use another privately-named __sa_attr_state
     - plain attributes didn't access directly obj.__dict__, but have proper getattr/setattr
     - extra columns and extra system attributes went all into the above _state,
         or anywhere but in ONE place.
@@ -372,7 +383,7 @@ if __name__ == '__main__':
         for q in [ sa.query_ALL_instances, sa.query_BASE_instances, sa.query_SUB_instances]:
             print '====', klas, q.__name__
             #r = session.query( klas)
-            r = q( session, klas ).all()
+            r = q( session, klas ) #.all()
             if not r: print r
             else:
                 for a in r: print a

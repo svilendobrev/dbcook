@@ -863,6 +863,8 @@ class Builder:
             if dbg: print ' load-only - disable mapper.save/.delete'
             extension = _MapExt( klas)
 
+        me.reflector.before_mapping( klas)      #eventualy hide klas.descriptors
+
         #primary, eventualy polymorphic_all if pjoin
         pm = make_mapper( klas, table,
                     polymorphic_identity= is_pm and name or None,

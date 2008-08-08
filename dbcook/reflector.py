@@ -30,6 +30,9 @@ class Reflector:
     def cleanup( me, klas):
         'clean klas of any side-effects like caches'
         raise NotImplementedError
+    def before_mapping( me, klas):
+        'called just before make_mapper( klas, ... )'
+        pass
     def is_reference_type( me, typ):
         raise NotImplementedError
         return None or dict(

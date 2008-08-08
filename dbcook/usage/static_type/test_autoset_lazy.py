@@ -1,9 +1,17 @@
 #$Id$
 import sys
-import dbcook.usage.static_type.sa2static as orm
-from static_type.types.atomary import Text
-orm.Base.auto_set = False
-
+if 0:
+    import dbcook.usage.plainwrap as orm
+    class Text( orm.Type):
+        def __init__( me, default_value =None): pass
+    def Reference( *a, **kargs):
+        kargs.pop( 'auto_set')
+        return orm.Reference( *a, **kargs)
+else:
+    import dbcook.usage.static_type.sa2static as orm
+    from static_type.types.atomary import Text
+    orm.Base.auto_set = False
+    Reference = orm.Reference
 Base = orm.Base
 
 _debug = 'debug' in sys.argv
@@ -24,7 +32,7 @@ def model( is_lazy =True, is_auto_set =True, is_reference =True, is_value_defaul
         else:
             code = Text()
         if is_reference:
-            ime = orm.Reference( Name, auto_set= is_auto_set, lazy= is_lazy)
+            ime = Reference( Name, auto_set= is_auto_set, lazy= is_lazy)
         else:
             ime = Text()    #TODO must make a deferred_column when is_lazy
 
@@ -39,7 +47,7 @@ fieldtypemap = {
 
 def check( is_auto_set =True, is_reference =True, is_value_default =False, **kargs):
     namespace = model( is_auto_set =is_auto_set, is_reference =is_reference, is_value_default =is_value_default, **kargs)
-
+    SAdb.config.getopt()
     sa = SAdb()
     sa.open( recreate=True)
     b = sa.bind( namespace, builder= orm.Builder, fieldtypemap= fieldtypemap, base_klas= Base )
@@ -65,9 +73,11 @@ def check( is_auto_set =True, is_reference =True, is_value_default =False, **kar
     s.close()
 
     s = sa.session()
+    r = C.code == 'alabala'
+#   print C.code
     res = s.query( C).filter( C.code == 'alabala' ).all()
     if _debug: print res
-    assert len(res) == 1
+    assert len(res) == 1, str(res) +', case: '+ namespace['case']
     r = str(res[0])
     assert r==cexp, '\n'.join( [ namespace['case'], r, '!=', cexp] )
 
@@ -77,10 +87,11 @@ def check( is_auto_set =True, is_reference =True, is_value_default =False, **kar
 
     sa.destroy( True)
 
+sys.setrecursionlimit( 200)
 failed = 0
 buli = [ False, True]
 for is_ref in buli:
-    for is_auto in buli[ :1+is_ref]:
+    for is_auto in buli[ :1+is_ref ]:
         for is_lazy in buli:
             for is_value_default in buli:
                 try:
