@@ -39,23 +39,33 @@ class PolymorphicAssociation( object):  #cfg.Base):
         which_owner = None  #Text() - some textual Type #cfg.which_owner_TextType
     else:
         # implicit: needs walking all refs once-per-load, finding a non-zero one.
-        #   that fires lazy-loads if done on attr-level.
-        #   now done walking refs at column-level; maybe mapperExt @ populate_instance
         NEEDS__slots__ = ['_which_owner']   #add this yourself to the inherting class
 
         def get_which_owner( me):
             try: return me._which_owner
-            except AttributeError:
-                from dbcook.aboutrel import about_relation
-                for selector in me.possible_owners():
-                    ab = about_relation( me.__class__, selector)
-                    column = ab.thisside.column
-                    if getattr( me, column.key) is not None:
-                        me._which_owner = selector
-                        break
-                else:
-                    selector = None
-            return selector
+            except AttributeError: pass
+
+            # here is walking refs at column-level; maybe mapperExt @ populate_instance
+            from dbcook.aboutrel import about_relation
+            for selector in me.possible_owners():
+                ab = about_relation( me.__class__, selector)
+                column = ab.thisside.column
+                if getattr( me, column.key) is not None:
+                    me._which_owner = selector
+                    return selector
+
+            # above alone is not enough -
+            #  - a newly-created object + low-level copy of refs (not via .owner)
+            # would not have column_id set-up yet (but would have an attr)
+
+            # warning: this may fire lazy-loads
+            for selector in me.possible_owners():
+                if getattr( me, selector) is not None:
+                    me._which_owner = selector
+                    return selector
+
+            return None
+
         def set_which_owner( me, v):
             me._which_owner = v
         which_owner = property( get_which_owner, set_which_owner)
