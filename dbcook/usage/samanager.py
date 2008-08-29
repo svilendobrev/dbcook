@@ -261,6 +261,16 @@ def detach_instances( namespace_or_iterable, idname, resetup =False ):
             if debug: print 'resetup', e.__class__, id(e)
             _setup_state( e)
 
+
+def exact_count( query):
+    from sqlalchemy.sql import func
+    m = getattr( query, 'mapper', None)     #0.4
+    if m is None: m = query._mapper_zero()  #0.5
+    #see Query.count()
+    return query._col_aggregate( m.primary_key[0],
+                lambda x: func.count( func.distinct(x)) )
+
+
 if 0*'inline_inside_table/embedded_struct':
     _level_delimiter4embedded_name = '_' #( parent,child): return '_'.join( (parent,child) )
 
