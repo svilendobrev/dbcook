@@ -9,7 +9,7 @@
 
 def set_attrib( self, name, value, getattr =getattr, setattr=setattr):
     'setattr over hierachical name'
-    if isinstance( name, str):
+    if isinstance( name, basestring):
         name = name.split('.')
     name1 = name[-1]
     if len(name)>1:
@@ -20,7 +20,7 @@ def set_attrib( self, name, value, getattr =getattr, setattr=setattr):
 
 def get_attrib( self, name, *default_value, **kargs):
     'getattr over hierachical name'
-    if isinstance( name, str):
+    if isinstance( name, basestring):
         name = name.split('.')
     _getattr = kargs.get( 'getattr', getattr)
     for a in name:
@@ -94,6 +94,36 @@ def setattr_kargs( *args, **kargs):
 
 ########
 
+def getattr_each_by_inheritance( klas, name,
+        without_self =False,
+        order_flattened =(),    #__mro__ by default; careful, this should be leaf-to-root
+        getattr =getattr,   #=getattr: yields at first visible place (leaf-most)
+                            #=getattr_local_instance_only: yields at place of declaration (root-most)
+    ):
+    '''for rich multiple inheritance, define things locally, then use this to collect them all
+       e.g. many have local setup() methods - single setup_all() can call them all without omissions
+    '''
+    used = set()
+    notfound = used
+    for k in order_flattened or klas.__mro__:
+        k = k or klas   #None means self
+        if without_self and k is klas: continue
+        f = getattr( klas, name, notfound)
+        if f is not notfound and f not in used:
+            used.add(f)
+            yield f
+
+########
+
+def flatten_vars( klas, ignore_hidden=True):
+    res = {}
+    for dic in reversed( [ vars(k) for k in klas.mro() ] ):
+        res.update( dic)
+    if ignore_hidden:
+        return dict( (k,v) for k,v in res.iteritems() if not k.startswith('__'))
+    return res
+
+
 # util/base.py
 __issubclass = issubclass
 def issubclass( obj, klas):
@@ -129,7 +159,7 @@ def import_fullname( name, last_non_modules =0, **kargs):
 
 def find_valid_fullname_import( paths, last_non_modules =1):
     'search for a valid attribute path, importing them if needed'
-    if isinstance( paths, str): paths = paths.split()
+    if isinstance( paths, basestring): paths = paths.split()
     for p in paths:
         try:
             return import_fullname( p, last_non_modules=last_non_modules)

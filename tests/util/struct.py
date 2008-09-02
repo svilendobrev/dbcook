@@ -2,6 +2,7 @@
 # -*- coding: cp1251 -*-
 
 class Struct( object):
+    'takes any kwargs and turns them into attrs'
     __slots__ = [ '__dict__' ]
     def __init__( me, **k ):
         me.__dict__.update( k)
@@ -27,6 +28,14 @@ class Struct_debug( Struct):
     def __setattr__( me, name, value):
         print '%s=%r' % (name,value)
         Struct.__setattr__( me, name, value)
+
+#######
+
+class DictAttr( dict):
+    'like Struct, but works both as getitem and getattr'
+    def __init__( me, *a, **k):
+        dict.__init__( me, *a, **k)
+        me.__dict__ = me
 
 ##########
 
