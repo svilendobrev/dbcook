@@ -13,8 +13,9 @@ class MultiTester( object):
         me.failed_counter = 0
         me.prn = []
 
+    _any_echos = 'debug echo verbose log_sa'
     def any_echo( me):
-        for k in 'debug echo verbose log_sa'.split():
+        for k in me._any_echos.split():
             if getattr( me.config, k, None): return True
         return False
 

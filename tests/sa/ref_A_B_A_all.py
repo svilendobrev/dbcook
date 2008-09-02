@@ -314,6 +314,7 @@ if __name__ == '__main__':
     from tests.util import multi_tester
     class ABtester( multi_tester.MultiTester):
         Printer = Printer
+        _any_echos = 'debug echo'
         def _run_one( me, printer, **parameters):
             if check_concrete_polymorphism( **parameters): return ()
             db = create_engine( config.db, echo= config.echo)
