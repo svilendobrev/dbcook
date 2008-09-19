@@ -1,6 +1,8 @@
 #$Id$
 #s.dobrev 2k4
 
+#see http://www.xs4all.nl/~anthon/Python/ordereddict/ for C-implementation
+
 from __future__ import generators
 
 class dictOrder( dict):
