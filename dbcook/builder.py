@@ -12,8 +12,6 @@
 
     * структура:
         - вградени-структури - НЕ МОГАТ да се направят!
-    * fieldtypemap
-        - ?? дати/времена
     * mappers:
         - наследявания: ОК
             + joined_table & concrete_table; all-same, all-same-at-node; mixed
@@ -633,12 +631,27 @@ class Builder:
         if force_ordered:
             me.klasi = me.DICT( sorted( me.klasi.items() ))
 
+        #fieldtype_mapper
+        if isinstance( fieldtype_mapper, (list, tuple)):
+            # [ Type ] -> obtaining sa.Column kargs from Type.column_def
+            fieldtype_mapper = dict( (typ,None) for typ in fieldtype_mapper )
         if isinstance( fieldtype_mapper, dict):
+            # { Type: one-of
+            #       instance/subclass of sa.AbstractType to be used as type= for sa.Column
+            #       dict( kargs-for-sa.Column )
+            #       func returning above dict/kargs
+            #       None -> obtain any of the above from Type.column_def
+            from sqlalchemy.types import AbstractType
             def fm( typ):
                 r = fieldtype_mapper[ typ.__class__ ]
-                if callable(r): r = r( typ)
+                if r is None: r = typ.column_def
+                if isinstance( r, AbstractType) or issubclass( r, AbstractType):
+                    r = dict( type = r)
+                elif callable(r): r = r( typ)
                 return r
-        else: fm = fieldtype_mapper
+        else:
+            fm = fieldtype_mapper
+        assert callable( fm)
 
         #work
         me.make_subklasi()

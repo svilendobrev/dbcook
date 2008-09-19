@@ -8,10 +8,12 @@ from dbcook.usage import sa_hack4echo   #nicer selects echoed PLEAZE
 
 # get a builder
 import dbcook.usage.plainwrap as o2r
-
+import sqlalchemy
 # define some types
 class Text( o2r.Type): pass
 class Int(  o2r.Type): pass
+class Bool( o2r.Type): #pass
+    column_def = sqlalchemy.Boolean(30)
 
 Base = o2r.Base
 
@@ -20,6 +22,7 @@ Base = o2r.Base
 class Employee( Base):
     name    = Text()
     age     = Int()
+    haskids = Bool()
     manager = o2r.Reference( 'Employee')    #or 'Manager'
     DBCOOK_inheritance = 'joined'   #for subclasses - this(base) one is always concrete anyway
     #or DBCOOK_inheritance = o2r.table_inheritance_types.JOINED
@@ -47,16 +50,15 @@ class Director( director_base):
 ####### endof model-definition
 
 
-
-
 import sqlalchemy
 import sqlalchemy.orm
 meta = sqlalchemy.MetaData( sqlalchemy.create_engine('sqlite:///', echo= 'echo' in sys.argv ))
 
-# map attr-types to sql-column-types
+# map attr-types to sa-column-types
 fieldtypemap = {
     Text: dict( type= sqlalchemy.String(100), ),
-    Int : dict( type= sqlalchemy.Integer, ),
+    Int : sqlalchemy.Integer,
+    Bool: None, #i.e. use Bool.column_def
 }
 
 # build the mapping
@@ -78,6 +80,7 @@ if mybuild.generator:
 def populate():
     a = Employee()
     a.name = 'anna'
+    a.haskids = True
     a.age = 30
 
     a1 = Employee()

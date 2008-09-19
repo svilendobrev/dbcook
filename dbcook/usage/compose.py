@@ -24,11 +24,13 @@ class composer( object):
         return me.proxy( obj or klas, me.name)
 
 if __name__ == '__main__':
-
+    import sys
     from dbcook.usage import sa_hack4echo   #nicer selects echoed PLEAZE
     import dbcook.usage.plainwrap as o2r
+    from dbcook import expression
     class Text( o2r.Type): pass
     class Int(  o2r.Type): pass
+    class Bool( o2r.Type): pass
     Base = o2r.Base
 
     class Engineer( Base):
@@ -50,6 +52,7 @@ if __name__ == '__main__':
             fieldtype_mapper = { # map attr-types to sql-column-types
                 Text: dict( type= sqlalchemy.String(100), ),
                 Int : dict( type= sqlalchemy.Integer, ),
+                Bool: dict( type= sqlalchemy.Boolean, ),
             },
             generator =True     #lets see how this would look in plain sqlalchemy
         )
@@ -62,7 +65,6 @@ if __name__ == '__main__':
     #populate
     e2 = Engineer()
     e2.name = 'ena'
-    e2.manager = e
     e2.age = 30
     e2.machine = 'deep'
 
@@ -87,7 +89,7 @@ if __name__ == '__main__':
 
     print '       --- xxxxxxxxxxxxxx'
     prn( session.query( Engineer).filter( Engineer.a.x < 6 ).all() )
-    prn( session.query( Engineer).filter( Engineer.a == ( 6,4) ).all() )
+#    prn( session.query( Engineer).filter( Engineer.a == ( 6,4) ).all() )
     prn( expression.query1( lambda self: self.a.y > 5, klas=Engineer, session=session) )
 
 # vim:ts=4:sw=4:expandtab
