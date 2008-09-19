@@ -158,6 +158,7 @@ def test_klas_tree_structure():
 
 def prn(q):
     for x in q: print ' ', x
+    print
 
 def test_selects():
     from dbcook import expression
