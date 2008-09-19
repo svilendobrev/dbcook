@@ -102,11 +102,16 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
         return Collection( assoc_klas, **kargs)
 
     @classmethod
-    def Hidden( klas, other_side_klas, other_side_attr ='', backref ='', dbname =None):
+    def Hidden( klas, other_side_klas, other_side_attr ='', backref ='', dbname =None, **rel_kargs):
         #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
         return _Relation4AssocHidden( other_side_klas, backref= backref or other_side_attr,
-                    dbname= dbname, assoc_base= klas )
+                    dbname= dbname, assoc_base= klas, **rel_kargs )
     HIDDEN_NAME_PREFIX = '_Assoc'
+    '''if any of above methods has to be overloaded, it has to be renamed as say _Hidden,
+        become @staticmethod and be overloaded as such, while keeping the
+        @classmethod just as
+        def Hidden( klas, *a,**k): return klas._Hidden( klas, *a,**k)
+    '''
 
     @classmethod
     def get_link_info( klas, attr):
@@ -336,6 +341,9 @@ Check for double-declaration with different names''' % locals()
                 collection_class = collection_class     #needed if InstrumentedList.append is replaced
             )
         rel_kargs.update( me.rel_kargs)
+        #for k,v in me.rel_kargs.iteritems():
+        #    if callable( v): v = v( klas, assoc_klas )
+        #    rel_kargs[k] = v
 
         colid = builder.column4ID( klas )
 
@@ -372,6 +380,7 @@ Check for double-declaration with different names''' % locals()
                     secondary   = builder.tables[ assoc_klas],
                     primaryjoin = (fk == colid),
                     secondaryjoin = (otherfk == builder.column4ID( otherklas)),
+#                    cascade = 'all'
                 )
         else:
             assoc_klas_actual = assoc_klas
@@ -379,6 +388,9 @@ Check for double-declaration with different names''' % locals()
                     primaryjoin = (fk == colid),
                     remote_side = fk,
                 )
+        for k,v in me.rel_kargs.iteritems():
+            if callable( v):
+                rel_kargs[k] = v( klas, assoc_klas_actual )
         if dbg: print ' ', me, 'made:', assoc_klas, assoc_klas_actual, rel_kargs
         return assoc_klas, assoc_klas_actual, rel_kargs
 
@@ -404,8 +416,8 @@ class _AssocDetails:
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
 class _Relation4AssocHidden( _Relation):
-    def __init__( me, assoc_klas, backref =None, rel_kargs ={},
-            assoc_base= Association, dbname =None):
+    def __init__( me, assoc_klas, backref =None,
+            assoc_base= Association, dbname =None, **rel_kargs ):
         me.assoc_base = assoc_base
         me.dbname = dbname
         _Relation.__init__( me, assoc_klas, backref, rel_kargs)
