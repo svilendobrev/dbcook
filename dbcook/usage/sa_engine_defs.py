@@ -148,6 +148,14 @@ create database %(dbname)s;
                     r = os.system( 'echo -e "'+stdin.replace('\n','\\n')+ '" | %(cmd)s' % locals() )
             except OSError: pass
 
+if 0:
+    #mysql: use pasw from mysql.config file
+    from sqlalchemy.engine.url import URL
+    myDB = URL( drivername='mysql', host='localhost', database='my_database_name',
+                query= dict( read_default_file= '/path/to/.my.cnf' ) )
+    engine = create_engine( name_or_url=myDB)
+    # use the engine as usual, no password needed in your code file :)
+
 engines = dict(
     memory  = Dmemory(),
     sqlite  = Dsqlite(),

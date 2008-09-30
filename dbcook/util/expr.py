@@ -322,14 +322,14 @@ class GluerOP( object):
        resultfunc = GluerXX( *funcs).__call__
     '''
     op = None
-    def __init__( me, *selects): me.selects = selects
-    def __call__( me, self, f= None):
+    def __init__( me, *selects): 
+        me.selects = [ s for s in selects if s is not None]
+    def __call__( me, self):
         r = None
         for s in me.selects:
-            if s is not None:
-                s = s( self,f)
-                if r is None: r = s
-                else: r = me.op( r, s)
+            s = s( self)
+            if r is None: r = s
+            else: r = me.op( r, s)
         assert r is not None
         return r
 

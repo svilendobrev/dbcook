@@ -199,8 +199,9 @@ def resolve_assoc_hidden( builder, klasi):
                         bases = (mapcontext.base_klas,) + bases
                     return type( name, bases, dict)
                 DBCOOK_hidden = True
-                left  = Assoc.Link( klas, attr= attr)
-                right = Assoc.Link( other_side_klas, attr= other_side_attr)
+                DBCOOK_indexes = list(Assoc.DBCOOK_indexes) + 'left right'.split()
+                left  = Assoc.Link( klas, attr= attr, nullable=False)
+                right = Assoc.Link( other_side_klas, attr= other_side_attr, nullable=False)
                 if dbname:
                     DBCOOK_dbname = dbname
                 else:

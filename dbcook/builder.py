@@ -328,9 +328,11 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
 #                print klas.__name__, k, typ
                 assoc_kargs, assoc_columner= relation.is_association_reference( klas, typ, attrklas, )
                 nullable = is_substruct[ 'nullable']
-                if nullable !='default':
+                if nullable != 'default':
                     assoc_kargs.update( nullable=nullable)
-                c = make_table_column4struct_reference( klas, k, attrklas, mapcontext, **assoc_kargs)
+                c = make_table_column4struct_reference( klas, k, attrklas, mapcontext,
+                    index= k in indexes,
+                    **assoc_kargs )
                 if assoc_columner: assoc_columner( c, cacher=builder)
                 columns.append( c)
                 id_columns.add( k)
