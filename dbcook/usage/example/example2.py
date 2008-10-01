@@ -26,7 +26,7 @@ inh=            :: the way of inheritance-decomposition: concrete or joined    [
 director_base=  :: base-class of Director: one of Employee, Engineer, Manager  [=Manager]
 '''
 
-config = Config( SAdb.config)
+config = Config()
 config.getopt()
 print 'config:', config
 

@@ -40,7 +40,7 @@ debug/output options:
   log_sa=   :: SA-logging: sql,transact,mapper,connect,all  [default:no]
 '''
 
-config = Config( builder.config )
+config = Config()
 
 ## nice echo of selects
 import sys
