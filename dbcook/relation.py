@@ -199,7 +199,8 @@ def resolve_assoc_hidden( builder, klasi):
                         bases = (mapcontext.base_klas,) + bases
                     return type( name, bases, dict)
                 DBCOOK_hidden = True
-                DBCOOK_indexes = list(Assoc.DBCOOK_indexes) + 'left right'.split()
+                if rel_typ.indexes:
+                    DBCOOK_indexes = list(Assoc.DBCOOK_indexes) + 'left right'.split()
                 left  = Assoc.Link( klas, attr= attr, nullable=False)
                 right = Assoc.Link( other_side_klas, attr= other_side_attr, nullable=False)
                 if dbname:
@@ -418,9 +419,10 @@ class _AssocDetails:
 
 class _Relation4AssocHidden( _Relation):
     def __init__( me, assoc_klas, backref =None,
-            assoc_base= Association, dbname =None, **rel_kargs ):
+            assoc_base= Association, dbname =None, indexes =False, **rel_kargs ):
         me.assoc_base = assoc_base
         me.dbname = dbname
+        me.indexes = indexes
         _Relation.__init__( me, assoc_klas, backref, rel_kargs)
     @property
     def backrefname( me): return me.backref and me.backref['name'] or ''

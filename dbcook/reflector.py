@@ -49,8 +49,10 @@ class Reflector:
     def obj2str( me, obj, base_klas, idname, refname ='name', **kargs):
         from baseobj import obj2str
         '''nice str(obj), cuts recursion. Uses v.idname and obj.refname for references (if available)'''
+        attrs = list( me.attrtypes( o.__class__))
+        attrs += list( getattr( o.__class__, '_extra_attrs4str', []))
         return obj2str( obj, base_klas,
-                    attrname_iterator= lambda o: me.attrtypes( o.__class__).iterkeys() ,
+                    attrname_iterator= attrs,
                     idname = idname,
                     refname= refname,
                     **kargs
