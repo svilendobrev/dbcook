@@ -884,7 +884,7 @@ class Builder:
         pm = make_mapper( klas, table,
                     polymorphic_identity= is_pm and name or None,
                     concrete= is_concrete,
-                    select_table= pjoin,
+                    with_polymorphic= ('*', pjoin),     #was select_table= pjoin,
                     polymorphic_on= pjoin_key,
                     inherits= inherits,
                     inherit_condition= inherit_condition,

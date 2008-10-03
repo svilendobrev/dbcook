@@ -135,6 +135,12 @@ class ConfigBase( object):
     def _getopt( me, help =None):
         myhelp = help or me._help
         possible_args = set( [ ak.strip().split()[-1] for ak in myhelp.split( _help_sep)[:-1]] )
+        assert possible_args, me.__class__.__name__ + ''':empty help?? - syntax is
+boolname    :: text.. for positive booleans
+no_boolname :: text.. for negative booleans
+valuename=  :: text.. for name=value
+where boolname and valuename are the attributes of the class
+'''
         for expr in sys.argv[1:]:
             arg_val = expr.split('=')
             prefixed_name = arg_val[0]

@@ -161,7 +161,10 @@ class SAdb:
         return me.tables[ mostBaseMappableKlas]
 
     def session( me, **kargs):
-        return sqlalchemy.orm.create_session( echo_uow= 'transact' in me.log_sa, **kargs)
+        echo_uow= 'transact' in me.log_sa
+        if echo_uow:
+            logging.getLogger('sqlalchemy.orm.unitofwork').setLevel(logging.DEBUG)
+        return sqlalchemy.orm.create_session( **kargs)
 
     def saveall( me, session, *args, **kargs):
         ''' kargs:
@@ -220,7 +223,8 @@ class SAdb:
         if f is None: return ()
         q = session.query( m.polymorphic_all )
         if isinstance( f, sqlalchemy.sql.Selectable):
-            return q.from_statement( f)
+            return q.select_from( f)    #allows furtner joins/filters
+            #return q.from_statement( f) #no furtner joins/filters
         else:
             return q.filter( f)
 
