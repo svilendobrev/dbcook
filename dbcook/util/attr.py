@@ -125,11 +125,13 @@ def flatten_vars( klas, ignore_hidden=True):
 
 
 # util/base.py
+def isclass( obj):
+    from types import ClassType
+    return isinstance( obj, (type, ClassType))
 __issubclass = issubclass
 def issubclass( obj, klas):
     'fail/fool-proof issubclass() - works with ANY argument'
-    from types import ClassType
-    return isinstance( obj, (type, ClassType)) and __issubclass(obj, klas)
+    return isclass( obj) and __issubclass(obj, klas)
 
 
 def isiterable( obj, string_is_iterable =False):

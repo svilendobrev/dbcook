@@ -94,9 +94,10 @@ class PolymorphicAssociation( object):  #cfg.Base):
         return r
 
     @classmethod
-    def find_which_owner( me, someowner, is_class =False):
+    def find_which_owner( me, someowner):
         #the backward mapping _possible_owners2 won't do direct, must use isinstance/issubclass
-        func = is_class and issubclass or isinstance
+        from dbcook.util.attr import isclass
+        func = isclass( someowner) and issubclass or isinstance
         r1 = me.possible_owners()
         r2 = me.possible_owners2()
         #these can be either classes or selector-names
@@ -113,6 +114,11 @@ class PolymorphicAssociation( object):  #cfg.Base):
             #if klas not in prefered_order and selector not in prefered_order:  not really needed
                 if func( someowner, klas): return selector
         return None
+
+    @classmethod
+    def find_which_owner_attr( me, someowner):
+        a = me.find_which_owner( someowner)
+        return a and getattr( me, a)
 
     'exactly one of owner-links must exist'
     def get_owner( me):
