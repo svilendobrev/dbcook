@@ -211,9 +211,10 @@ where boolname and valuename are the attributes of the class
         namespaces = _disp.namespaces.copy()
         nmspace_txt = lambda pfx: (pfx==GLOBAL_NAMESPACE and 'global namespace' or pfx)
         s = 'current namespace: %s\n' % nmspace_txt( me._prefix)
-        for prefix, namespace in namespaces.iteritems():
+        #for prefix, namespace in namespaces.iteritems():
+        for prefix, namespace in sorted( namespaces.iteritems(), key= lambda (x,y): x):
             s += '------- %s --------\n' % nmspace_txt( prefix)
-            s += '\n'.join( [ '%s=%s' % (k,str(v)) for k,v in namespace.iteritems() ]) + '\n'
+            s += '\n'.join( [ '%s=%s' % (k,str(v)) for k,v in sorted( namespace.iteritems(), key= lambda (x,y): x) ]) + '\n'
         return s
 
 
