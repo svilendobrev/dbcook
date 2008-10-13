@@ -31,7 +31,11 @@ class PolymorphicAssociation( object):  #cfg.Base):
 
     #owned_thing = Association.Link( OwnedClass, attr= 'owners')    #into OwnedClass
     config__non_owner_linknames = ()    #at least the one above pointing to OwnedClass
-    config__owner_order = ()     #put classes that inherit each-other here, in child-to-root order
+    @staticmethod
+    def config__is_owner_link( me, linkname, targetklas):
+        return linkname not in me.config__non_owner_linknames
+
+    config__owner_order = ()    #put classes that inherit each-other here, in child-to-root order
 
     #type-selector
     if 0:
@@ -77,7 +81,7 @@ class PolymorphicAssociation( object):  #cfg.Base):
         r = me._possible_owners
         if r is None:
             r = dict( (k,v) for k,v in me._DBCOOK_references.iteritems()
-                            if k not in me.config__non_owner_linknames)
+                            if me.config__is_owner_link( me, k,v) )
             me._possible_owners = r
         return r
 
@@ -97,9 +101,13 @@ class PolymorphicAssociation( object):  #cfg.Base):
     def find_which_owner( me, someowner):
         #the backward mapping _possible_owners2 won't do direct, must use isinstance/issubclass
         from dbcook.util.attr import isclass
-        func = isclass( someowner) and issubclass or isinstance
-        r1 = me.possible_owners()
+        aclass = isclass( someowner)
         r2 = me.possible_owners2()
+        direct = r2.get( aclass and someowner or someowner.__class__, None)
+        if direct: return direct
+
+        func = aclass and issubclass or isinstance
+        r1 = me.possible_owners()
         #these can be either classes or selector-names
         prefered_order = me.config__owner_order
         #p = [ isinstance( i, str) and r1[i] or i for i in prefered_order]
