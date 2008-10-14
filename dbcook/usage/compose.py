@@ -1,6 +1,9 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
+#see also  sqlachemy/examples/derived_attributes/attributes.py
+# for methods that can be used at both class and instance
+
 class composer( object):
     class proxy( object):
         __slots__ = 'obj name'.split()
