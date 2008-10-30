@@ -396,29 +396,42 @@ meta = t.meta
                 if v:
                     if isinstance( v, Base): v = names[id(v)]
                     else: v = repr(v)
-                    r += k +'.'+a + ' = ' + v + '\n'
+                    r += '%(k)s.%(a)s = %(v)s\n' % locals()
 
         r+= '''
 session = create_session()
 ''' + '\n'.join( 'session.save('+k+')' for k,m in s ) + '''
 session.flush()
 
-expects = [
-'''
+expects = [ '''
         for k,m in s:
-            if '1' in k: continue
+            if '1' in k:
+                r += '#'+k
+                continue
             klas = klas_translator( m.__class__)
             klasname = klas.__name__
-            r += ('''\
-    dict( klas= %(klasname)s, table= table_%(klasname)s, oid= %(k)s.%(idname)s, exp_single= str(%(k)s),
-            exp_multi = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) ) + ''' ]),
-''') % locals()
+            r += ('''
+    dict( klas= %(klasname)s, table= table_%(klasname)s,
+            oid= %(k)s.%(idname)s, exp_single= str(%(k)s),
+            exp_all   = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) ) + ''' ],
+            exp_base  = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) and mm.__class__ == klas) + ''' ],
+            exp_sub   = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) and mm.__class__ != klas) + ''' ],
+    ),''') % locals()
 
-        r+= '''
+        r+= ('''
 ]
 
-me.query( session, expects, idname=%(idname)r )
-''' % locals()
+#me.query( session, expects, idname=%(idname)r )
+me.dump( expects )
+for item in expects:
+    me.query_by_id( session, idname=%(idname)r, **item)
+    me.query_all( session, **item)
+    if item['exp_base'] != item['exp_all']:
+        me.query_base( session, **item)
+    if item['exp_sub']:
+        me.query_sub( session, **item)
+'''
+) % locals()
 
         me.out += r
         me.done.append( 'populate')

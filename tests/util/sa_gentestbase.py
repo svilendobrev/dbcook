@@ -102,7 +102,7 @@ class Test_SA( unittest.TestCase):
                     #print x
             print 'gc/SA objects:', i
 
-    def query( me, session, expects, idname ='id'):
+    def dump( me, expects):
         if config.debug:
             print 'items:'
             for item in expects:
@@ -114,32 +114,55 @@ class Test_SA( unittest.TestCase):
                 s = tbl.select()
                 for x in s.execute():
                     print tbl, ':', ', '.join( '%s= %s' % kv for kv in zip( s.columns, x) )
-        for item in expects:
-            me.query1( session, idname=idname, **item)
 
-    def query1( me, session, idname, klas, table, oid, exp_single, exp_multi):
-        if config.session_clear: session.clear()
+    def query( me, session, expects, idname ='id'):
+        me.dump( expects)
+        for item in expects:
+            me.query_by_id( session, idname=idname, **item)
+            me.query_all( session, **item)
+#            me.query_sub( session, **item)
+#            me.query_base( session, **item)
+
+    def check( me, q, exp, name):
+        if not isinstance( exp, list): exp = [exp]
+        exp.sort()
+        q = sorted( str(x) for x in q)
+        #assert q == exp
+        me.assertEqual( q, exp, '''
+%(name)s:
+result= %(q)s
+expect= %(exp)s''' % locals()
+        )
+
+    def query_by_id( me, session, klas, idname, oid, exp_single, **kargs_ignore):
         klasname = klas.__name__
         #single
-        if config.debug: print klas, '.filter_by().first', idname,'=',oid
-        q = session.query( klas).filter_by( **{idname: oid}).first()
-        me.assertEqual( exp_single, str(q),
-            '''%(klasname)s .filter_by( %(idname)s=%(oid)s):
- result= %(q)s
- expect= %(exp_single)s''' % locals()
-            )
-
         if config.session_clear: session.clear()
+        name = '%(klasname)s .filter_by( %(idname)s=%(oid)s)' % locals()
+        if config.debug: print name
+        q = session.query( klas).filter_by( **{idname: oid})
+        me.check( q, exp_single, name)
+
+    def query_all( me, session, klas, exp_all, **kargs_ignore):
+        klasname = klas.__name__
         #multiple
-        if config.debug: print klas, '.query()'
+        if config.session_clear: session.clear()
+        if config.debug: print klasname
         q = session.query( klas)
-        x = [ str(z) for z in q ]
-        x.sort()
-        exp_multi.sort()
-        me.assertEqual( exp_multi, x, '''%(klasname)s .query():
- result= %(x)s
- expect= %(exp_multi)s''' % locals()
-            )
+        me.check( q, exp_all, klasname )
+
+    def query_sub( me, session, klas, sub, exp_sub, **kargs_ignore):
+        #see dbcook/usage/samanager:query_SUB_instances
+        klasname = klas.__name__
+        if config.session_clear: session.clear()
+        me.check( session.query( klas).from_statement( sub), exp_sub, klasname+'/sub-from_stmt')
+        me.check( session.query( klas).select_from( sub), exp_sub, klasname+'/sub-select_from')
+
+    def query_base( me, session, klas, mapr, exp_base, **kargs_ignore):
+        #see dbcook/usage/samanager:query_BASE_instances
+        klasname = klas.__name__
+        if config.session_clear: session.clear()
+        me.check( session.query( mapr), exp_base, klasname+'/base')
 
     def run( self, *a, **k):
         for i in range( config.repeat):
