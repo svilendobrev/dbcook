@@ -2,8 +2,9 @@
 # -*- coding: cp1251 -*-
 import sqlalchemy
 from sqlalchemy import orm
+from sqlalchemy.orm import attributes
 
-_debug = 0
+_debug = 1
 
 object_mapper = orm.object_mapper
 def base_mapper(m): return m.base_mapper
@@ -86,6 +87,18 @@ class _OnDemand:
         me.use += (r is not None)
         return r
 
+def get_property( mapper, key):
+    if isinstance( mapper, orm.Mapper):
+        prop = getattr( mapper.class_, key, None)
+    else:
+        prop = getattr( mapper, key, None)
+    if prop is None:
+        raise sqlalchemy.exceptions.InvalidRequestError( '%(mapper)r has no property %(key)r' % locals() )
+    if isinstance( prop, attributes.InstrumentedAttribute):
+        prop = prop.property
+    return prop
+    return mapper.get_property(key)
+
 def join_via( keys, mapper, must_alias =None):
     '''from Query.join_via, input root mapper, return last mapper/table
         alias and link properly recursive /self-referential joins
@@ -111,8 +124,18 @@ def join_via( keys, mapper, must_alias =None):
     self_colequivalents = None
     xmappers = set([mapper])        #mapper === parent
     ymappers = set([base_mapper(mapper) ])
-    for key in keys:
-        prop = mapper.get_property(key)
+    parent = None
+    for ix,key in enumerate(keys):
+        prop = get_property( parent or mapper, key)
+        if isinstance( prop, orm.properties.ColumnProperty):
+            break
+        if not isinstance( prop, orm.properties.MapperProperty):    #proxy or whatever non-prop
+            parent = prop
+            continue
+        else:
+            assert isinstance( prop, orm.properties.PropertyLoader)
+            parent = None
+            if ix == len(keys)-1: break     #walk all but last
 
         c = prop_get_join( prop, mapper)
 
@@ -167,7 +190,7 @@ def join_via( keys, mapper, must_alias =None):
 
         mapper = prop.mapper
 
-    return clause, mapper, self_table
+    return prop, clause, mapper, self_table
 
 '''
 C.boza= Alabala.Instance()
@@ -194,10 +217,10 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
 '''
 
     path = name.split('.')
-    root_name = path[0]
+    root_name = path.pop(0)
     root_value = context4root[ root_name]
 
-    if len( path)<2:
+    if not path:
 #       if isinstance( root_value, klas ot mapnatite):
 #           return root_value.db_id
         return root_value, None, True
@@ -207,10 +230,9 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
 
 #    if root_value ne e klas ot mapnatite:
 
-
-    attr_name = path[-1]
-    via_names = path[1:-1]
     if 0:
+        attr_name = path[-1]
+        via_names = path[:-1]
         from sqlalchemy.orm.query import Query
         q = Query( root_value)
         q = q.join( via_names, aliased= must_alias4root.get( root_name,None) )
@@ -218,15 +240,12 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
 
         #needs the query's mapper; for now assume primary
     mapper0 = orm.class_mapper( root_value)
-    clause, mapper, lasttable = join_via( via_names, mapper0, must_alias= must_alias4root.get( root_name,None) )
-#    prop = mapper.props[ attr_name]
-    prop = mapper.get_property( attr_name)
+    prop, clause, mapper, lasttable = join_via( path, mapper0, must_alias= must_alias4root.get( root_name,None) )
     if _debug: print 'cols/joins:', mapper, prop, 'lasttable:', lasttable, 'clause:', clause
 
         #hope for the first if many...
     if isinstance( prop, orm.properties.ColumnProperty):
         lastcol = prop.columns[0]
-
     elif isinstance( prop, orm.properties.PropertyLoader):
         for c in foreign_keys( prop):
             lastcol = c
@@ -249,7 +268,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
                     lastcol = lc
                     break
             else:
-                assert 0, str(self) + ": Could not find corresponding column for " + str(c) + " in selectable "  + str(self.mapper.select_table)
+                assert 0, '%(name)s: Cannot find corresp.column for %(c)s in mapper:%(mapper)s, selectable %(lasttable)s' % locals()
 
         if _debug: print '>>>>>', lastcol
 
