@@ -4,27 +4,54 @@
 #see also  sqlachemy/examples/derived_attributes/attributes.py
 # for methods that can be used at both class and instance
 
-class composer( object):
-    class proxy( object):
-        __slots__ = 'obj name'.split()
-        @staticmethod
-        def compose_name( name, subname):
-            return name + '_' + subname
-        def __init__( me, obj, name):
-            me.obj = obj
-            me.name = name
-        def __getattr__( me, key):
-            return getattr( me.obj, me.compose_name( me.name, key))
-        def __setattr__( me, key, value):
-            if key in me.__slots__:
-                return object.__setattr__( me, key, value)
-            return setattr( me.obj, me.compose_name( me.name, key), value )
+import sqlalchemy.orm
 
-    def __init__( me, factory, name):
+class proxy( object):
+    __slots__ = 'obj name'.split()
+    def compose_name( me, subname):
+        return me.name + '_' + subname
+    def __init__( me, obj, name):
+        me.obj = obj
+        me.name = name
+    def __getattr__( me, key):
+        return getattr( me.obj, me.compose_name( key))
+
+class proxy4inst( proxy):
+    __slots__ = ()
+    def __setattr__( me, key, value):
+        if key in me.__slots__ or key in proxy.__slots__:
+            return object.__setattr__( me, key, value)
+        return setattr( me.obj, me.compose_name( key), value )
+
+class proxy4klas( proxy, sqlalchemy.orm.interfaces.PropComparator):
+    def __init__( me, obj, name, eq_keys =()):
+        me.obj = obj
+        me.name = name
+        me.eq_keys = eq_keys
+    def __eq__( me, other):
+        assert me.eq_keys
+        obj = me.obj
+        if isinstance( other, (tuple,list)):
+            def getother( k,ix): return other[ix]
+        elif isinstance( other, dict):
+            def getother( k,ix): return other[k]
+        else:
+            def getother( k,ix): return getattr( other, k)
+        return sqlalchemy.and_( *[
+                    getattr( obj, me.compose_name(k)) == getother( k,ix)
+                    for ix,k in enumerate( me.eq_keys) ])
+
+class composer( object):
+    eq_keys = ()
+    def __init__( me, factory, name, eq_keys =() ):
         me.factory = factory
         me.name = name
+        if isinstance( eq_keys, basestring): eq_keys = eq_keys.split()
+        if eq_keys: me.eq_keys = eq_keys
     def __get__( me, obj, klas ):
-        return me.proxy( obj or klas, me.name)
+        if obj: return proxy4inst( obj, me.name)
+        return proxy4klas( klas, me.name, me.eq_keys)
+
 
 if __name__ == '__main__':
     import sys
@@ -40,10 +67,34 @@ if __name__ == '__main__':
         machine = Text()
         a_x = Text()
         a_y = Int()
-        a = composer( None, 'a')
+        a = composer( None, 'a', eq_keys ='x y')
         b_x = Text()
         b_y = Int()
         b = composer( None, 'b')
+
+    if 0*1:
+        class Point( composer):
+            eq_keys = 'x y'
+        class Vertex( Base):
+            a_x = Text()
+            a_y = Int()
+            a_name = Text()
+            a = Point( 'a')
+            b_x = Text()
+            b_y = Int()
+            b_name = Text()
+            b = Point( 'b')
+
+    if 0*2:
+        class Point( composer):
+            eq_keys = 'x y'
+        class Vertex( Base):
+            a_x = Text()
+            a_y = Int()
+            a = Point( 'a')
+            b_x = Text()
+            b_y = Int()
+            b = Point( 'b')
 
     import sqlalchemy
     import sqlalchemy.orm
@@ -80,19 +131,22 @@ if __name__ == '__main__':
     assert e2.b.y == e2.b_y == by
 
     session = sqlalchemy.orm.create_session()
-    #anything off Base, go to db
-    for a in locals().values():
+    for a in locals().values(): #anything off Base, go to db
         if isinstance( a, Base): session.save( a)
     session.flush()
     session.clear()
 
     def prn(q):
+        print q
         for x in q: print ' ', x
         print
 
     print '       --- xxxxxxxxxxxxxx'
-    prn( session.query( Engineer).filter( Engineer.a.x < 6 ).all() )
-#    prn( session.query( Engineer).filter( Engineer.a == ( 6,4) ).all() )
+    print Engineer.a.x
+    prn( session.query( Engineer).filter( Engineer.a.x < 6 ) )
     prn( expression.query1( lambda self: self.a.y > 5, klas=Engineer, session=session) )
+    prn( session.query( Engineer).filter( Engineer.a == sqlalchemy.orm.aliased(Engineer).b ) )
+    prn( session.query( Engineer).filter( Engineer.a == ( 6,4) ) )
+    prn( session.query( Engineer).filter( Engineer.a == dict( x= 6, y=4) ) )
 
 # vim:ts=4:sw=4:expandtab
