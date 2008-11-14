@@ -51,8 +51,6 @@ class about_relation( object):
 
     class _About( object):
         __slots__ = '''klas name attr has_many column'''.split()
-        @property
-        def cardinality( me): return me.has_many and '1' or 'N'
         def __str__( me):
             if not me.column:
                 assert me.has_many
@@ -90,19 +88,20 @@ class about_relation( object):
 
     @property
     def cardinality( me):
-        r = [ me.thisside.cardinality, me.otherside.cardinality ]
+        r = [ me.otherside.has_many and 'M' or '1', me.thisside.has_many and 'N' or '1']
         #if me.midthis: r.insert( 1, me.middle)
         return ':'.join( r)
 
 
     def __str__( me):
-        r = me.__class__.__name__[:5]+ ' %s %s this=%s / other=%s: %s' % (
+        r = ' '.join( str(s) for s in [ 'aboutrel',
                     not me.no_backref and 'backref' or 'no_backref',
+                    me.cardinality,
+                    #'this=' +(me.thisside.has_many  and 'collection' or 'reference'),
                     me.thisside,
-                    me.thisside.has_many  and 'collection' or 'reference',
-                    me.otherside.has_many and 'collection' or 'reference',
+                    #'other='+(me.otherside.has_many and 'collection' or 'reference'),
                     me.otherside,
-                )
+                ])
         if me.midthis:
             r += '\n via %s / %s' % ( me.midthis, me.midother )
         return r
