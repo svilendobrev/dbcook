@@ -116,8 +116,12 @@ from dbcook.util.attr import getattr_local_instance_only, issubclass
 class _NOTFOUND: pass
 
 class MappingContext:
-    base_klas = None  #_Base or something else
-    reflector = None  #some Reflector()
+    def __init__( me,
+        base_klas = None,  #_Base or something else
+        reflector = None,  #some Reflector()
+    ):
+        me.base_klas = base_klas
+        me.reflector = reflector
 
     def mappable( me, klas):
         if klas and issubclass( klas, me.base_klas) and klas is not me.base_klas:

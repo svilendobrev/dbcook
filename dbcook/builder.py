@@ -578,7 +578,7 @@ class _MapExt( sqlalchemy.orm.MapperExtension):
 
 class Builder:
     reflector = None    #Reflector()    #override - just a default
-    Base = MappingContext.base_klas     #override - just a default
+    Base = None         #MappingContext.base_klas     #override - just a default
 
     SETordered  = sqlalchemy.util.OrderedSet
     DICTordered = sqlalchemy.util.OrderedDict
@@ -612,14 +612,12 @@ class Builder:
         if base_klas is None: base_klas = me.Base
         assert base_klas
 
-        mc = MappingContext()
-        mc.base_klas = base_klas
-        mc.reflector = reflector
-        me.mapcontext = mc
+        mapcontext = MappingContext( base_klas, reflector)
+        me.mapcontext = mapcontext
 
         if force_ordered:
-            me.DICT = mc.DICT = me.DICTordered
-            mc.SET  = me.SETordered
+            me.DICT = mapcontext.DICT = me.DICTordered
+            mapcontext.SET  = me.SETordered
 
         #get/scan class declarations to be processed
         walkklas._debug = 'walk' in config.debug

@@ -113,7 +113,7 @@ class about_relation( object):
             prop = klas_attr.property
             mapper = prop.mapper
         except AttributeError, e:
-            assert 0, 'not a relation klas_attr: '+ repr( klas_attr) + ' / ' + str( klas_attr)
+            raise ValueError, 'not a relation klas_attr: '+ repr( klas_attr) + ' / ' + str( klas_attr)
 
         #me._klas_attr = klas_attr
         #TODO: try on 1:1/backref and n:n
