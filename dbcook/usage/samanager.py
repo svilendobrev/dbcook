@@ -228,6 +228,16 @@ class SAdb:
         else:
             return q.filter( f)
 
+    ###### misx
+    def statx( me, pfx =''):
+        pfx += 'N'
+        #print pfx, 'Elementi', len( [k for k in locals().values() if issubclass( k, Element)])
+        print pfx, 'klasi', len( me.klasi)
+        print pfx, 'assoc-hid', len( [k for k in me.klasi.values() if getattr(k,'DBCOOK_hidden',False)] )
+        print pfx, 'tabli', len( me.metadata.tables)
+        for a in '_columns constraints _foreign_keys indexes'.split():
+            print pfx, a, sum( len( list(getattr( t, a))) for t in me.metadata.tables.values())
+
 
 def setup_logging( log_sa, log2stream =None):
     import logging

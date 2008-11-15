@@ -137,6 +137,104 @@ def rel_has_or_anyhas( klas_attr_or_klas, other_attr_name, value, attr_name =Non
     return has( other_attr == value)
 
 
+
+#############
+'''query over multilevel alternatives, i.e. query1 or (query2 and (query3 or query4 ))
+3 approaches:
+    * alternatives into a clause: query(X).filter( (X.a > 5) | (X.b < 3) & (X.bb.c == 5) )
+        + simple, although needs multilevels (a.b.c > 5 i.e. joins) to be expressed as ANDs
+        - all tables in the or'red s clauses come into the FROM, causing explosion of decart product
+    * alternatives as union:  query(X).select_from( union( query1(X), query2(X) ))
+        + each alternative can be of any complexity by itself
+        - postgres fails to do count() over these
+    * alternatives as python-sequence: x.all() for x in [query1,query2,...]
+        + each alternative can be anything
+        - global ordering,sorting,grouping etc has to be done
+
+the last approach seems to be fastest in very complex cases,
+applied over the 1st level of alternative-branches only (the rest in each branch being plain or()s),
+esp. as each branch seemed to have slightly different meaning hence treatment.
+union'ing (applied same way - 1st level) is comparable and comes next,
+but probably will deteriorate when number of unioned branches grows.
+the plain or() goes dead when number of tables exceeds certain threshold (server-dependent).
+the number of levels also has some impact but not that bad as number of alternatives.
+
+the challenge is a query over (deep) directed-graph/tree-like structure with alternative paths
+across the tree, e.g. get params of all objects under root;
+objects are all of a different kind but all having params:
+  a
+   .b       #ref 0..1
+     .y     #ref
+   .c       #ref 0..1
+     .x
+       .y
+   .ds      #collection [0..n]
+      .y    #ref
+      .ds   #...recursive
+
+ A.params
+ A.b.params
+ A.b.y.params
+ A.c.params
+ A.c.x.params
+ A.c.x.y.params
+ A.d*.params
+ A.d*.y.params
+ A.d*.d*.params
+ A.d*.d*.y.params
+ ...
+add all links being m2m with time-filters for additional taste...
+    doesnt change the structure much except that number of tables grows awfully
+'''
+
+def or2union( qbase, filters4subqueries, extra_filter_per_query =None):
+    'via unioning'
+    import sqlalchemy
+    uu = []
+    for a in filters4subqueries:
+        if isinstance( a, tuple): a=a[0]    #HACK for (expr,name)
+        ra = qbase.filter( a)
+        if extra_filter_per_query is not None:
+            ra = ra.filter( extra_filter_per_query )
+        if len(filters4subqueries)<=1:
+            return ra
+        s = ra._compile_context().statement
+        s.use_labels = True
+        uu.append( s)
+    filt = sqlalchemy.union( *uu)
+    return qbase.select_from( filt)
+
+class QueryMulti( object):
+    'saQuery-like over py-sequence of queries'
+    def __init__( me, queries):
+        me.queries = list( queries)
+    def count( me):
+        if 10:
+            return sum( q.count() for q,nm in me.queries)
+        s=0
+        for q,nm in me.queries:
+            c = q.count()
+            #print 88888888, nm,c
+            s+=c
+        return s
+    def all( me):
+        return list( me)
+    def __iter__( me):
+        for q,nm in me.queries:
+            for o in q:
+                yield o
+    def __str__( me):
+        return '\n'.join( ['QueryMulti:'] + [ '\n >> '+str(nm)+': '+str(q) for q,nm in me.queries ])
+
+class gen_join( object):
+    ''' walk the tree/graph and build expression-tree like or( or( and( or(...
+        the first level can be left as list or or()red
+    .....
+    '''
+    pass
+
+#################
+
 __all__ = '''QueryX RelComparator
             rel_is_or_contains rel_has_or_anyhas
         '''.split()
