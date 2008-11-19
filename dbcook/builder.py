@@ -565,6 +565,11 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
 
                     rel_kargs[ 'lazy'] = lazy
                     rel_kargs[ 'uselist'] = False
+                    backref = is_substruct.get('backref',None)
+                    if backref:
+                        if isinstance( backref, dict):
+                            backref = sa_backref( **backref)
+                        rel_kargs[ 'backref'] = backref
                     if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
                     m.add_property( k, sa_relation( attrklas, **rel_kargs))
                     assert refs[k] == attrklas

@@ -46,7 +46,7 @@ class AboutRel( object):
         me.backref_kids2 = me.backref_kids = BACKREF and 'mama' or None
         me.backref_club = BACKREF and 'members' or None
         me.backref_work = BACKREF and 'employes' or None
-        me.backref_papa = BACKREF and 'papa' or None
+        me.backref_papa = BACKREF and 'opap' or None
 
     def test_mama_kids_1_n( me):
         test( me.Mama.kids,
@@ -80,7 +80,7 @@ class AboutRel( object):
         for a in me.Kid, me.Kid.name, 'alala':
             try:
                 about_relation( a)
-            except AssertionError, e:
+            except ValueError, e:
                 if 'not a relation klas_attr' in e.message: continue
                 raise
 
@@ -123,7 +123,7 @@ if 'nodbcook' not in sys.argv:
             backref_kids = me.backref_kids
             backref_club = me.backref_club
             backref_work = me.backref_work
-            backref_papa = me.backref_papa
+            backref_papa = me.backref_papa and dict( name=me.backref_papa, uselist=False)
             backref = me.BACKREF
 
             class Work( o2r.Base):
@@ -146,7 +146,7 @@ if 'nodbcook' not in sys.argv:
                     club = o2r.Association.Hidden( Club, backref_club and 'members' or '')
                 kids = o2r.Collection( Kid, backref=backref_kids)
                 friend = o2r.Reference( 'Mama')
-                papa   = o2r.Reference( 'Papa') #not yet,  backref=backref_papa)
+                papa   = o2r.Reference( 'Papa', backref=backref_papa)
                 if 1: #not yet without this
                     skills = o2r.Association.Relation( 'SkillMap', backref='mama')
             class Papa( o2r.Base):

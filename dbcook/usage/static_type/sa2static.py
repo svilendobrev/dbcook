@@ -38,10 +38,12 @@ class Reflector4StaticType( builder.Reflector):
     def is_reference_type( me, typ):
         if not isinstance( typ, _static_type.SubStruct):
             return None
-        klas = typ.typ
-        lazy = getattr( typ, 'lazy', 'default')
-        nullable = getattr( typ, 'nullable', 'default')
-        return dict( klas=klas, lazy=lazy, as_value=False, nullable=nullable)
+        return dict( klas= typ.typ,
+                     as_value= False,
+                     lazy    = getattr( typ, 'lazy', 'default'),
+                     nullable= getattr( typ, 'nullable', 'default'),
+                     backref = getattr( typ, 'backref', None),
+                    )
         #as_value = callable( me.checker4substruct_as_value) and me.checker4substruct_as_value( klas)
 
     def resolve_forward_references( me, namespace, base_klas):
@@ -273,13 +275,14 @@ this exercise would be a lot easier if:
         or anywhere but in ONE place.
 '''
 
-def Type4Reference( klas, lazy ='default', nullable= 'default', **kargs):
+def Type4Reference( klas, lazy ='default', nullable= 'default', backref =None, **kargs):
     if isinstance( klas, str):
         r = _static_type.ForwardSubStruct( klas, **kargs)
     else:
         r = klas.Instance( **kargs)
     r.lazy = lazy
     r.nullable = nullable
+    r.backref = backref
     return r
 
 Reference = Type4Reference

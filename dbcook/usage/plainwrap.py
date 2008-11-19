@@ -23,12 +23,13 @@ NO_CLEANUP = False
 
 class Type( object): pass
 class Type4Reference( Type):
-    def __init__( me, klas, lazy ='default', nullable ='default', as_value =False):
+    def __init__( me, klas, lazy ='default', nullable ='default', as_value =False, backref =None):
         assert not as_value
         me.itemklas = klas
         me.lazy = lazy
         me.nullable = nullable
         me.as_value = False
+        me.backref = backref
     def __str__( me):
         return me.__class__.__name__ + '/'+repr(me.itemklas)
 
@@ -68,6 +69,7 @@ class Reflector4sa( builder.Reflector):
             return None
         return dict( klas= typ.itemklas, as_value= typ.as_value,
                         lazy= typ.lazy, nullable= typ.nullable,
+                        backref= typ.backref
                     )
 
     ##############
