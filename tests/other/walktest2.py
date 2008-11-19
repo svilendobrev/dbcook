@@ -1,6 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
-from tests.util.context import *
+from tests.util.context import Base,Reference,Collection,Int
 
 class C( Base):
     c = Int()
@@ -9,6 +8,7 @@ class C( Base):
 class D( Base):
     d = Int()
     s2E = Reference( 'E')
+    #s2E = Collection( 'E') #XXX fails
 
 class E( Base):
     e = Int()

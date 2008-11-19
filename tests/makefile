@@ -16,7 +16,8 @@ utilz: ../dbcook/util/expr.test
 sa: sa/ref_AxA.test
 sa: sa/ref_A_B_A_all.test
 
-simple: other/walktest1.test
+walk: other/walktest1.test
+simple: walk
 simple: mapper/mincut.test
 mapper: mapper/test4mapper.test
 mapper: mapper/test_inh_types.test
@@ -25,12 +26,12 @@ mapper: mapper/freegen/main.test
 
 assoc:   mapper/association.test
 collect: mapper/collection.test
-rel: assoc collect aboutrel
+rel: assoc collect
 aboutrel: override ARGS=
 aboutrel: other/aboutrel.test
 
 expr:    other/expression.test
-mapper: rel expr
+mapper: rel expr aboutrel
 
 #abc: ARGS= zno_sisters Binhs=A Cinhs=B Clinks=None doC zdummy
 GG= generate=failed,one

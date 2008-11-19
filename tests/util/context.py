@@ -25,6 +25,7 @@ else:
 Builder = orm.Builder
 Base = orm.Base
 Reference = orm.Reference
+Collection = orm.Collection
 
 from dbcook.usage.samanager import SAdb
 
