@@ -35,7 +35,7 @@
 #print 'builder...', __name__
 
 from reflector import Reflector
-from mapcontext import table_inheritance_types, MappingContext, issubclass
+from mapcontext import table_inheritance_types, MappingContext, issubclass, getattr_local_instance_only
 import walkklas
 import relation
 import sqlalchemy
@@ -251,7 +251,7 @@ this is not used for now, as it is not clear how it combines in branched trees.
 
 ###############################
 def get_DBCOOK_references( klas):
-    refs = getattr( klas, '_DBCOOK_references', {} )
+    refs = getattr_local_instance_only( klas, '_DBCOOK_references', {} )
     klas._DBCOOK_references = refs
     return refs
 
@@ -572,7 +572,7 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                         rel_kargs[ 'backref'] = backref
                     if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
                     m.add_property( k, sa_relation( attrklas, **rel_kargs))
-                    assert refs[k] == attrklas
+                    assert refs[k] == attrklas, ('ref[%(k)s]/'+str(refs[k])+' != %(attrklas)s') % locals()
 
 class _MapExt( sqlalchemy.orm.MapperExtension):
     def __init__( me, klas): me.klas = klas
