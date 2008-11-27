@@ -292,4 +292,13 @@ class MappingContext:
         me.subklasi = subklasi
         return subklasi
 
+    def subklasi4any( me, klas):
+        'return all mappable classes that are subclasses of klas, be it mappable or not'
+        if me.mappable( klas):
+            return klas, me.subklasi[ klas]
+        klas_mappable = me.base( klas)
+        subklasi_mappable = me.subklasi[ klas_mappable]
+        subs = [ k for k in subklasi_mappable if issubclass( k, klas) ]
+        return klas_mappable, subs
+
 # vim:ts=4:sw=4:expandtab

@@ -42,6 +42,19 @@ class RelComparator( _RelComparator):
     def setup_rel2many_is2contains_has2any( klas):
         PropertyLoader.Comparator = klas
 
+def query_ALL4mappable_or_not( qklas, entities, *args,**kargs):
+    '''return polymorphic query over all mappable subclasses of klas,
+        be it mappable or not (incl.klas if mappable);
+        needs mapcontext= dbcook_builder.mapcontext'''
+    mapcontext = kargs.pop( 'mapcontext', None)
+    if mapcontext:
+        klas = entities[0]
+        klas_mappable, subs = mapcontext.subklasi4any( klas)
+        if klas_mappable is not klas:
+            assert len(entities)==1
+            assert subs
+            return qklas( klas_mappable, *args,**kargs).with_polymorphic( list(subs) )
+    return qklas( entities, *args,**kargs)
 
 from sqlalchemy.orm.query import Query as _saQuery
 class QueryX( _saQuery):
@@ -78,6 +91,8 @@ class QueryX( _saQuery):
             r = _saQuery.filter_by( r, **{ attrs[-1]:v})
         return r
 
+    query4any = classmethod( query_ALL4mappable_or_not)
+
     @classmethod
     def setup_kargs4session( klas,
             count2exact_distinct =True,         #usable before sa0.5rc4
@@ -86,12 +101,12 @@ class QueryX( _saQuery):
             filter_ands_args =True,
         ):
         QueryX = klas
-        if not count2exact_distinct: del QueryX.count
-        if not filter_by2multilevel_join: del QueryX.filter_by
-        if not filter_ands_args: del QueryX.filter
+        if not count2exact_distinct: QueryX.count = _saQuery.count
+        if not filter_by2multilevel_join: QueryX.filter_by = _saQuery.filter_by
+        if not filter_ands_args: QueryX.filter = _saQuery.filter
         QueryX.config.func2expr= func2expr
-        kargs = dict( query_cls = QueryX )
-        return kargs
+        #kargs = dict( query_cls = QueryX )
+        #return kargs
 
 
 ################### dbcook-dependent:
@@ -236,6 +251,7 @@ class gen_join( object):
 #################
 
 __all__ = '''QueryX RelComparator
+            query_ALL4mappable_or_not
             rel_is_or_contains rel_has_or_anyhas
         '''.split()
 

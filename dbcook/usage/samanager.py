@@ -200,28 +200,30 @@ class SAdb:
                 session.save_or_update( x)
 
     ####### querys
-    def query_all_tables( sadb, *classes, **kargs_ignore):
+    def query_all_tables( me, *classes, **kargs_ignore):
         yield '=== whole database:'
-        for k,t in sadb.tables.iteritems():
+        for k,t in me.tables.iteritems():
             if not classes or k in classes:
                 yield k, '\n'.join(
                         ' '.join( '%s=%s' % kv for kv in r.items())
                         for r in t.select().execute() )
 
     ####### klasifier querys
-    def query_BASE_instances( sadb, session, klas ):
-        m = sadb.mappers[ klas]
+    def query_BASE_instances( me, session, klas ):
+        m = me.mappers[ klas]
         if m.plain is None: return ()
         return session.query( m.plain )
 
-    def query_ALL_instances( sadb, session, klas ):
+    def query_ALL_instances( me, session, klas ):
         return session.query( klas)
 
-    def query_SUB_instances( sadb, session, klas ):
-        m = sadb.mappers[ klas]
+    def query_SUB_instances( me, session, klas ):
+        m = me.mappers[ klas]
         f = m.polymorphic_sub_only
         if f is None: return ()
         q = session.query( m.polymorphic_all )
+        #same as this; needs selectable=f for concrete_inh
+        #return q.with_polymorphic( [ k for k in me.mapcontext.subklasi[klas] if k is not klas ] )
         if isinstance( f, sqlalchemy.sql.Selectable):
             return q.select_from( f)    #allows furtner joins/filters
             #return q.from_statement( f) #no furtner joins/filters

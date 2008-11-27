@@ -87,10 +87,45 @@ def getattr_in( me, local =True, klas =True, *a,**k):
 #######
 
 def setattr_kargs( *args, **kargs):
-    'may just copy the last line instead of calling here'
+    '''set all kargs key/values as attrs;
+    e.g.
+    def __init__( me, someflag, **kargs):
+        setattr_kargs( me, **kargs)
+        if someflag: whatever
+    or
+    __init__ = setattr_kargs
+    or just copy the last line instead of calling this
+    '''
     assert len(args)==1
-    x = args[0]
-    for k,v in kargs.iteritems(): setattr( x, k, v)
+    me = args[0]
+    for k,v in kargs.iteritems(): setattr( me, k, v)
+
+#######
+
+def setattr_from_kargs( me, inkargs, **kargs):
+    '''from inkargs, pop those in kargs using the values as defaults, and setattr
+    e.g.
+    def func( me, **kargs):
+        setattr_from_kargs( me, kargs, ala=1, bala=2, nica=3)
+        super(me).func( **kargs)
+    instead of:
+    def func( me, ala=1, bala=2, nica=3, **kargs):
+        me.ala=ala
+        me.bala=bala
+        me.nica=nica
+        super(me).func( **kargs)
+    '''
+    for k,v in kargs.iteritems():
+        setattr( me, k, inkargs.pop( k, v) )
+
+#######
+
+def setattr_kargs_in_order( me, these_first =(), **kargs):
+    for k in these_first:
+        if k in kargs:
+            #print '>>',k,kargs[k]
+            setattr( me, k, kargs.pop( k) )
+    setattr_kargs( me, **kargs)
 
 ########
 
@@ -146,6 +181,19 @@ def isiterable( obj, string_is_iterable =False):
 
 def iscollection( obj):
     return isinstance( obj, (list, tuple, set))
+
+def subclasses( klas):
+    'ALL subclasses of klas but klas itself'
+    subklasi = []
+    klasi = [klas]
+    while True:
+        x = []
+        for k in klasi:
+            x += k.__subclasses__()
+        if not x: break
+        subklasi += x
+        klasi = x
+    return subklasi
 
 ########
 # util/module.py
