@@ -301,4 +301,14 @@ class MappingContext:
         subs = [ k for k in subklasi_mappable if issubclass( k, klas) ]
         return klas_mappable, subs
 
+
+#not really here but...
+from dbcook.util.attr import subclasses_in
+def subclasses4db_in( klasi, *args,**kargs):   #klasi= locals() or list
+    exclude_ = kargs.pop('exclude_',True)
+    return [ c for c in subclasses_in( klasi, *args, **kargs)
+             if not getattr_local_instance_only( c, 'DBCOOK_no_mapping', False)
+             and not (exclude_ and c.__name__.startswith( '_'))
+            ]
+
 # vim:ts=4:sw=4:expandtab

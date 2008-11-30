@@ -182,6 +182,19 @@ def isiterable( obj, string_is_iterable =False):
 def iscollection( obj):
     return isinstance( obj, (list, tuple, set))
 
+def subclasses_in( locals, base_klas, module_name =None, exclude =(), include_base =False):
+    if isinstance( locals,dict): all = locals.itervalues()
+    else: all = locals
+    return sorted( #dict( (c.__name__, c) for c in
+            set( c
+            for c in all
+            if ( issubclass( c, base_klas)
+             and (not module_name or c.__module__ == module_name)
+             and c not in exclude
+             and (c is not base_klas or include_base)
+            ) )
+        , key= lambda c: c.__name__)
+
 def subclasses( klas):
     'ALL subclasses of klas but klas itself'
     subklasi = []
@@ -194,6 +207,7 @@ def subclasses( klas):
         subklasi += x
         klasi = x
     return subklasi
+
 
 ########
 # util/module.py
