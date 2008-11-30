@@ -220,6 +220,7 @@ class dict_via_attr( object):
             raise
         del me[k]
         return v
+    def __iter__( me): return me.src.StaticType.iterkeys()
 
 ######################
 
@@ -390,5 +391,5 @@ if __name__ == '__main__':
             if not r: print r
             else:
                 for a in r: print a
-
+    print set('name dept_id'.split()).intersection( a._sa_instance_state.dict )
 # vim:ts=4:sw=4:expandtab

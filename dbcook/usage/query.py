@@ -53,7 +53,13 @@ def query_ALL4mappable_or_not( qklas, entities, *args,**kargs):
         if klas_mappable is not klas:
             assert len(entities)==1
             assert subs
-            return qklas( klas_mappable, *args,**kargs).with_polymorphic( list(subs) )
+            from sqlalchemy.orm import class_mapper
+            atype = class_mapper( klas_mappable).polymorphic_on
+            return qklas( klas_mappable, *args,**kargs
+                        ).with_polymorphic( list(subs)
+                        #XXX workaround
+                        ).filter( atype.in_( [k.__name__ for k in subs] )
+                        )
     return qklas( entities, *args,**kargs)
 
 from sqlalchemy.orm.query import Query as _saQuery
@@ -79,6 +85,7 @@ class QueryX( _saQuery):
         for k,v in kargs.iteritems():
             r = r.join( k.split('.'))
             r = _saQuery.filter_by( r, **{ _subattr: getattr(v,_subattr) })
+            r = r.reset_joinpoint()
         return r
 
     def filter_by( me, **kargs):
@@ -250,7 +257,7 @@ class gen_join( object):
 
 #################
 
-__all__ = '''QueryX RelComparator
+__all__ = '''QueryX RelComparator QueryMulti
             query_ALL4mappable_or_not
             rel_is_or_contains rel_has_or_anyhas
         '''.split()

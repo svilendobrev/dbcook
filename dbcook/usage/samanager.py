@@ -222,7 +222,7 @@ class SAdb:
         f = m.polymorphic_sub_only
         if f is None: return ()
         q = session.query( m.polymorphic_all )
-        #same as this; needs selectable=f for concrete_inh
+        #similar but not same; needs selectable=f for concrete_inh
         #return q.with_polymorphic( [ k for k in me.mapcontext.subklasi[klas] if k is not klas ] )
         if isinstance( f, sqlalchemy.sql.Selectable):
             return q.select_from( f)    #allows furtner joins/filters
