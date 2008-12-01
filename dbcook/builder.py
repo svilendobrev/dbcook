@@ -923,6 +923,10 @@ class Builder:
             else:
                 #non-mapper - primary over sub-union-select
                 subtables.pop( name, None)  #all but this
+                #TODO test it
+                #if len(subtables) == 1:
+                #    m.polymorphic_sub_only = subtables.popitem()[1]
+                #else:
                 m.polymorphic_sub_only = _polymorphic_union( subtables,
                                             #v04/r3515: m.polymorphic_all.polymorphic_on._label
                                             column4type.name,
