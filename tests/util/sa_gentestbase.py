@@ -140,6 +140,7 @@ expect= %(exp)s''' % locals()
         if config.session_clear: session.clear()
         name = '%(klasname)s .filter_by( %(idname)s=%(oid)s)' % locals()
         if config.debug: print name
+        #TODO: filter by atype for concrete?
         q = session.query( klas).filter_by( **{idname: oid})
         me.check( q, exp_single, name)
 

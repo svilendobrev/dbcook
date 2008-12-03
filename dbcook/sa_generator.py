@@ -409,10 +409,11 @@ expects = [ '''
                 r += '#'+k
                 continue
             klas = klas_translator( m.__class__)
-            klasname = klas.__name__
+            klasname = klas.__name__    #todo filterby atype/concrete?
             r += ('''
     dict( klas= %(klasname)s, table= table_%(klasname)s,
-            oid= %(k)s.%(idname)s, exp_single= str(%(k)s),
+            oid= %(k)s.%(idname)s,
+            exp_single= str(%(k)s),
             exp_all   = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) ) + ''' ],
             exp_base  = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) and mm.__class__ == klas) + ''' ],
             exp_sub   = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) and mm.__class__ != klas) + ''' ],
