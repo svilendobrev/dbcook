@@ -197,7 +197,7 @@ class duper2( duper):
 
 #names = {}
 def table_varname(t):  return 'table_'+t.name
-def punion_varname(u): return u.name #'punion_'+
+def punion_varname(u): return getattr( u, 'name', 'punionxx') #'punion_'+
 def mapper_varname(m): return 'mapper_'+m.class_.__name__+(m.non_primary and '1' or '')
 
 class Printer:

@@ -48,7 +48,8 @@ from config import config_components, config,  column4type, column4ID, table_nam
 if not config_components.polymunion_from_SA:
     from polymunion import polymorphic_union
 else:
-    polymorphic_union = sqlalchemy.polymorphic_union
+    from sqlalchemy.orm.util import polymorphic_union
+    #polymorphic_union = sqlalchemy.polymorphic_union
     #this cannot handle mixed inheritances
 
 
