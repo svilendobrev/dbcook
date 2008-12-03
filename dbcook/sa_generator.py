@@ -204,6 +204,8 @@ class Printer:
     def __init__( me, filename=''):
         me.out = ''
         me.done= []
+        me.names4non_primary_mappers = {}
+        me.names4sub_queries = {}
     def nl(me):
         me.out += '\n'
 
@@ -303,18 +305,21 @@ meta.create_all()
             else:
                 #pu_tstr.replace( "'atype',", 'NotImplementedError,')
                 pu_tstr+= ' XXX  NotImplementedError - mixed joined and concrete inheritance; use polymunion.py'
-        me.out += punion_varname(pu)+ ' = ' + pu_tstr
+        varname = punion_varname(pu)
+        me.out += varname + ' = ' + pu_tstr
         me.nl()
+        return varname
 
     def pmapi( me, iterm):
         maps = [ m for m in iterm if isinstance( m, sqlalchemy.orm.Mapper)]
-        maps.sort( key= lambda m: m.class_.__name__)
+        maps.sort( key= lambda m: (m.class_.__name__, m.non_primary) )
         for m in maps:
             pu = m2punion( m)
             if isinstance( pu, sqlalchemy.sql.Alias):  #CompoundSelect
                 me.punion( pu)
 
             varname = mapper_varname( m)
+            if m.non_primary: me.names4non_primary_mappers[ m.class_ ] = varname
             t2 = m.tstr2
             me.out += varname + ' = '+ t2
             me.nl()
@@ -333,12 +338,13 @@ meta.create_all()
         maps.sort( key= lambda (pu,m): m.class_.__name__)
         for pu,m in maps:
             if isinstance( pu, sqlalchemy.sql.Alias):  #CompoundSelect
-                me.punion( pu)
+                varname = me.punion( pu)
             else:
                 varname = 'psub_'+m.class_.__name__
                 t2 = tstr(pu)
                 me.out += varname + ' = ( ' + t2 + ' )'
                 me.nl()
+            me.names4sub_queries[ m.class_] = varname
         me.done.append( 'psubs')
 
 
@@ -409,11 +415,16 @@ expects = [ '''
                 r += '#'+k
                 continue
             klas = klas_translator( m.__class__)
+            mapr = me.names4non_primary_mappers.get( klas)
+            sub  = me.names4sub_queries.get( klas)
+
             klasname = klas.__name__    #todo filterby atype/concrete?
             r += ('''
     dict( klas= %(klasname)s, table= table_%(klasname)s,
             oid= %(k)s.%(idname)s,
-            exp_single= str(%(k)s),
+            exp_single= str(%(k)s), ''' + bool(mapr) * '''
+            q4base= %(mapr)s, ''' + bool(sub) * '''
+            q4sub = %(sub)s, ''' + '''
             exp_all   = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) ) + ''' ],
             exp_base  = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) and mm.__class__ == klas) + ''' ],
             exp_sub   = [ ''' + ', '.join( 'str('+kk+')' for kk,mm in s if isinstance( mm, klas) and mm.__class__ != klas) + ''' ],
@@ -473,6 +484,7 @@ def repr2alias(me):
         except AttributeError: pass
     else:
         r = tstr2(me)
+        return r    #XXX HACK avoid pua.alias('pua') in with_polymorphic
     return r + '.alias( '+ repr(me.name) +' )'
 
 repr2tstr( sqlalchemy.sql.Alias, repr2alias)

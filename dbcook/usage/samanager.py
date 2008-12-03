@@ -222,8 +222,10 @@ class SAdb:
         f = m.polymorphic_sub_only
         if f is None: return ()
         q = session.query( m.polymorphic_all )
-        #similar but not same; needs selectable=f for concrete_inh
-        #return q.with_polymorphic( [ k for k in me.mapcontext.subklasi[klas] if k is not klas ] )
+        #XXX neither of these work for concrete... may need another mapper
+        # session.query( klas).from_statement( q4sub)
+        # session.query( klas).select_from( q4sub)
+        # session.query( klas).with_polymorphic( '*', q4sub)
         if isinstance( f, sqlalchemy.sql.Selectable):
             return q.select_from( f)    #allows furtner joins/filters
             #return q.from_statement( f) #no furtner joins/filters

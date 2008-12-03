@@ -785,14 +785,15 @@ class Builder:
             if s_inheritype == table_inheritance_types.CONCRETE:  # or != JOINED ??XXX
                 if dbg: print 'outer_join_ok not ok', sklas, s_inheritype
                 return None
-            t = me.tables[ sklas]
-            j = sa.outerjoin( j, t, (column4ID( t) == column4ID( tbase)) )
+            #t = me.tables[ sklas]
+            #j = sa.outerjoin( j, t, (column4ID( t) == column4ID( tbase)) )
+            #above is done in SA if with_polymorphic='*'/empty selectable
 
         if dbg: print 'outer_join_ok', klas, ':', j, '\n',j.c
-        outer_join_ok = True
-        pjoin = j
+        #outer_join_ok = True
+        #pjoin = j
         pjoin_key = column4type( tbase)
-        return pjoin, pjoin_key
+        return pjoin_key
 
 
     def _make_mapper_polymorphic( me, klas, **kargs):
@@ -833,7 +834,8 @@ class Builder:
             if config_components.outerjoin_for_joined_tables_instead_of_polymunion:
                 outer_join_ok = me._outerjoin_polymorphism( klas, subklasi, dbg)
             if outer_join_ok:
-                pjoin, pjoin_key = outer_join_ok
+                pjoin_key = outer_join_ok
+                pjoin = None
             else:
                 # тези трябва да работят във всички случаи - еднакво/ смесено наследяване
                 subtables = me.DICT(
@@ -888,7 +890,7 @@ class Builder:
         pm = make_mapper( klas, table,
                     polymorphic_identity= is_pm and name or None,
                     concrete= is_concrete,
-                    with_polymorphic= pjoin and ('*', pjoin),     #was select_table= pjoin,
+                    with_polymorphic= pjoin_key and ('*', pjoin),   #was select_table= pjoin,
                     polymorphic_on= pjoin_key,
                     inherits= inherits,
                     inherit_condition= inherit_condition,
@@ -896,14 +898,14 @@ class Builder:
                 )
         m.polymorphic_all = pm
 
-        if pjoin:
+        if pjoin_key:
             if 1<len( [ k for k in subklasi if k is not klas and
                         me.mapcontext.base4table_inheritance( k)[1] == table_inheritance_types.CONCRETE
                     ]):
                 warnings.warn( 'polymorphism over concrete inheritance not supported/SA - queries may not work' )
 
 
-        if pjoin:
+        if pjoin_key:
             #non-primary, plain
             t = me.klas_only_selectables[ klas]['filtered']
             pm = make_mapper( klas,
@@ -916,7 +918,7 @@ class Builder:
 
         m.plain = pm
 
-        if pjoin:
+        if pjoin_key:
             if dbg: print ' non-primary, SUBclasses_only'
             if outer_join_ok:
                 #non-mapper - primary over sub-union-select
@@ -934,5 +936,6 @@ class Builder:
                                             'psub_'+name,
                                             inheritype
                                         )
+                #XXX this wont work for concrete... may need another mapper
 
 # vim:ts=4:sw=4:expandtab

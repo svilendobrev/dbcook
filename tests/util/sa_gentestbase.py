@@ -140,8 +140,13 @@ expect= %(exp)s''' % locals()
         if config.session_clear: session.clear()
         name = '%(klasname)s .filter_by( %(idname)s=%(oid)s)' % locals()
         if config.debug: print name
-        #TODO: filter by atype for concrete?
         q = session.query( klas).filter_by( **{idname: oid})
+        #TODO: filter by atype for concrete?
+        m = class_mapper( klas)
+        concrete = m.with_polymorphic and bool( m.with_polymorphic[1] )
+        if concrete: q= q.filter( m.polymorphic_on == klas.__name__)
+        #if concrete: q= q.filter( m.with_polymorphic[1].c.atype == klas.__name__)
+        # = session.query( klas).get( oid)
         me.check( q, exp_single, name)
 
     def query_all( me, session, klas, exp_all, **kargs_ignore):
@@ -152,18 +157,24 @@ expect= %(exp)s''' % locals()
         q = session.query( klas)
         me.check( q, exp_all, klasname )
 
-    def query_sub( me, session, klas, sub, exp_sub, **kargs_ignore):
+    def query_sub( me, session, klas, q4sub, exp_sub, **kargs_ignore):
         #see dbcook/usage/samanager:query_SUB_instances
         klasname = klas.__name__
         if config.session_clear: session.clear()
-        me.check( session.query( klas).from_statement( sub), exp_sub, klasname+'/sub-from_stmt')
-        me.check( session.query( klas).select_from( sub), exp_sub, klasname+'/sub-select_from')
+        import sqlalchemy.sql
+        if isinstance( q4sub, sqlalchemy.sql.Selectable):
+            #XXX neither of these work for concrete... may need another mapper
+            #me.check( session.query( klas).from_statement( q4sub), exp_sub, klasname+'/sub-from_stmt')
+            me.check( session.query( klas).select_from( q4sub), exp_sub, klasname+'/sub-select_from')
+            #me.check( session.query( klas).with_polymorphic( '*', q4sub), exp_sub, klasname+'/sub-select_from')
+        else:
+            me.check( session.query( klas).filter( q4sub), exp_sub, klasname+'/sub-filter')
 
-    def query_base( me, session, klas, mapr, exp_base, **kargs_ignore):
+    def query_base( me, session, klas, q4base, exp_base, **kargs_ignore):
         #see dbcook/usage/samanager:query_BASE_instances
         klasname = klas.__name__
         if config.session_clear: session.clear()
-        me.check( session.query( mapr), exp_base, klasname+'/base')
+        me.check( session.query( q4base), exp_base, klasname+'/base')
 
     def run( self, *a, **k):
         for i in range( config.repeat):
