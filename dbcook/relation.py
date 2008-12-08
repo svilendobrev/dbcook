@@ -215,12 +215,12 @@ def resolve_assoc_hidden( builder, klasi):
                         #this sees forward-resolved
                         this_side_klas,  this_side_attr  = klas.get_link_info( 'left')
                         other_side_klas, other_side_attr = klas.get_link_info( 'right')
-                        r = '_'.join( (
+                        r = '_'.join( x for x in (
                                 klas.HIDDEN_NAME_PREFIX,
                                 table_namer( this_side_klas ), this_side_attr,
                                 '2',
                                 table_namer( other_side_klas), other_side_attr
-                            ))
+                            ) if x)
                         return r
             #TODO test
 
@@ -231,12 +231,12 @@ def resolve_assoc_hidden( builder, klasi):
             rel_typ.assoc_klas = assoc_klas = AssocHidden
 
             #change __name__ - see __name__DYNAMIC
-            klasname = '_'.join( (
+            klasname = '_'.join( x for x in (
                 Assoc.HIDDEN_NAME_PREFIX,
                 table_namer( klas), attr,
                 '2',
                 isinstance( other_side_klas, str) and other_side_klas or table_namer( other_side_klas),
-                other_side_attr ))
+                other_side_attr ) if x)
             assoc_klas.__name__ = klasname
 
             #self-add to mappable klasi
