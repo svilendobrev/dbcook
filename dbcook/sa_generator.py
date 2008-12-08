@@ -510,10 +510,16 @@ join  = duper( sqlalchemy.join)
 outerjoin  = duper( sqlalchemy.outerjoin)
 relation = duper( sqlalchemy.orm.relation, nl='\n'+12*' ', nl4args='',
             no_kargs= dict(
-                remote_side=None,
+                remote_side= None,
+                secondary_join= None,
                 post_update= False,
             ) )  #lazy=True,
-backref = duper( sqlalchemy.orm.backref)
+backref = duper( sqlalchemy.orm.backref,
+            no_kargs= dict(
+                remote_side= None,
+                secondary_join= None,
+                post_update= False,
+            ) )
 polymorphic_union= duper4polymorphic_union( sqlalchemy.orm.polymorphic_union )
 
 # vim:ts=4:sw=4:expandtab

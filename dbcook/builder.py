@@ -437,13 +437,21 @@ def fix_one2many_relations( klas, builder):
     dbg = 'table' in config.debug or 'relation' in config.debug or 'column' in config.debug
     if dbg: print 'make_one2many_table_columns', klas
     mapcontext = builder.mapcontext
-    for attr_name,collection in mapcontext.iter_attr_local( klas, attr_base_klas= relation.Collection, dbg=dbg ):
+    for attr_name, collection, nonmappable_origin in mapcontext.iter_attr( klas,
+                                                    attr_base_klas= relation.Collection,
+                                                    local= True,
+                                                    denote_nonmappable_origin= True,
+                                                    dbg=dbg ):
         child_klas = collection.assoc_klas
         if isinstance( child_klas, str):
             try: child_klas = builder.klasi[ child_klas]
             except KeyError: assert 0, '''undefined relation/association class %(child_klas)r in %(klas)s.%(attr_name)s''' % locals()
         #one2many rels can be >1 between 2 tables
         #and many classes can relate to one child klas with relation with same name
+        if nonmappable_origin:
+            if dbg: print '  attr:', attr_name, 'inherited from nonmappable base, clone'
+            collection = collection.copy()
+            setattr( klas, attr_name, collection)
 
         backrefname = collection.setup_backref( klas, attr_name)
         fk_column_name = backrefname

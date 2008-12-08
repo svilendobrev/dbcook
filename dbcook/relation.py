@@ -186,7 +186,11 @@ def resolve_assoc_hidden( builder, klasi):
     mapcontext = builder.mapcontext
     news = {}
     for k,klas in klasi.iteritems():
-        for attr, rel_typ in mapcontext.iter_attr_local( klas, attr_base_klas= _Relation4AssocHidden, dbg=dbg ):
+        for attr, rel_typ, nonmappable_origin in mapcontext.iter_attr( klas,
+                                                    attr_base_klas= _Relation4AssocHidden,
+                                                    local= True,
+                                                    denote_nonmappable_origin= True,
+                                                    dbg=dbg ):
             other_side_klas = rel_typ.assoc_klas
             Assoc = rel_typ.assoc_base
             other_side_attr = rel_typ.backrefname
@@ -220,6 +224,10 @@ def resolve_assoc_hidden( builder, klasi):
                         return r
             #TODO test
 
+            if nonmappable_origin:
+                if dbg: print ' inherited from nonmappable base, clone'
+                rel_typ = rel_typ.copy()
+                setattr( klas, attr, rel_typ)
             rel_typ.assoc_klas = assoc_klas = AssocHidden
 
             #change __name__ - see __name__DYNAMIC
@@ -296,6 +304,10 @@ class _Relation( object):
         me.backref = backref
     def __str__( me):
         return me.__class__.__name__+'/'+str(me.assoc_klas)
+
+    def copy( me):
+        from copy import copy
+        return copy( me)
 
     def resolve( me, builder):
         'needed separately before make()'
@@ -418,6 +430,7 @@ class _AssocDetails:
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
 class _Relation4AssocHidden( _Relation):
+    __slots__ = [ 'assoc_base', 'dbname', 'indexes' ]
     def __init__( me, assoc_klas, backref =None,
             assoc_base= Association, dbname =None, indexes =False, **rel_kargs ):
         me.assoc_base = assoc_base
@@ -509,7 +522,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                                 ]
         if dbg and assoc_links: print '  association-implied valid implicit relations:', assoc_implicit_rels
 
-        iter_rels = builder.mapcontext.iter_attr_local( klas, attr_base_klas= _Relation, dbg=dbg )
+        iter_rels = builder.mapcontext.iter_attr( klas, attr_base_klas= _Relation, local= True, dbg=dbg )
 
         for name,typ in itertools.chain( iter_rels, assoc_implicit_rels ):
             rel_info = typ.make( builder, klas, name)    #any2many

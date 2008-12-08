@@ -137,6 +137,7 @@ class MappingContext:
 
     def __getattr_local_or_nonmappable_base( me, klas, attr, *default):
             # allow non-mapped classes to declare certain DBCOOK_xxxxxxx for their children
+            # TODO see below iter_attr_local
         klas0 = klas
         for klas in klas.__mro__:
             r = getattr_local_instance_only( klas, attr, _NOTFOUND)
@@ -214,15 +215,12 @@ class MappingContext:
                 assert 0, '%(klas)s: unknown DBCOOK_inheritance=%(inheritype)r' % locals()
         return base, inheritype
 
-    def iter_attr_local( me, klas, **kargs):
-        return me.iter_attr( klas, local= True, **kargs)
-
     def iter_attr( me, klas, attr_base_klas =None, **kargs):
         if not attr_base_klas:
             return me.reflector.attrtypes( klas).iteritems()
         return me._iter_attr( klas, attr_base_klas, **kargs)
 
-    def _iter_attr( me, klas, attr_base_klas, local =False, dbg =False):
+    def _iter_attr( me, klas, attr_base_klas, local =False, denote_nonmappable_origin =False, dbg =False):
         base_klas, inheritype = me.base4table_inheritance( klas)
         is_joined_table = (inheritype == table_inheritance_types.JOINED)
         dir_base_klas = is_joined_table and dir( base_klas) or ()
@@ -233,7 +231,11 @@ class MappingContext:
             if local and k in dir_base_klas:
                 if dbg: print '  inherited:', k
                 continue
-            yield k,attr
+            if denote_nonmappable_origin:
+                nonmappable_origin = getattr_local_instance_only( klas, k, _NOTFOUND) is _NOTFOUND
+                yield k,attr, nonmappable_origin
+            else:
+                yield k,attr
 
     def is_direct_inherited_non_concrete( me, klas):
         for sk in me.subklasi[ klas].direct:
