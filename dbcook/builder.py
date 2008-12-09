@@ -577,6 +577,10 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                     backref = is_substruct.get('backref',None)
                     if backref:
                         if isinstance( backref, dict):
+                            if 'name' not in backref:
+                                #XXX save original for reusage of same relation-def in inheriteds
+                                backref = backref.copy()
+                                backref['name'], ignored = relation.setup_backrefname( backref, klas, k)
                             backref = sa_backref( **backref)
                         rel_kargs[ 'backref'] = backref
                     if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )

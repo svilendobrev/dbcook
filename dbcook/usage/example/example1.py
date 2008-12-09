@@ -15,7 +15,12 @@ class Int(  o2r.Type): pass
 class Bool( o2r.Type): #pass
     column_def = sqlalchemy.Boolean(30)
 
-Base = o2r.Base
+class Base( o2r.Base):
+    DBCOOK_no_mapping = True
+    def __init__( me, **kargs):
+        o2r.Base.__init__( me)
+        for k,v in kargs.iteritems():
+            setattr( me,k,v)
 
 ####### start actual model-definition
 
@@ -46,6 +51,10 @@ class Director( director_base):
     if 'secretary' not in director_base.__dict__:   #no life without a secretary!
         secretary = o2r.Reference( Employee)
     salary = Int()
+
+class Work( Base):
+    name = Text()
+    assignee = o2r.Reference( Employee)
 
 ####### endof model-definition
 
@@ -114,6 +123,10 @@ def populate():
     h.secretary = a
 
     m.manager = h
+
+    w1= Work( name='dig', assignee=e2 )
+    w2= Work( name='rip', assignee=a1 )
+    w3= Work( name='rip', assignee=a  )
 
     session = sqlalchemy.orm.create_session()
     #anything off Base, go to db
@@ -211,6 +224,10 @@ def test_selects():
             lambda self: self.manager.manager.age > age,
             klas=Employee, session=session) )
 
+    print '       --- 2-klas, via expression/automatic - ok if Work owns .name'
+    prn( expression.query1(
+            lambda self, ot=Work: (ot.name == 'dig') & (self.db_id == ot.assignee),
+            klas=Employee, session=session) )
 
 populate()
 test_klas_tree_structure()

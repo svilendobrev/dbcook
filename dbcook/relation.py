@@ -102,10 +102,10 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
         return Collection( assoc_klas, **kargs)
 
     @classmethod
-    def Hidden( klas, other_side_klas, other_side_attr ='', backref ='', dbname =None, **rel_kargs):
+    def Hidden( klas, other_side_klas, other_side_attr ='', backref ='', **kargs):
         #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
         return _Relation4AssocHidden( other_side_klas, backref= backref or other_side_attr,
-                    dbname= dbname, assoc_base= klas, **rel_kargs )
+                    assoc_base= klas, **kargs )
     HIDDEN_NAME_PREFIX = '_Assoc'
     '''if any of above methods has to be overloaded, it has to be renamed as say _Hidden,
         become @staticmethod and be overloaded as such, while keeping the
@@ -202,7 +202,7 @@ def resolve_assoc_hidden( builder, klasi):
                     if not issubclass( Assoc, mapcontext.base_klas):
                         bases = (mapcontext.base_klas,) + bases
                     return type( name, bases, dict)
-                DBCOOK_hidden = True
+                DBCOOK_hidden = not rel_typ.semihidden #True
                 if rel_typ.indexes:
                     DBCOOK_indexes = list(Assoc.DBCOOK_indexes) + 'left right'.split()
                 left  = Assoc.Link( klas, attr= attr, nullable=False)
@@ -430,12 +430,14 @@ class _AssocDetails:
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
 class _Relation4AssocHidden( _Relation):
-    __slots__ = [ 'assoc_base', 'dbname', 'indexes' ]
+    __slots__ = [ 'assoc_base', 'dbname', 'indexes', 'semihidden' ]
     def __init__( me, assoc_klas, backref =None,
-            assoc_base= Association, dbname =None, indexes =False, **rel_kargs ):
+            assoc_base= Association, dbname =None, indexes =False, semihidden =False,
+            **rel_kargs ):
         me.assoc_base = assoc_base
         me.dbname = dbname
         me.indexes = indexes
+        me.semihidden = semihidden
         _Relation.__init__( me, assoc_klas, backref, rel_kargs)
     @property
     def backrefname( me): return me.backref and me.backref['name'] or ''
@@ -459,20 +461,24 @@ class Collection( _Relation):
         b = me._backrefname
         return b
     def setup_backref( me, parent_klas, parent_attr):
-        from config import column4ID
-
-        if me.backref:
-            backrefname = me.backref[ 'name']
-            #XXX save as functor to allow multiple-usage of same relation-def
-            # in many inheriting classes - re-exec there
-            me._backrefname = backrefname
-            if callable( backrefname):
-                backrefname = backrefname( parent_klas, parent_attr)
-        else:
-            #make once and save - no reexec
-            backrefname = column4ID.backref_make_name( parent_klas, parent_attr)
-            me._backrefname = backrefname
+        backrefname, me._backrefname = setup_backrefname( me.backref, parent_klas, parent_attr)
         return backrefname
+
+def setup_backrefname( backref_dict, parent_klas, parent_attr):
+    from config import column4ID
+    if backref_dict and 'name' in backref_dict:
+        backrefname = backref_dict[ 'name']
+        #XXX save as functor to allow multiple-usage of same relation-def
+        # in many inheriting classes - re-exec there
+        #... is this obsolete because of Relation.copy() ?
+        _backrefname = backrefname
+        if callable( backrefname):
+            backrefname = backrefname( parent_klas, parent_attr)
+    else:
+        #make once and save - no reexec
+        backrefname = column4ID.backref_make_name( parent_klas, parent_attr)
+        _backrefname = backrefname
+    return backrefname, _backrefname
 
 def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtractor ):
     dbg = 'relation' in config.debug
