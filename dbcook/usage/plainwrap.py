@@ -73,7 +73,7 @@ class Reflector4sa( builder.Reflector):
                         nullable= typ.nullable,
                         backref= typ.backref,
                     )
-        elif isinstance( typ, builder.relation._Relation:
+        elif isinstance( typ, builder.relation._Relation):
             return me.relation_info(
                         item_klas= typ.assoc_klas,
                         multiple= True,

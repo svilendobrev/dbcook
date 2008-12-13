@@ -433,7 +433,7 @@ for combina in combinator():
             else:   #filter population by func
                 expected = []
                 for p in popu.itervalues():
-
+                    p = session.merge(p)
                     ##real python eval
                     import inspect
                     args,vargs,kwargs,defaults = inspect.getargspec( func)

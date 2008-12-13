@@ -145,7 +145,7 @@ def test_inh_ref_A_B_A( meta,
         }
         Ajoin = polymorphic_union( ajoin, inh=='concrete' and 'atype' or None )
         mapper_A = mapper( A, table_A, polymorphic_identity='A',
-            select_table=Ajoin, polymorphic_on=Ajoin.c.atype,
+            with_polymorphic=['*',Ajoin], polymorphic_on=Ajoin.c.atype,
         )
     else:
         mapper_A = mapper( A, table_A)

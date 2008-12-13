@@ -60,6 +60,8 @@ class Reflector:
             return default
         def __len__( me):
             return sum( len(d) for d in me.dicts)
+        def __iter__( me):
+            return me.iterkeys()
 
     DICT = dict
 
@@ -113,7 +115,7 @@ class Reflector:
         from baseobj import obj2str
         '''nice str(obj), cuts recursion. Uses v.idname and obj.refname for references (if available)'''
         return obj2str( obj, base_klas,
-                    attrname_iterator= lambda o: list( me.attrtypes( o.__class__, collects=True)
+                    attrname_iterator= lambda o: list( me.attrtypes( o.__class__, collections=True)
                                              ) + list( getattr( o.__class__, '_extra_attrs4str', [])),
                     idname = idname,
                     refname= refname,
