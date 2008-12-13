@@ -49,7 +49,6 @@ if not config_components.polymunion_from_SA:
     from polymunion import polymorphic_union
 else:
     from sqlalchemy.orm.util import polymorphic_union
-    #polymorphic_union = sqlalchemy.polymorphic_union
     #this cannot handle mixed inheritances
 
 
@@ -321,14 +320,15 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
 
         #else: 'concrete_table' - each class OWN table
         k = name_prefix + attr
-        is_substruct = reflector.is_reference_type( typ)
-        if is_substruct:
-            attrklas = is_substruct[ 'klas']
-            if not is_substruct[ 'as_value']:
+        rel_info = reflector.is_relation_type( typ)
+        if rel_info:
+            assert rel_info.is_reference
+            attrklas = rel_info.klas
+            if not rel_info.as_value:
                 if dbg: print '  as_reference', k,typ
 #                print klas.__name__, k, typ
                 assoc_kargs, assoc_columner= relation.is_association_reference( klas, typ, attrklas, )
-                nullable = is_substruct[ 'nullable']
+                nullable = rel_info.nullable
                 if nullable != 'default':
                     assoc_kargs.update( nullable=nullable)
                 c = make_table_column4struct_reference( klas, k, attrklas, mapcontext,
@@ -438,14 +438,12 @@ def fix_one2many_relations( klas, builder):
     if dbg: print 'make_one2many_table_columns', klas
     mapcontext = builder.mapcontext
     for attr_name, collection, nonmappable_origin in mapcontext.iter_attr( klas,
+                                                    collections=True, plains=False, references=False,
                                                     attr_base_klas= relation.Collection,
                                                     local= True,
                                                     denote_nonmappable_origin= True,
                                                     dbg=dbg ):
-        child_klas = collection.assoc_klas
-        if isinstance( child_klas, str):
-            try: child_klas = builder.klasi[ child_klas]
-            except KeyError: assert 0, '''undefined relation/association class %(child_klas)r in %(klas)s.%(attr_name)s''' % locals()
+        child_klas = collection.resolve( builder)
         #one2many rels can be >1 between 2 tables
         #and many classes can relate to one child klas with relation with same name
         if nonmappable_origin:
@@ -539,8 +537,9 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
         fkeys = FKeyExtractor( klas, table, mapcontext, tables)
 
         base_klas, inheritype = mapcontext.base4table_inheritance( klas)
-        for k,typ in reflector.attrtypes( klas).iteritems():
-            if base_klas and k in reflector.attrtypes( base_klas):
+        for k,typ in reflector.attrtypes( klas, plains=False).iteritems():
+            rel_info = reflector.is_relation_type( typ)
+            if base_klas and k in reflector.attrtypes( base_klas, plains=False):
                 if inheritype != table_inheritance_types.CONCRETE:
                     if dbg: print '  inherited:', k
                     continue
@@ -548,44 +547,43 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                     if dbg: print '  concrete-inherited-relink:', k
             else:
                 if dbg: print '  own:', k
-            is_substruct = reflector.is_reference_type( typ)
-            if is_substruct:
-                attrklas = is_substruct[ 'klas']
-                if is_substruct[ 'as_value']:
-                    raise NotImplementedError
+
+            attrklas = rel_info.klas
+            if rel_info.as_value:
+                raise NotImplementedError
+            else:
+                if m.non_primary:
+                    if dbg: print ' non-primary, reference ignored:', k    #comes from primary mapper
+                    continue
+
+                rel_kargs = fkeys.get_relation_kargs( k)
+
+                if (issubclass( attrklas, klas)         #not supported by SA + raise
+                        or issubclass( klas, attrklas)  #seems not supported by SA + crash
+                    ):
+                    lazy = True
+                elif config.force_lazy:
+                    lazy = True
                 else:
-                    if m.non_primary:
-                        if dbg: print ' non-primary, reference ignored:', k    #comes from primary mapper
-                        continue
+                    lazy = getattr( attrklas, 'DBCOOK_reference_lazy', False
+                                    ) or rel_info.lazy
+                    if lazy == 'default':
+                        lazy = config.default_lazy
 
-                    rel_kargs = fkeys.get_relation_kargs( k)
-
-                    if (issubclass( attrklas, klas)         #not supported by SA + raise
-                            or issubclass( klas, attrklas)  #seems not supported by SA + crash
-                        ):
-                        lazy = True
-                    elif config.force_lazy:
-                        lazy = True
-                    else:
-                        lazy = getattr( attrklas, 'DBCOOK_reference_lazy', False
-                                        ) or is_substruct[ 'lazy']
-                        if lazy == 'default':
-                            lazy = config.default_lazy
-
-                    rel_kargs[ 'lazy'] = lazy
-                    rel_kargs[ 'uselist'] = False
-                    backref = is_substruct.get('backref',None)
-                    if backref:
-                        if isinstance( backref, dict):
-                            if 'name' not in backref:
-                                #XXX save original for reusage of same relation-def in inheriteds
-                                backref = backref.copy()
-                                backref['name'], ignored = relation.setup_backrefname( backref, klas, k)
-                            backref = sa_backref( **backref)
-                        rel_kargs[ 'backref'] = backref
-                    if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
-                    m.add_property( k, sa_relation( attrklas, **rel_kargs))
-                    assert refs[k] == attrklas, ('ref[%(k)s]/'+str(refs[k])+' != %(attrklas)s') % locals()
+                rel_kargs[ 'lazy'] = lazy
+                rel_kargs[ 'uselist'] = False
+                backref = rel_info.backref
+                if backref:
+                    if isinstance( backref, dict):
+                        if 'name' not in backref:
+                            #XXX save original for reusage of same relation-def in inheriteds
+                            backref = backref.copy()
+                            backref['name'], ignored = relation.setup_backrefname( backref, klas, k)
+                        backref = sa_backref( **backref)
+                    rel_kargs[ 'backref'] = backref
+                if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
+                m.add_property( k, sa_relation( attrklas, **rel_kargs))
+                assert refs[k] == attrklas, ('ref[%(k)s]/'+str(refs[k])+' != %(attrklas)s') % locals()
 
 class _MapExt( sqlalchemy.orm.MapperExtension):
     def __init__( me, klas): me.klas = klas
@@ -613,6 +611,7 @@ class Builder:
                 generator =None,    #None->see config.generate; True->use SrcGenerator; anything non-empty, use it as the src_generator
                 only_table_defs = False,    #stop after metadata.tables setup and no metadata.create_all
                 only_declarations= False,   #do not metadata.create_all - work on empty metadata
+                hook_after_resolve =None,   #callable( me)
             ):
         #config/setup
         if debug is not None:
@@ -645,6 +644,8 @@ class Builder:
         me._cleanup_klasi()     #here? or after resolve_forward_references?
         relation.resolve_assoc_hidden( me, me.klasi)
         reflector.resolve_forward_references( me.klasi, base_klas)
+
+        if hook_after_resolve: hook_after_resolve( me) #hook_after_resolve( me.klasi)
 
         if force_ordered:
             me.klasi = me.DICT( sorted( me.klasi.items() ))
@@ -705,11 +706,12 @@ class Builder:
         return column4ID( me.tables[ klas] )
     def itermapi( me, primary_only =False):
         #primary
-        for m in me.mappers.itervalues():
+        mapi = sorted( me.mappers.iteritems(), key= lambda (klas,m): klas.__name__)
+        for k,m in mapi:
             yield m.polymorphic_all
         if not primary_only:
             # non-primary mappers
-            for m in me.mappers.itervalues():
+            for k,m in mapi:
                 if m.plain is not m.polymorphic_all:
                    yield m.plain
 
@@ -741,7 +743,7 @@ class Builder:
                 fkey.tstr.kargs.update( dict( use_alter=True, name=fkey.name))
 
         def getprops( klas):
-            return [ column4ID.name ] + list( me.reflector.attrtypes( klas).iterkeys()) #if not k.startswith('link')]
+            return [ column4ID.name ] + list( me.reflector.attrtypes( klas)) #if not k.startswith('link')]
 
         try:
             if not only_table_defs:
@@ -764,9 +766,8 @@ class Builder:
     def make_mappers( me, **kargs):
         me.mappers = me.DICT()
         iterklasi = [ mklas for mklas in me.iterklasi()
-                        if not getattr( mklas, 'DBCOOK_hidden', None)
+                        if getattr( mklas, 'DBCOOK_hidden', None) != True
                     ]
-
         me.klas_only_selectables = me.DICT( (klas, me.make_klas_selectable( klas))
                                             for klas in iterklasi)
 
@@ -902,7 +903,7 @@ class Builder:
         pm = make_mapper( klas, table,
                     polymorphic_identity= is_pm and name or None,
                     concrete= is_concrete,
-                    with_polymorphic= pjoin_key and ('*', pjoin),   #was select_table= pjoin,
+                    with_polymorphic= pjoin_key and ('*', pjoin),     #was select_table= pjoin,
                     polymorphic_on= pjoin_key,
                     inherits= inherits,
                     inherit_condition= inherit_condition,

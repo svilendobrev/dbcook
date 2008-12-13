@@ -161,9 +161,9 @@ class about_relation( object):
             other.name = None
         other.attr = other.name and getattr( other.klas, other.name) or None
 
-def about_relation_assoc_explicit( ab):
+def about_relation_assoc_explicit( ab, midthis_attr =None):
     assocklas = ab.otherside.klas
-    midthis_attr = ab.otherside.name
+    midthis_attr = midthis_attr or ab.otherside.name
     assert midthis_attr, 'cannot guess otherside, unknown midthis: %(ab)s' % locals()
     oattr = None
     from sqlalchemy.orm.properties import PropertyLoader

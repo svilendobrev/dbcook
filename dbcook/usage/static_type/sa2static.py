@@ -21,7 +21,19 @@ from dbcook import builder
 table_inheritance_types = builder.table_inheritance_types
 
 class Reflector4StaticType( builder.Reflector):
-    def attrtypes( me, klas): return klas.StaticType
+    def _attrtypes_rels( me, klas, references, collections):
+        if references is not None:
+            for k,v in klas.StaticType.iteritems():
+                if isinstance( v, _static_type.SubStruct): references[k]=v
+        if collections is not None:
+            for k in dir( klas):
+                if k.startswith('__') or k in klas.StaticType: continue
+                v = getattr( klas,k)
+                if isinstance( v, builder.relation._Relation): collections[k]=v
+    def _attrtypes_plains( me, klas, plains):
+        for k,v in klas.StaticType.iteritems():
+            if not isinstance( v, _static_type.SubStruct): plains[k]=v
+
     def cleanup( me, klas):     #XXX nothing so far... maybe _order_Statics_cache
         pass
     def before_mapping( me, klas):
@@ -30,20 +42,31 @@ class Reflector4StaticType( builder.Reflector):
             if isinstance( getattr( klas,k), _static_type.StaticType ):
                 setattr( klas, k, None)
 
-#    def is_collection_type( me, typ):
-#        from static_type.types.sequence import Sequence
-#        return isinstance( typ, Sequence)
-
     #checker4substruct_as_value = None
-    def is_reference_type( me, typ):
-        if not isinstance( typ, _static_type.SubStruct):
-            return None
-        return dict( klas= typ.typ,
-                     as_value= False,
-                     lazy    = getattr( typ, 'lazy', 'default'),
-                     nullable= getattr( typ, 'nullable', 'default'),
-                     backref = getattr( typ, 'backref', None),
-                    )
+    def is_relation_type( me, typ):
+        if isinstance( typ, _static_type.SubStruct):
+            return me.relation_info(
+                    item_klas= typ.typ,
+                    multiple = False,
+                    own = False, #?
+                    as_value= False,
+                    lazy    = getattr( typ, 'lazy', 'default'),
+                    nullable= getattr( typ, 'nullable', 'default'),
+                    backref = getattr( typ, 'backref', None),
+                )
+        elif isinstance( typ, builder.relation._Relation):
+            #from static_type.types.sequence import Sequence
+            #isinstance( typ, Sequence)
+            return me.relation_info(
+                    item_klas= typ.assoc_klas,
+                    multiple = True,
+                    own = isinstance( typ, builder.relation.Collection),
+                    as_value= False,
+                    #lazy    = getattr( typ, 'lazy', 'default'),
+                    #nullable= getattr( typ, 'nullable', 'default'),
+                    backref = typ.backref,
+                )
+        else: return None
         #as_value = callable( me.checker4substruct_as_value) and me.checker4substruct_as_value( klas)
 
     def resolve_forward_references( me, namespace, base_klas):
@@ -298,15 +321,12 @@ class Collection( builder.relation.Collection):
     __slots__ = ()
     reflector = reflector
 
-def bsetup( s):
-    s.reflector = reflector
-    s.Base = Base
-    #s.Reference = staticmethod( Reference)
-    #s.Association = Association
-    #s.Collection = Collection
-
-class Builder( builder.Builder): pass
-bsetup( Builder)
+class Builder( builder.Builder):
+    reflector = reflector
+    Base = Base
+    Type4Reference = staticmethod( Reference)
+    #Association = Association
+    #Collection = Collection
 
 #######
 

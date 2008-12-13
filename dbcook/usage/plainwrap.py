@@ -39,24 +39,22 @@ class Reflector4sa( builder.Reflector):
     The only reason for the Reflector to be static and not local to Builder
     is the Base's __str___/obj2str below...
     '''
-    DICT = dict
-    if 0:
-        class DICT( dict):
-            def iter_attr_type_klas( me):
-                for k,v in me.iteritems():
-                    if isinstance( v, Type4Reference):
-                        yield k, v, v.itemklas
 
-    def attrtypes( me, klas):
-        try:
-            d = klas.__dict__[ '_attrtypes']
-        except KeyError:
-            klas._attrtypes = d = me.DICT()
-            for k in dir( klas):
-                if k.startswith('__'): continue
-                v = getattr( klas,k)
-                if isinstance( v, Type): d[k]=v
-        return d
+    def _attrtypes_rels( me, klas, references, collections):
+        for k in dir( klas):
+            if k.startswith('__'): continue
+            v = getattr( klas,k)
+            if collections is not None and isinstance( v, builder.relation._Relation): d=collections
+            elif references is not None and isinstance( v, Type4Reference): d=references
+            else: continue
+            d[k]=v
+    def _attrtypes_plains( me, klas, plains):
+        for k in dir( klas):
+            if k.startswith('__'): continue
+            v = getattr( klas,k)
+            if isinstance( v, Type4Reference): continue
+            elif isinstance( v, Type): plains[k]=v
+            else: continue
 
     def cleanup( me, klas):
         if NO_CLEANUP: return
@@ -64,13 +62,28 @@ class Reflector4sa( builder.Reflector):
         except AttributeError: pass
 
     ##############
-    def is_reference_type( me, typ):
-        if not isinstance( typ, Type4Reference):
-            return None
-        return dict( klas= typ.itemklas, as_value= typ.as_value,
-                        lazy= typ.lazy, nullable= typ.nullable,
-                        backref= typ.backref
+    def is_relation_type( me, typ):
+        if isinstance( typ, Type4Reference):
+            return me.relation_info(
+                        item_klas= typ.itemklas,
+                        multiple=False,
+                        own     =False, #?
+                        as_value= typ.as_value,
+                        lazy= typ.lazy,
+                        nullable= typ.nullable,
+                        backref= typ.backref,
                     )
+        elif isinstance( typ, builder.relation._Relation:
+            return me.relation_info(
+                        item_klas= typ.assoc_klas,
+                        multiple= True,
+                        own = isinstance( typ, builder.relation.Collection),
+                        as_value= False,
+                        #lazy= typ.lazy,            #? rel_kargs[lazy]?
+                        #nullable= typ.nullable,    #?
+                        backref= typ.backref,
+                    )
+        else: return None
 
     ##############
     def resolve_forward_references( me, namespace, base_klas):
@@ -88,9 +101,9 @@ class Resolver( Resolver):
     def finisher( me, typ, resolved_klas):
         typ.itemklas = resolved_klas
     def klas_reftype_iterator( me, klas):
-        for t in reflector.attrtypes( klas).itervalues():
-            if isinstance( t, Type4Reference):
-                yield t
+        for t in reflector.attrtypes( klas, plains=False).itervalues():
+            assert isinstance( t, Type4Reference)
+            yield t
     def is_forward_decl( me, typ):
         assert isinstance( typ, Type4Reference)
         return isinstance( typ.itemklas, str) and typ.itemklas
@@ -109,21 +122,16 @@ class Association( builder.relation.Association):
     __slots__ = ()
     Type4Reference = Type4Reference
     reflector = reflector
-
 class Collection( builder.relation.Collection):
     __slots__ = ()
     reflector = reflector
 
-
-def bsetup( s):
-    s.reflector = reflector
-    s.Base = Base
-    #s.Type4Reference = Type4Reference
-    #s.Association = Association
-    #s.Collection = Collection
-
-class Builder( builder.Builder): pass
-bsetup( Builder)
+class Builder( builder.Builder):
+    reflector = reflector
+    Base = Base
+    Type4Reference = Type4Reference
+    Association = Association
+    Collection = Collection
 
 #############################################
 

@@ -57,11 +57,13 @@ def add_bases( klas, klasi, baseklas):
             if _debug: print 'walk: add base', b
         b = b.__bases__
 
+_kargs4attrtypes = dict( collections=False, plains=False)   #TODO collections=True....resolvers fail
+
 def find_owner_baseklas( klas, attr, reflector):
     'from which level in hierarchy of klas comes the attr'
     def getattr( klas, a, *dv):
         'use reflector cache -- not really needed, a workaround similar to plainwrap.NO_CLEANUP'
-        rcache = reflector.attrtypes( klas)
+        rcache = reflector.attrtypes( klas, **_kargs4attrtypes)
         if dv: return rcache.get( a, *dv)
         return rcache[a]
     value = getattr( klas, attr)
@@ -83,13 +85,10 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
     if _debug: print ind, 'klas:', `klas`
     _level+=1
     ind += '    '
-    for attr,typ in dbgsorted( reflector.attrtypes( klas).iteritems() ):
-        is_substruct = reflector.is_reference_type( typ)
-        if not is_substruct:
-            if _debug: print ind, attr, 'ignoring non-ref:', typ
-            continue
-        if _debug: print ind, attr, is_substruct, typ
-        oklas = is_substruct[ 'klas']
+    for attr,typ in dbgsorted( reflector.attrtypes( klas, **_kargs4attrtypes).iteritems() ):
+        rel_info = reflector.is_relation_type( typ)
+        if _debug: print ind, attr, rel_info, typ
+        oklas = rel_info.klas
 
         if isinstance( oklas, str):
             name = oklas

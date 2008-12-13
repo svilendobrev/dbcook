@@ -4,7 +4,7 @@ import sqlalchemy
 from sqlalchemy import orm
 from sqlalchemy.orm import attributes
 
-_debug = 1
+_debug = 0
 
 object_mapper = orm.object_mapper
 def base_mapper(m): return m.base_mapper
@@ -193,8 +193,8 @@ def join_via( keys, mapper, must_alias =None):
     return prop, clause, mapper, self_table
 
 '''
-C.boza= Alabala.Instance()
-C.koza= Alabala.Instance()
+C.boza= Alabala.Reference()
+C.koza= Alabala.Reference()
 
 a where a.b.c.boza_id=id1 AND a.b.c.koza_id=id2         #алиас=a.b.c; a.b.c.koza.алиас()==id1
     трябва от c надясно

@@ -78,9 +78,6 @@ mssql refused to have unique constraints other than the primary key
 >
 >I defined Sample as:
 > CREATE TABLE Sample( first int NOT NULL, something int NULL, other bit NULL)
->
-> I don't know how you'd get SqlAlchemy to generate this when it makes tables for you.
-
 theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html#docstrings_sqlalchemy.schema_DDL
         '''
 
@@ -118,12 +115,13 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
         #sees parent_klas after forward-decl-resolving
         if isinstance( attr, str):
             attr = getattr( klas, attr)
-        is_substruct = klas.reflector.is_reference_type( attr)
-        return is_substruct[ 'klas'], attr.assoc.relation_attr
+        rel_info = klas.reflector.is_relation_type( attr)
+        assert rel_info.is_reference
+        return rel_info.klas, attr.assoc.relation_attr
 
     @classmethod
     def walk_links( klas, with_typ =False ):
-        if not klas.DBCOOK_hidden:
+        if not klas.DBCOOK_hidden:      #explicit
             #only works after mapping - i.e. not at table level
             from sqlalchemy.orm import class_mapper
             from sqlalchemy.orm.properties import PropertyLoader
@@ -132,20 +130,20 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
                 key = prop.key
                 r = key, prop.mapper.class_
                 if with_typ:
-                    typ = klas.reflector.attrtypes( klas).get( key, None)
+                    typ = klas.reflector.attrtypes( klas).get( key, None)   #not getattr, it gives SA-stuff
                     r = r + (typ,)
                 yield r
         else:
             #sees parent_klasi after forward-decl-resolving
             #does not see implied links, e.g. by A.asoc = Assoc.Relation( backref='a_ptr')
-            for attr,typ in klas.reflector.attrtypes( klas).iteritems():
-                is_substruct = klas.reflector.is_reference_type( typ)
-                if is_substruct:
-                    assoc_details = getattr( typ, 'assoc', None)
-                    if assoc_details:
-                        r = attr, is_substruct['klas']
-                        if with_typ: r = r + (typ,)
-                        yield r
+            for attr,typ in klas.reflector.attrtypes( klas, plains=False).iteritems():
+                rel_info = klas.reflector.is_relation_type( typ)
+                assert rel_info.is_reference
+                assoc_details = getattr( typ, 'assoc', None)
+                if assoc_details:
+                    r = attr, rel_info.klas
+                    if with_typ: r = r + (typ,)
+                    yield r
 
     @classmethod
     def find_links( klas, parent_klas):  #, parent_name):
@@ -187,6 +185,7 @@ def resolve_assoc_hidden( builder, klasi):
     news = {}
     for k,klas in klasi.iteritems():
         for attr, rel_typ, nonmappable_origin in mapcontext.iter_attr( klas,
+                                                    collections=True, plains=False, references=False,
                                                     attr_base_klas= _Relation4AssocHidden,
                                                     local= True,
                                                     denote_nonmappable_origin= True,
@@ -198,11 +197,12 @@ def resolve_assoc_hidden( builder, klasi):
             if dbg: print 'assoc_hidden: ', klas, '.'+attr, '<->', other_side_klas, '.'+other_side_attr
 
             class AssocHidden( Assoc):
+                DBCOOK_automatic = True
                 def __metaclass__( name, bases, dict):
                     if not issubclass( Assoc, mapcontext.base_klas):
                         bases = (mapcontext.base_klas,) + bases
                     return type( name, bases, dict)
-                DBCOOK_hidden = not rel_typ.semihidden #True
+                DBCOOK_hidden = rel_typ.hidden
                 if rel_typ.indexes:
                     DBCOOK_indexes = list(Assoc.DBCOOK_indexes) + 'left right'.split()
                 left  = Assoc.Link( klas, attr= attr, nullable=False)
@@ -295,9 +295,10 @@ def relate( klas, parent_klas, parent_attr, column, cacher ):
 class _Unspecified: pass
 
 class _Relation( object):
-    __slots__ = [ 'rel_kargs', 'assoc_klas', 'backref' ]
-    def __init__( me, assoc_klas, backref =None, rel_kargs ={}):
+    _meta_kargs = ()    #allowed meta-kargs
+    def __init__( me, assoc_klas, backref =None, **rel_kargs):
         me.assoc_klas = assoc_klas
+        me.__dict__.update( (k,rel_kargs.pop(k)) for k in me._meta_kargs if k in rel_kargs )
         me.rel_kargs = rel_kargs
         if backref and not isinstance( backref, dict):
             backref = dict( name= backref)
@@ -313,16 +314,16 @@ class _Relation( object):
         'needed separately before make()'
         assoc_klas = me.assoc_klas
         if isinstance( assoc_klas, str):
-            try: me.assoc_klas = builder.klasi[ assoc_klas]
+            try: assoc_klas = me.assoc_klas = builder.klasi[ assoc_klas]
             except KeyError: assert 0, '''\
 undefined relation/association class %(assoc_klas)r -
 maybe it does not inherit a mappable base?''' % locals()
+        return assoc_klas
 
     def make( me, builder, klas, name ):
         'return relation_klas, actual_relation_klas, relation_kargs'
         dbg = 'relation' in config.debug
-        me.resolve( builder)
-        assoc_klas = me.assoc_klas
+        assoc_klas = me.resolve( builder)
         if dbg: print ' ' , me, 'prop:', klas, '.', name or None
 
         foreign_keys = builder.foreign_keys[ assoc_klas]
@@ -429,32 +430,26 @@ class _AssocDetails:
         @sqlalchemy.orm.collections.collection.appender
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
-class _Relation4AssocHidden( _Relation):
-    __slots__ = [ 'assoc_base', 'dbname', 'indexes', 'semihidden' ]
-    def __init__( me, assoc_klas, backref =None,
-            assoc_base= Association, dbname =None, indexes =False, semihidden =False,
+class _Relation4AssocHidden( _Relation):    #actualy _Relation4AssocAuto
+    def __init__( me, assoc_klas, #backref =None,
+            assoc_base= Association, dbname =None, indexes =False, hidden =True,
             **rel_kargs ):
         me.assoc_base = assoc_base
         me.dbname = dbname
         me.indexes = indexes
-        me.semihidden = semihidden
-        _Relation.__init__( me, assoc_klas, backref, rel_kargs)
+        me.hidden = hidden
+        _Relation.__init__( me, assoc_klas, **rel_kargs)
     @property
     def backrefname( me): return me.backref and me.backref['name'] or ''
 
 ##############################
 
 class Collection( _Relation):
-    '''define one2many relations - in the 'one' side of the relation
-    (parent-to-child/ren relations in terms of R-DBMS).
-    '''
-    __slots__ = [ '_backrefname' ]
-
+    '''declare one2many relations - in the 'one' side of the relation'''
     def __init__( me, child_klas,
-                    backref =None,   #backref name or dict( name, **rel_kargs)
                     #unique =False,  #   ??
-                    **rel_kargs ):   #order_by =None, etc
-        _Relation.__init__( me, child_klas, backref, rel_kargs)
+                    **rel_kargs ):   #order_by =None, #backref= name or dict( rel_kargs), etc
+        _Relation.__init__( me, child_klas, **rel_kargs)
         me._backrefname = None   #decided later
     @property
     def backrefname( me):
@@ -484,7 +479,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
     dbg = 'relation' in config.debug
 
     #XXX TODO move all this into make_mapper_props ??
-
+    iter_attr = builder.mapcontext.iter_attr
     for m in builder.itermapi( primary_only =True):
         if dbg: print 'make_relations', m
 
@@ -494,12 +489,14 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
         if assoc_links:
             #match assoc-links with real rels
             assoc_links_names = dict( (rel_attr, assoc_klas) for assoc_klas, rel_attr in assoc_links )
-            for name,typ in builder.mapcontext.iter_attr( klas, local= False):
+            for name,typ in iter_attr( klas, local= False):
                 assert name not in assoc_links_names, '''%(klas)s.%(name)s specified both
                         as attribute and as link in association ''' % locals() + str( assoc_links_names[ name] )
-            for name,typ in builder.mapcontext.iter_attr( klas, attr_base_klas= _Relation, local= False):
+            for name,typ in iter_attr( klas,
+                                        collections=True, plains=False, references=False,
+                                        local= False):
                 typ.resolve( builder)
-
+                if dbg: print '  try', name, typ
                 try: assoc_links.remove( (typ.assoc_klas, name) )       #match real rel to named link
                 except KeyError:
                     try: assoc_links.remove( (typ.assoc_klas, None))    #match real rel to unnamed link
@@ -528,7 +525,9 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                                 ]
         if dbg and assoc_links: print '  association-implied valid implicit relations:', assoc_implicit_rels
 
-        iter_rels = builder.mapcontext.iter_attr( klas, attr_base_klas= _Relation, local= True, dbg=dbg )
+        iter_rels = builder.mapcontext.iter_attr( klas,
+                        collections=True, plains=False, references=False,
+                        local= True, dbg=dbg )
 
         for name,typ in itertools.chain( iter_rels, assoc_implicit_rels ):
             rel_info = typ.make( builder, klas, name)    #any2many

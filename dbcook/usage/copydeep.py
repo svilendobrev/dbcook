@@ -91,7 +91,7 @@ class Copier( object):
             i0 = item
             if not dont_copy_deep( obj, name, item):
 
-                DO TUKA #XXX me.make_copy( ? )
+                #DO TUKA #XXX me.make_copy( ? )
 
                 vcopy = getattr( item, 'copy', None)
                 if callable( vcopy):
@@ -183,9 +183,9 @@ class CopierSA( Copier):
 if 0:
     class Copier4DBCOOK( Copier):
         def is_explicit_association( me, obj, attr, child_klas):
-            return not getattr( child_klas, 'DBCOOK_hidden', True)
+            return not getattr( child_klas, 'DBCOOK_hidden', True)  #there and empty; 123 is not explicit
         def is_implicit_association( me, obj, attr, child_klas):
-            return getattr( child_klas, 'DBCOOK_hidden', False)
+            return getattr( child_klas, 'DBCOOK_hidden', False)     #not there or non-empty; 123 is implicit
         def walk_references( me, obj):
             return getattr( obj, 'DBCOOK_references', () )      #would these include inherited?
         def walk_collections( me, obj):

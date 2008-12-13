@@ -215,27 +215,23 @@ class MappingContext:
                 assert 0, '%(klas)s: unknown DBCOOK_inheritance=%(inheritype)r' % locals()
         return base, inheritype
 
-    def iter_attr( me, klas, attr_base_klas =None, **kargs):
-        if not attr_base_klas:
-            return me.reflector.attrtypes( klas).iteritems()
-        return me._iter_attr( klas, attr_base_klas, **kargs)
-
-    def _iter_attr( me, klas, attr_base_klas, local =False, denote_nonmappable_origin =False, dbg =False):
+    def iter_attr( me, klas, attr_base_klas =None,
+                local =False, denote_nonmappable_origin =False, dbg =False,
+                **kargs ):      #references,collections,plains
         base_klas, inheritype = me.base4table_inheritance( klas)
         is_joined_table = (inheritype == table_inheritance_types.JOINED)
         dir_base_klas = is_joined_table and dir( base_klas) or ()
             #joined_table: subclass' tables consist of extra attributes -> joins
-        for k in dir( klas):
-            attr = getattr( klas, k)
-            if not isinstance( attr, attr_base_klas): continue
+        for k,typ in sorted( me.reflector.attrtypes( klas, **kargs).iteritems()):    #refs,plains,collects
+            if attr_base_klas and not isinstance( typ, attr_base_klas): continue
             if local and k in dir_base_klas:
                 if dbg: print '  inherited:', k
                 continue
             if denote_nonmappable_origin:
                 nonmappable_origin = getattr_local_instance_only( klas, k, _NOTFOUND) is _NOTFOUND
-                yield k,attr, nonmappable_origin
+                yield k,typ, nonmappable_origin
             else:
-                yield k,attr
+                yield k,typ
 
     def is_direct_inherited_non_concrete( me, klas):
         for sk in me.subklasi[ klas].direct:
