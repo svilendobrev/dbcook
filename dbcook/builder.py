@@ -642,10 +642,10 @@ class Builder:
 
         me._load_klasi( namespace)
         me._cleanup_klasi()     #here? or after resolve_forward_references?
-        relation.resolve_assoc_hidden( me, me.klasi)
         reflector.resolve_forward_references( me.klasi, base_klas)
 
         if hook_after_resolve: hook_after_resolve( me) #hook_after_resolve( me.klasi)
+        relation.resolve_assoc_hidden( me, me.klasi)
 
         if force_ordered:
             me.klasi = me.DICT( sorted( me.klasi.items() ))
