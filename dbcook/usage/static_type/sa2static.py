@@ -325,8 +325,8 @@ class Builder( builder.Builder):
     reflector = reflector
     Base = Base
     Type4Reference = staticmethod( Reference)
-    #Association = Association
-    #Collection = Collection
+    Association = Association
+    Collection = Collection
 
 #######
 
