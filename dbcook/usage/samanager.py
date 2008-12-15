@@ -236,8 +236,11 @@ class SAdb:
     def statx( me, pfx =''):
         pfx += 'N'
         #print pfx, 'Elementi', len( [k for k in locals().values() if issubclass( k, Element)])
-        print pfx, 'klasi', len( me.klasi)
-        print pfx, 'assoc-hid', len( [k for k in me.klasi.values() if getattr(k,'DBCOOK_hidden',False)] )
+        klasi = me.klasi.values()
+        print pfx, 'klasi', len( klasi)
+        print pfx, '  assoc-auto', len( [k for k in klasi if getattr(k,'DBCOOK_automatic',False)] )
+        print pfx, '    of them, -hidden', len( [k for k in klasi if getattr(k,'DBCOOK_hidden',False)] )
+        print pfx, '  assoc-explicit', len( [k for k in klasi if not getattr(k,'DBCOOK_hidden', True) and not getattr(k,'DBCOOK_automatic',False)] )
         print pfx, 'tabli', len( me.metadata.tables)
         for a in '_columns constraints _foreign_keys indexes'.split():
             print pfx, a, sum( len( list(getattr( t, a))) for t in me.metadata.tables.values())

@@ -432,7 +432,7 @@ class _AssocDetails:
         factory = None
         @sqlalchemy.orm.collections.collection.internally_instrumented
         def append( me, obj =_Unspecified, **kargs):
-            msg = 'give premade %r obj, or only kargs to make one, or maybe use hidden assoc (DBCOOK_hidden=true)'
+            msg = 'give premade %r obj, or only kargs to make one, or maybe use hidden assoc (DBCOOK_hidden=True)'
             if obj is _Unspecified:
                 assert kargs, msg % me.factory
                 obj = me.factory( **kargs)
@@ -596,47 +596,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
     Having such relation-attr is not mandatory, some End-object may not need it.
 '''
 
-if 10:
-    from aboutrel import about_relation
-    def get_class_of_relation(*a,**k): return about_relation(*a,**k).otherside.klas
-else:
-    class get_class_of_relation( object):
-        '''use as
-            get_class_of_relation(x)        #=== .otherside(x)
-            get_class_of_relation.otherside(x)
-            get_class_of_relation.child(x)
-            get_class_of_relation.reference(x)
-            get_class_of_relation.parent(x) #=== .reference
-            '''
-        @staticmethod
-        def _klas_attr( klas_attr_or_klas, attr =None):
-            if attr is not None: return getattr( klas_attr_or_klas, attr)
-            return klas_attr_or_klas
-
-        @classmethod
-        def child( me, klas_attr_or_klas, attr =None):
-            'get_child_class'
-            klas_attr = me._klas_attr( klas_attr_or_klas, attr )
-            return klas_attr.impl.collection_factory().factory
-            #return parent_klas._DBCOOK_relations[ attr]   #needs flatening from all the inh-classes
-
-        @classmethod
-        def reference( me, klas_attr_or_klas, attr =None):
-            'get_parent_class'
-            klas_attr = me._klas_attr( klas_attr_or_klas, attr )
-            return klas_attr.property.mapper.class_
-        parent = reference
-
-        def otherside( me, klas_attr_or_klas, attr =None):
-            klas_attr = me._klas_attr( klas_attr_or_klas, attr )
-            prop = getattr( klas_attr, 'property', None)
-            if prop is not None: #parent - ref2one ... or isinstance???
-                return prop.mapper.class_
-            #child - rel2many
-            impl = getattr( klas_attr, 'impl', None)
-            assert impl is not None, 'not a relation klas_attr: %(klas_attr)r' % locals()
-            return impl.collection_factory().factory
-        __new__ = otherside
-        otherside = classmethod( otherside)
+from aboutrel import about_relation
+def get_class_of_relation(*a,**k): return about_relation(*a,**k).otherside.klas
 
 # vim:ts=4:sw=4:expandtab
