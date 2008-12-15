@@ -169,13 +169,16 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
         #    if not k.startswith( '__') and hasattr( getattr( klas, k), 'assoc'):
         #        return True     #has at least 1 Link
 
-    @classmethod
-    def _CollectionFactory( klas):
+    @staticmethod
+    def _CollectionFactory_any( cklas):
         m = _AssocDetails.MyCollection()
-        m.factory = klas
+        m.factory = cklas
         #m.assoc_attr           #assoc side
         #m.owner, m.owner_attr  #owner side
         return m
+    @classmethod
+    def _CollectionFactory( klas):
+        return klas._CollectionFactory_any( klas)
 
 
 from config import table_namer
@@ -196,12 +199,20 @@ def resolve_assoc_hidden( builder, klasi):
             dbname = rel_typ.dbname
             if dbg: print 'assoc_hidden: ', klas, '.'+attr, '<->', other_side_klas, '.'+other_side_attr
 
+            mapbase = mapcontext.base_klas
+            if not issubclass( Assoc, mapbase):
+                metabase = getattr( Assoc, '__metaclass__', None)
+                if not metabase: metabase = getattr( mapbase, '__metaclass__', None)
+                if not metabase: metabase = type
+                class meta( metabase):
+                    def __new__( meta, name, bases, adict):
+                        bases = (mapbase,) + bases
+                        return metabase.__new__( meta, name, bases, adict)
+            else: meta = None
+
             class AssocHidden( Assoc):
                 DBCOOK_automatic = True
-                def __metaclass__( name, bases, dict):
-                    if not issubclass( Assoc, mapcontext.base_klas):
-                        bases = (mapcontext.base_klas,) + bases
-                    return type( name, bases, dict)
+                if meta: __metaclass__ = meta
                 DBCOOK_hidden = rel_typ.hidden
                 if rel_typ.indexes:
                     DBCOOK_indexes = list(Assoc.DBCOOK_indexes) + 'left right'.split()
@@ -395,7 +406,8 @@ Check for double-declaration with different names''' % locals()
                     secondary   = builder.tables[ assoc_klas],
                     primaryjoin = (fk == colid),
                     secondaryjoin = (otherfk == builder.column4ID( otherklas)),
-#                    cascade = 'all'
+#                    cascade = 'all',
+                    collection_class = lambda: Association._CollectionFactory_any( otherklas),
                 )
         else:
             assoc_klas_actual = assoc_klas
@@ -409,7 +421,7 @@ Check for double-declaration with different names''' % locals()
         if dbg: print ' ', me, 'made:', assoc_klas, assoc_klas_actual, rel_kargs
         return assoc_klas, assoc_klas_actual, rel_kargs
 
-from dbcook.util.attr import setattr_kargs
+from dbcook.util.attr import setattr_kargs, setattr_from_kargs
 
 class _AssocDetails:
     __init__ = setattr_kargs
@@ -420,36 +432,32 @@ class _AssocDetails:
         factory = None
         @sqlalchemy.orm.collections.collection.internally_instrumented
         def append( me, obj =_Unspecified, **kargs):
+            msg = 'give premade %r obj, or only kargs to make one, or maybe use hidden assoc (DBCOOK_hidden=true)'
             if obj is _Unspecified:
-                assert len(kargs)>1, 'give all kargs, or maybe use hidden assoc (DBCOOK_hidden=true)'
+                assert kargs, msg % me.factory
                 obj = me.factory( **kargs)
-            if not me.factory.DBCOOK_hidden:
-                assert isinstance( obj, me.factory), 'give premade %r object, or maybe use hidden assoc (DBCOOK_hidden=true)' % me.factory
+            assert isinstance( obj, me.factory), msg % me.factory
             me._append( obj)
             return obj
         @sqlalchemy.orm.collections.collection.appender
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
 class _Relation4AssocHidden( _Relation):    #actualy _Relation4AssocAuto
-    def __init__( me, assoc_klas, #backref =None,
-            assoc_base= Association, dbname =None, indexes =False, hidden =True,
-            **rel_kargs ):
-        me.assoc_base = assoc_base
-        me.dbname = dbname
-        me.indexes = indexes
-        me.hidden = hidden
-        _Relation.__init__( me, assoc_klas, **rel_kargs)
+    def __init__( me, assoc_klas, *args, **kargs ):
+        setattr_from_kargs( me, kargs,
+                assoc_base= Association, dbname =None, indexes =False, hidden =True,
+            )
+        _Relation.__init__( me, assoc_klas, *args, **kargs)
     @property
     def backrefname( me): return me.backref and me.backref['name'] or ''
-
+    def __str__( me): return _Relation.__str__(me) + '/hidden=' + str(me.hidden)
 ##############################
 
 class Collection( _Relation):
     '''declare one2many relations - in the 'one' side of the relation'''
-    def __init__( me, child_klas,
+    def __init__( me, child_klas, *args, **kargs ):  #order_by =None, #backref= name or dict( rel_kargs), etc
                     #unique =False,  #   ??
-                    **rel_kargs ):   #order_by =None, #backref= name or dict( rel_kargs), etc
-        _Relation.__init__( me, child_klas, **rel_kargs)
+        _Relation.__init__( me, child_klas, *args, **kargs)
         me._backrefname = None   #decided later
     @property
     def backrefname( me):
