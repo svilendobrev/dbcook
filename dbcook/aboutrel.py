@@ -131,13 +131,17 @@ class about_relation( object):
         this = me.thisside  = me._About( prop)
         #print 'AAAAAAAAAAAA', prop, prop.secondary, prop.uselist, me.has_many, prop.backref
         this.attr = klas_attr
-        assert klas_attr is getattr( this.klas, this.name)
+        #print object.__repr__(klas_attr), object.__repr__(getattr( this.klas, this.name))
+        #assert klas_attr is getattr( this.klas, this.name)   not so for synonym/proxies
 
         if prop.secondary:
-            mthis = me.midthis = me._About()
-            mother= me.midother= me._About()
-            mthis.column  = prop.remote_side[0]
-            mother.column = prop.remote_side[1]
+            athis = me.midthis = me._About()
+            aother= me.midother= me._About()
+            #athis.column  = prop.remote_side[0]
+            #aother.column = prop.remote_side[1]
+            #TODO remote_side is not correct for viewonly=True in 0.5rev<5484.. switch back
+            athis.column  = prop.synchronize_pairs[0][1]
+            aother.column = prop.secondary_synchronize_pairs[0][1]
         else:
             me.midthis = me.midother = None
 

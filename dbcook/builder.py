@@ -722,11 +722,21 @@ class Builder:
 
     def make_tables( me, metadata, only_table_defs =False, **kargs):
         me.tables = me.DICT()
+        variants = {}
         for klas in me.iterklasi():
+            r = getattr( klas, '_DBCOOK_variant_of', None)
+            if r:
+                variants[ klas] = r.assoc_klas
+                continue
             me.tables[ klas] = make_table( klas, metadata, me, **kargs)
+        for klas,t in variants.items():
+            me.tables[ klas ] = me.tables[ t]
+
         for klas in me.iterklasi(): #to be sure all tables exists already
+            if klas in variants: continue
             fix_one2many_relations( klas, me)
         for klas in me.iterklasi(): #to be sure all tables+references exists already
+            if klas in variants: continue
             make_table_uniques( klas, me.mapcontext, me.tables[ klas])
 
         from table_circular_deps import fix_table_circular_deps

@@ -96,6 +96,7 @@ class QueryX( _saQuery):
             if attrs[:-1]:
                 r = r.join( attrs[:-1])
             r = _saQuery.filter_by( r, **{ attrs[-1]:v})
+            r = r.reset_joinpoint()
         return r
 
     query4any = classmethod( query_ALL4mappable_or_not)

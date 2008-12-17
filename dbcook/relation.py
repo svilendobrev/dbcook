@@ -50,7 +50,6 @@ import sqlalchemy
 import sqlalchemy.orm
 import warnings
 from config import config
-import itertools
 
 class Association( object):
     ''' serve as description of the association table and
@@ -101,7 +100,7 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
     @classmethod
     def Hidden( klas, other_side_klas, other_side_attr ='', backref ='', **kargs):
         #print 'Hidden Assoc', other_side_klas, '.'+ other_side_attr
-        return _Relation4AssocHidden( other_side_klas, backref= backref or other_side_attr,
+        return _AssocAutomatic( other_side_klas, backref= backref or other_side_attr,
                     assoc_base= klas, **kargs )
     HIDDEN_NAME_PREFIX = '_Assoc'
     '''if any of above methods has to be overloaded, it has to be renamed as say _Hidden,
@@ -187,17 +186,22 @@ def resolve_assoc_hidden( builder, klasi):
     mapcontext = builder.mapcontext
     news = {}
     for k,klas in klasi.iteritems():
-        for attr, rel_typ, nonmappable_origin in mapcontext.iter_attr( klas,
+        for attr, rel_typ, nonmappable_origin in sorted( mapcontext.iter_attr( klas,
                                                     collections=True, plains=False, references=False,
-                                                    attr_base_klas= _Relation4AssocHidden,
+                                                    attr_base_klas= _AssocAutomatic,
                                                     local= True,
                                                     denote_nonmappable_origin= True,
-                                                    dbg=dbg ):
+                                                    dbg=dbg ),
+                                                key= lambda (a,rel_typ,nmo): (rel_typ.variant_of,nmo,a) ):
+            rel_typ.name = attr
             other_side_klas = rel_typ.assoc_klas
             Assoc = rel_typ.assoc_base
             other_side_attr = rel_typ.backrefname
-            dbname = rel_typ.dbname
-            if dbg: print 'assoc_hidden: ', klas, '.'+attr, '<->', other_side_klas, '.'+other_side_attr
+            if dbg:
+                print 'assoc_hidden: ', klas, '.'+attr, '<->', rel_typ,
+                if rel_typ.synonym_by: print 'synonym_by:'+rel_typ.synonym_by,
+                if rel_typ.variant_of: print 'variant_of:'+rel_typ.variant_of,
+                print
 
             mapbase = mapcontext.base_klas
             if not issubclass( Assoc, mapbase):
@@ -218,8 +222,10 @@ def resolve_assoc_hidden( builder, klasi):
                     DBCOOK_indexes = list(Assoc.DBCOOK_indexes) + 'left right'.split()
                 left  = Assoc.Link( klas, attr= attr, nullable=False)
                 right = Assoc.Link( other_side_klas, attr= other_side_attr, nullable=False)
-                if dbname:
-                    DBCOOK_dbname = dbname
+                if rel_typ.variant_of:
+                    _DBCOOK_variant_of = getattr( klas, rel_typ.variant_of)     #ok for cloned because of nonmappable_origin
+                if rel_typ.dbname:
+                    DBCOOK_dbname = rel_typ.dbname % dict( klas_name= klas.__name__)
                 else:
                     @classmethod
                     def DBCOOK_dbname( klas):
@@ -301,21 +307,31 @@ def relate( klas, parent_klas, parent_attr, column, cacher ):
             warnings.warn( '''duplicate/ambigious/empty association %(parent_klas)s.%(key)s -> %(klas)s;
                 specify attr=<assoc_relation_attr> explicitly ''' % locals() )
     kk[ key ] = column
+    if dbg:
+        print '  fkeys:', kk
 
 
 class _Unspecified: pass
 
 class _Relation( object):
+    class frozendict( dict):
+        def _block( *a,**k):
+            raise AttributeError, 'cannot modify frozendict'
+        __delitem__ = __setitem__ = clear = pop = popitem = setdefault = update = _block
+    DICT = frozendict
+
     _meta_kargs = ()    #allowed meta-kargs
-    def __init__( me, assoc_klas, backref =None, **rel_kargs):
+    def __init__( me, assoc_klas, backref =None, synonym_by =None, variant_of =None, **rel_kargs):
         me.assoc_klas = assoc_klas
         me.__dict__.update( (k,rel_kargs.pop(k)) for k in me._meta_kargs if k in rel_kargs )
-        me.rel_kargs = rel_kargs
+        me.rel_kargs = me.DICT( rel_kargs)
         if backref and not isinstance( backref, dict):
             backref = dict( name= backref)
         me.backref = backref
+        me.synonym_by = synonym_by
+        me.variant_of = variant_of
     def __str__( me):
-        return me.__class__.__name__+'/'+str(me.assoc_klas)
+        return me.__class__.__name__ +'/' + str(me.assoc_klas) +'.' + (me.backref and str(me.backref) or 'nobackref')
 
     def copy( me):
         from copy import copy
@@ -336,8 +352,9 @@ maybe it does not inherit a mappable base?''' % locals()
         dbg = 'relation' in config.debug
         assoc_klas = me.resolve( builder)
         if dbg: print ' ' , me, 'prop:', klas, '.', name or None
-
-        foreign_keys = builder.foreign_keys[ assoc_klas]
+        original_rel = getattr( assoc_klas, '_DBCOOK_variant_of', None)
+        if original_rel: name = original_rel.name
+        foreign_keys = builder.foreign_keys[ original_rel and original_rel.assoc_klas or assoc_klas]
         if dbg: print ' ', me, 'assoc_fkeys:', foreign_keys
 
         try: fks = foreign_keys[ klas ]
@@ -350,10 +367,11 @@ maybe it does not inherit a mappable base?''' % locals()
                 break
             except KeyError: pass
         else:
-            assert 0, '''missing/wrong relation for association %(klas)s.%(name)s <- %(assoc_klas)s
-attrname: %(name)s;
-available: %(fks)s;
-all foreign_keys: %(foreign_keys)s.
+            assert 0, '''missing/wrong relation for association
+ %(klas)s.%(name)s <- %(assoc_klas)s
+ attrname: %(name)s;
+ available: %(fks)s;
+ all foreign_keys: %(foreign_keys)s.
 Check for double-declaration with different names''' % locals()
 
         collection_class = getattr( assoc_klas, '_CollectionFactory', None)
@@ -442,7 +460,7 @@ class _AssocDetails:
         @sqlalchemy.orm.collections.collection.appender
         def _append( me, *a,**k): return list.append( me, *a, **k)
 
-class _Relation4AssocHidden( _Relation):    #actualy _Relation4AssocAuto
+class _AssocAutomatic( _Relation):
     def __init__( me, assoc_klas, *args, **kargs ):
         setattr_from_kargs( me, kargs,
                 assoc_base= Association, dbname =None, indexes =False, hidden =True,
@@ -450,7 +468,9 @@ class _Relation4AssocHidden( _Relation):    #actualy _Relation4AssocAuto
         _Relation.__init__( me, assoc_klas, *args, **kargs)
     @property
     def backrefname( me): return me.backref and me.backref['name'] or ''
-    def __str__( me): return _Relation.__str__(me) + '/hidden=' + str(me.hidden)
+    def __str__( me): return ','.join( [_Relation.__str__(me),
+                            {True:'implicit', False: 'explicit'}.get( me.hidden, 'implicit='+str(me.hidden) )
+                            ])
 ##############################
 
 class Collection( _Relation):
@@ -486,7 +506,7 @@ def setup_backrefname( backref_dict, parent_klas, parent_attr):
 def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtractor ):
     dbg = 'relation' in config.debug
 
-    #XXX TODO move all this into make_mapper_props ??
+    #XXX TODO merge with make_mapper_props ??
     iter_attr = builder.mapcontext.iter_attr
     for m in builder.itermapi( primary_only =True):
         if dbg: print 'make_relations', m
@@ -533,11 +553,12 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                                 ]
         if dbg and assoc_links: print '  association-implied valid implicit relations:', assoc_implicit_rels
 
-        iter_rels = builder.mapcontext.iter_attr( klas,
-                        collections=True, plains=False, references=False,
-                        local= True, dbg=dbg )
+        iter_rels = sorted( builder.mapcontext.iter_attr( klas,
+                                collections=True, plains=False, references=False,
+                                local= True, dbg=dbg ),
+                            key= lambda (nm,typ): (typ.variant_of,nm) )
 
-        for name,typ in itertools.chain( iter_rels, assoc_implicit_rels ):
+        for name,typ in iter_rels + assoc_implicit_rels:
             rel_info = typ.make( builder, klas, name)    #any2many
             if not rel_info:
                 if dbg: print '  DONE ON OTHERSIDE:', name
@@ -574,11 +595,18 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                             ##XXX uselist= False, #??? goes wrong if selfref - both sides become lists
                             **backref)
                 rel_kargs[ 'backref'] = backref
-
-            #print ' property', name, 'on', klas, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
-            #print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
+            if dbg:
+                print ' add_property', klas,'.',name, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
+                print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
             m.add_property( name, sa_relation_factory( rel_klas_actual, **rel_kargs) )
             relations[ name ] = rel_klas
+            synonym_by = typ.synonym_by
+            if synonym_by:
+                synattr = getattr( klas, synonym_by, None)
+                if dbg:
+                    print ' add_synonym', klas, '.', synonym_by, 'to', name, 'via', synattr
+                m.add_property( synonym_by, sqlalchemy.orm.synonym( name, descriptor= synattr) )
+
 
         klas._DBCOOK_relations = relations
 
