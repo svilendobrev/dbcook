@@ -121,9 +121,11 @@ class column4type( _column4):
 #### table naming
 
 from dbcook.util.attr import getattr_local_instance_only
-def table_namer( klas):
+def table_namer( klas, short =False):
     'table auto-naming'
-    r = getattr_local_instance_only( klas, 'DBCOOK_dbname', klas.__name__)
+    r = getattr_local_instance_only( klas, 'DBCOOK_dbname', None) or klas.__name__
+    if short:
+        r = getattr_local_instance_only( klas, 'DBCOOK_dbname_short', None) or r
     if isinstance( r, classmethod): r = klas.DBCOOK_dbname()
     return r
 

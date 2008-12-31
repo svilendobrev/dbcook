@@ -523,7 +523,7 @@ class FKeyExtractor( dict):
 
 def make_mapper_props( klas, mapcontext, mapper, tables ):
     'as second round - refs can be cyclic'
-    dbg = 'mapper' in config.debug or 'prop' in config.debug
+    dbg = 'mapper' in config.debug or 'relation' in config.debug
     reflector = mapcontext.reflector
 
     need_mplain = bool( not config_components.non_primary_mappers_dont_need_props
@@ -576,9 +576,14 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
                 if backref:
                     if isinstance( backref, dict):
                         if 'name' not in backref:
-                            #XXX save original for reusage of same relation-def in inheriteds
+                            #save original for reusage of same relation-def in inheriteds
                             backref = backref.copy()
                             backref['name'], ignored = relation.setup_backrefname( backref, klas, k)
+                        #XXX this differs from make_relations()/.backref !!! e.g.
+                        #r = fkeys.get_relation_kargs( backrefname)
+                        #for p in 'post_update remote_side'.split():
+                        #    if p in r: backref[ p] = r[p]
+                        if dbg: print '  BACKREF:', backref['name'], backref
                         backref = sa_backref( **backref)
                     rel_kargs[ 'backref'] = backref
                 if dbg: print '  reference:', k, attrklas, ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
@@ -604,7 +609,7 @@ class Builder:
 
     def __init__( me, metadata, namespace, fieldtype_mapper,
                 base_klas =None,
-                force_ordered =False,
+                force_ordered =True,
                 reflector =None,
 
                 debug = None,       #same as config.debug
@@ -648,7 +653,7 @@ class Builder:
         relation.resolve_assoc_hidden( me, me.klasi)
 
         if force_ordered:
-            me.klasi = me.DICT( sorted( me.klasi.items() ))
+            me.klasi = me.DICTordered( sorted( me.klasi.items() ))
 
         #fieldtype_mapper
         if isinstance( fieldtype_mapper, (list, tuple)):

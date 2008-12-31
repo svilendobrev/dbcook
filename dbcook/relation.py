@@ -5,6 +5,19 @@
 TODO:
 
 връзки:
+    * 1:1
+       enforcement:
+        Дата: 9 Dec 2008
+        Тема: [sqlalchemy] cardinality 1:1
+        in SA, 1:1 is represented as relation( ...uselist=False, backref( ... uselist=False)).
+        The question is, can that cardinality be enforced somehow - AFAIK that backref is not
+        a real back-link in the DB.
+             От: Michael Bayer <mike...@zzzcomputing.com>
+             place a unique index on the foreign key column.   though the ORM might
+             not know how to update this correctly - you might need a mapper
+             extension that nulls out the column when an old member is detached and
+             a new member attached.
+
       * към 1:
         x = Reference( struct) = has_one(struct) = SubStruct(struct) = struct.Instance()
 +       * самостоятелна (1-посочна)
@@ -81,10 +94,12 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
         '''
 
     @classmethod
-    def Link( klas, parent_klas, attr =None, **kargs4type):
+    def Link( klas, parent_klas, attr =None, attr_short =None, **kargs4type):
         '''(in some assoc_klas) declaration of link to parent_klas'''
         typ = klas.Type4Reference( parent_klas, **kargs4type)
-        typ.assoc = _AssocDetails( relation_attr= attr, relation_klas=parent_klas )
+        if not attr: assert not attr_short
+        typ.assoc = _AssocDetails( relation_attr= attr, relation_klas=parent_klas,
+                                   relation_attr_short= attr_short, )
         #print 'Link', klas, parent_klas, attr
         return typ
 
@@ -110,13 +125,13 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
     '''
 
     @classmethod
-    def get_link_info( klas, attr):
+    def get_link_info( klas, attr, short =False):
         #sees parent_klas after forward-decl-resolving
         if isinstance( attr, str):
             attr = getattr( klas, attr)
         rel_info = klas.reflector.is_relation_type( attr)
         assert rel_info.is_reference
-        return rel_info.klas, attr.assoc.relation_attr
+        return rel_info.klas, short and attr.assoc.relation_attr_short or attr.assoc.relation_attr
 
     @classmethod
     def walk_links( klas, with_typ =False ):
@@ -194,11 +209,12 @@ def resolve_assoc_hidden( builder, klasi):
                                                     dbg=dbg ),
                                                 key= lambda (a,rel_typ,nmo): (rel_typ.variant_of,nmo,a) ):
             rel_typ.name = attr
+            attr_short = getattr( rel_typ, 'name_short', None)
             other_side_klas = rel_typ.assoc_klas
             Assoc = rel_typ.assoc_base
             other_side_attr = rel_typ.backrefname
             if dbg:
-                print 'assoc_hidden: ', klas, '.'+attr, '<->', rel_typ,
+                print 'assoc_auto: ', klas, '.'+attr, '<->', rel_typ,
                 if rel_typ.synonym_by: print 'synonym_by:'+rel_typ.synonym_by,
                 if rel_typ.variant_of: print 'variant_of:'+rel_typ.variant_of,
                 print
@@ -214,31 +230,45 @@ def resolve_assoc_hidden( builder, klasi):
                         return metabase.__new__( meta, name, bases, adict)
             else: meta = None
 
+
+            backref_kargs = dict( name= attr,
+                                lazy= True,
+                                uselist= True,
+                                #collection_class= Assoc._CollectionFactory,
+                            )
+
             class AssocHidden( Assoc):
                 DBCOOK_automatic = True
                 if meta: __metaclass__ = meta
                 DBCOOK_hidden = rel_typ.hidden
                 if rel_typ.indexes:
                     DBCOOK_indexes = list(Assoc.DBCOOK_indexes) + 'left right'.split()
-                left  = Assoc.Link( klas, attr= attr, nullable=False)
+                left  = Assoc.Link( klas, attr= attr, nullable=False, attr_short= attr_short,
+                        #XXX TODO right now, explicit-automatic-assoc will get BOTH A.relation() and assoc.reference
+                        # must be 1 only, with backref XXX
+                        backref= not rel_typ.hidden and backref_kargs,
+                    )
                 right = Assoc.Link( other_side_klas, attr= other_side_attr, nullable=False)
                 if rel_typ.variant_of:
                     _DBCOOK_variant_of = getattr( klas, rel_typ.variant_of)     #ok for cloned because of nonmappable_origin
                 if rel_typ.dbname:
-                    DBCOOK_dbname = rel_typ.dbname % dict( klas_name= klas.__name__)
+                    DBCOOK_dbname = rel_typ.dbname
                 else:
                     @classmethod
-                    def DBCOOK_dbname( klas):
+                    def DBCOOK_dbname( asocklas):
                         #this sees forward-resolved
-                        this_side_klas,  this_side_attr  = klas.get_link_info( 'left')
-                        other_side_klas, other_side_attr = klas.get_link_info( 'right')
+                        this_side_klas,  this_side_attr  = asocklas.get_link_info( 'left',  short=True)
+                        other_side_klas, other_side_attr = asocklas.get_link_info( 'right', short=True)
                         r = '_'.join( x for x in (
-                                klas.HIDDEN_NAME_PREFIX,
-                                table_namer( this_side_klas ), this_side_attr,
+                                asocklas.HIDDEN_NAME_PREFIX,
+                                table_namer( this_side_klas, short=True ), this_side_attr,
                                 '2',
-                                table_namer( other_side_klas), other_side_attr
+                                table_namer( other_side_klas, short=True), other_side_attr
                             ) if x)
                         return r
+
+            backref_kargs[ 'collection_class'] = AssocHidden._CollectionFactory
+
             #TODO test
 
             if nonmappable_origin:
@@ -250,9 +280,9 @@ def resolve_assoc_hidden( builder, klasi):
             #change __name__ - see __name__DYNAMIC
             klasname = '_'.join( x for x in (
                 Assoc.HIDDEN_NAME_PREFIX,
-                table_namer( klas), attr,
+                table_namer( klas, short=True), attr,       #do not use attr_short
                 '2',
-                isinstance( other_side_klas, str) and other_side_klas or table_namer( other_side_klas),
+                isinstance( other_side_klas, str) and other_side_klas or table_namer( other_side_klas, short=True),
                 other_side_attr ) if x)
             assoc_klas.__name__ = klasname
 
@@ -566,45 +596,49 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
                 #continue
             rel_klas, rel_klas_actual, rel_kargs = rel_info
             #if not rel_klas_actual: rel_klas_actual = rel_klas
+            explicit_auto = not getattr( rel_klas, 'DBCOOK_hidden', True) and getattr( rel_klas, 'DBCOOK_automatic', False)
+            if explicit_auto:
+                if dbg: print '  done in assoc:', name, rel_klas
+                #print about_relation( klas, name)
+            else:
+                #forward link
+                r = fkeys.get_relation_kargs( name)
+                if dbg: print '  FORWARD:', name, r, fkeys
+                rel_kargs.update( r)
 
-            #forward link
-            r = fkeys.get_relation_kargs( name)
-            if dbg: print '  FORWARD:', name, r, fkeys
-            rel_kargs.update( r)
+                #backward link 1:n
+                backref = typ.backref
+                if backref:
+                    backrefname = typ.backrefname
+                    if callable( backrefname): backrefname = backrefname( klas, name)
+                    r = fkeys.get_relation_kargs( backrefname)
+                    backref = backref.copy()
+                    backref['name'] = backrefname
+                    if dbg: print '  BACKREF:', backrefname, r, backref
+                    for p in 'post_update remote_side'.split():
+                        if p in r: backref[ p] = r[p]
+                    #explicit - as SA does if backref is str
+                    pj = rel_kargs[ 'primaryjoin']
+                    sj = rel_kargs.get( 'secondaryjoin')
+                    if rel_kargs.get( 'secondary') and sj: pj,sj=sj,pj
+                    backref = sa_backref_factory(
+                                #secondary = secondary,
+                                primaryjoin  = pj,
+                                secondaryjoin= sj,
+                                ##XXX uselist= False, #??? goes wrong if selfref - both sides become lists
+                                **backref)
+                    rel_kargs[ 'backref'] = backref
+                if dbg:
+                    print ' add_property', klas,'.'+name, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
+                    print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
+                m.add_property( name, sa_relation_factory( rel_klas_actual, **rel_kargs) )
 
-            #backward link 1:n
-            backref = typ.backref
-            if backref:
-                backrefname = typ.backrefname
-                if callable( backrefname): backrefname = backrefname( klas, name)
-                r = fkeys.get_relation_kargs( backrefname)
-                backref = backref.copy()
-                backref['name'] = backrefname
-                if dbg: print '  BACKREF:', backrefname, r, backref
-                for p in 'post_update remote_side'.split():
-                    try: backref[ p] = r[p]
-                    except KeyError: pass
-                #explicit - as SA does if backref is str
-                pj = rel_kargs[ 'primaryjoin']
-                sj = rel_kargs.get( 'secondaryjoin')
-                if rel_kargs.get( 'secondary') and sj: pj,sj=sj,pj
-                backref = sa_backref_factory(
-                            #secondary = secondary,
-                            primaryjoin  = pj,
-                            secondaryjoin= sj,
-                            ##XXX uselist= False, #??? goes wrong if selfref - both sides become lists
-                            **backref)
-                rel_kargs[ 'backref'] = backref
-            if dbg:
-                print ' add_property', klas,'.',name, 'via', rel_klas, rel_klas is not rel_klas_actual and '/'+str(rel_klas_actual) or '',
-                print ', '.join( '%s=%s' % kv for kv in rel_kargs.iteritems() )
-            m.add_property( name, sa_relation_factory( rel_klas_actual, **rel_kargs) )
             relations[ name ] = rel_klas
             synonym_by = typ.synonym_by
             if synonym_by:
                 synattr = getattr( klas, synonym_by, None)
                 if dbg:
-                    print ' add_synonym', klas, '.', synonym_by, 'to', name, 'via', synattr
+                    print ' add_synonym', klas, '.'+synonym_by, 'to', name, 'via', synattr
                 m.add_property( synonym_by, sqlalchemy.orm.synonym( name, descriptor= synattr) )
 
 
