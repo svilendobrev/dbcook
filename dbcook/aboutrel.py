@@ -111,10 +111,10 @@ class about_relation( object):
         else: klas_attr = getattr( klas_attr_or_klas, attr_name)
 
         if dbcook_reflector:
-            me._setup_from_dbcook( klas_attr, dbcook_reflector)
-            me.thisside.klas = attr_name and klas_attr_or_klas
-            me.thisside.name = attr_name
-            return
+            if not me._setup_from_dbcook( klas_attr, dbcook_reflector):
+                me.thisside.klas = attr_name and klas_attr_or_klas
+                me.thisside.name = attr_name
+                return
 
         try:
             prop = klas_attr.property
@@ -177,6 +177,7 @@ class about_relation( object):
 
     def _setup_from_dbcook( me, klas_attr, reflector):
         rel_info = reflector.is_relation_type( klas_attr )
+        if not rel_info: return 'err'
         me.no_backref = not rel_info.backref
 
         this = me.thisside  = me._About()
@@ -205,11 +206,13 @@ class about_relation( object):
 
     def walk_assoc_explicit( ab, midthis_attr =None, force =False, **kargs):
         assocklas = ab.otherside.klas
+        #print 'walk_assoc_explicit', assocklas
         if not getattr( assocklas, 'DBCOOK_hidden', True) and getattr( assocklas, 'DBCOOK_automatic', None):
             oattr = 'right'
         elif force:
-            oattr = me.assoc_explicit_sa_find_midattr( midthis_attr)
-        else: return ab
+            oattr = ab.assoc_explicit_sa_find_midattr( midthis_attr)
+        else:
+            return ab
         assert oattr
         other = about_relation( assocklas, oattr, **kargs)
         ab.midthis = ab.otherside

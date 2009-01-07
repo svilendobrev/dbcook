@@ -11,8 +11,8 @@ def eq( me,o):
         if not r: return False
     return True
 
+about_relation.__eq__ = eq
 def test( attr, other={}, about_relation= about_relation, **this):
-    about_relation.__eq__ = eq
     a = about_relation( attr)
     print a
     if a.ownedside:
@@ -164,11 +164,10 @@ if 'nodbcook' not in sys.argv:
             namespace = locals().copy()
             mkids = Mama.kids
             meta = MetaData()
-            o2r.Builder( meta, namespace, fieldtype_mapper= fieldtype_mapper,
+            me.builder = o2r.Builder( meta, namespace, fieldtype_mapper= fieldtype_mapper,
                     only_declarations =True,
-                    debug= debug and 'mapper,relation.table' or ''
+                    debug= debug and 'mapper,relation,table' or ''
                 )
-
             from dbcook import config
             me.backref_kids2 = backref_kids or config.column4ID.ref_make_name( mkids.backrefname)
             me.Mama = Mama
@@ -180,9 +179,11 @@ if 'nodbcook' not in sys.argv:
             me.SkillMap = SkillMap
 
         def test_skills_n_n_explicit( me):
-            from dbcook.aboutrel import about_relation_assoc_explicit
+            #from dbcook.aboutrel import about_relation_assoc_explicit
             a=test( me.Mama.skills,
-                about_relation = lambda *a,**k: about_relation_assoc_explicit( about_relation( *a,**k)),
+                #about_relation = lambda *a,**k: about_relation_assoc_explicit( about_relation( *a,**k)),
+                about_relation = lambda *a,**k: about_relation.automatic(
+                                    dbcook_reflector= me.builder.mapcontext.reflector, force=True, *a,**k),
                 name='skills', klas=me.Mama, has_many=True,
                 other=dict( name=me.BACKREF and 'actors' or None, klas=me.Skill, has_many=True)
             )
