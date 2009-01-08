@@ -194,10 +194,11 @@ class MappingContext:
         assert klas
         base_klas = me.base_klas
         while klas is not base_klas:
+            assert issubclass( klas, base_klas), 'klas %(klas)s does not inherit base_klas %(base_klas)s' % locals()
             for base in klas.__bases__:
                 if issubclass( base, base_klas): break
             else:
-                assert 0, '%(klas)s does not inherit baseklas %(base_klas)s' % locals()
+                assert 0, 'klas %(klas)s does not inherit base_klas %(base_klas)s' % locals()
             if me.mappable( base): return base
             # allow non-mapped classes to declare props -> added to _all_ their children
             klas = base
@@ -295,6 +296,8 @@ class MappingContext:
         'return all mappable classes that are subclasses of klas, be it mappable or not'
         if me.mappable( klas):
             return klas, me.subklasi[ klas]
+        if not issubclass( klas, me.base_klas):
+            return klas, ()
         klas_mappable = me.base( klas)
         subklasi_mappable = me.subklasi[ klas_mappable]
         subs = [ k for k in subklasi_mappable if issubclass( k, klas) ]
