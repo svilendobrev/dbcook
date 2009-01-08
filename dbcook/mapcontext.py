@@ -217,12 +217,13 @@ class MappingContext:
 
     def iter_attr( me, klas, attr_base_klas =None,
                 local =False, denote_nonmappable_origin =False, dbg =False,
-                **kargs ):      #references,collections,plains
+                **kargs4attrtypes ):
+        'sorted'
         base_klas, inheritype = me.base4table_inheritance( klas)
         is_joined_table = (inheritype == table_inheritance_types.JOINED)
         dir_base_klas = is_joined_table and dir( base_klas) or ()
             #joined_table: subclass' tables consist of extra attributes -> joins
-        for k,typ in sorted( me.reflector.attrtypes( klas, **kargs).iteritems()):    #refs,plains,collects
+        for k,typ in sorted( me.reflector.attrtypes( klas, **kargs4attrtypes ).iteritems()):
             if attr_base_klas and not isinstance( typ, attr_base_klas): continue
             if local and k in dir_base_klas:
                 if dbg: print '  inherited:', k

@@ -57,7 +57,7 @@ def add_bases( klas, klasi, baseklas):
             if _debug: print 'walk: add base', b
         b = b.__bases__
 
-_kargs4attrtypes = dict( collections=False, plains=False)   #TODO collections=True....resolvers fail
+_kargs4attrtypes = dict( references=True)#, collections=False, plains=False)   #TODO collections=True....resolvers fail
 
 def find_owner_baseklas( klas, attr, reflector):
     'from which level in hierarchy of klas comes the attr'

@@ -40,21 +40,15 @@ class Reflector4sa( builder.Reflector):
     is the Base's __str___/obj2str below...
     '''
 
-    def _attrtypes_rels( me, klas, references, collections):
+    def _attrtypes( me, klas, plains =None, references =None, collections =None):
         for k in dir( klas):
             if k.startswith('__'): continue
             v = getattr( klas,k)
-            if collections is not None and isinstance( v, builder.relation._Relation): d=collections
-            elif references is not None and isinstance( v, Type4Reference): d=references
+            if collections is not None and isinstance( v, builder.relation._Relation): d = collections
+            elif references is not None and isinstance( v, Type4Reference): d = references
+            elif plains is not None and isinstance( v, Type): d = plains
             else: continue
             d[k]=v
-    def _attrtypes_plains( me, klas, plains):
-        for k in dir( klas):
-            if k.startswith('__'): continue
-            v = getattr( klas,k)
-            if isinstance( v, Type4Reference): continue
-            elif isinstance( v, Type): plains[k]=v
-            else: continue
 
     def cleanup( me, klas):
         if NO_CLEANUP: return
@@ -101,7 +95,7 @@ class Resolver( Resolver):
     def finisher( me, typ, resolved_klas):
         typ.itemklas = resolved_klas
     def klas_reftype_iterator( me, klas):
-        for t in reflector.attrtypes( klas, plains=False).itervalues():
+        for t in reflector.attrtypes( klas, references=True ).itervalues():
             assert isinstance( t, Type4Reference)
             yield t
     def is_forward_decl( me, typ):

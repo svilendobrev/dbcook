@@ -257,7 +257,7 @@ def get_DBCOOK_references( klas):
 
 def make_table_column4id_fk( column_name, other_klas,
                             type =None, fk_kargs ={}, **column_kargs):
-    dbg = 'column' in config.debug
+    dbg = 'column' in config.debug or 'relation' in config.debug
     if dbg: print 'make_table_column4id_fk', column_name, '->', other_klas.__name__
     assert type
     assert other_klas
@@ -310,10 +310,11 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
 
     refs = get_DBCOOK_references( klas)
     assert base_klas or not is_joined_table
-    for attr,typ in reflector.attrtypes( klas).iteritems():
+    base_attrtypes = base_klas and reflector.attrtypes( base_klas, plains=True, references=True ) or {}
+    for attr,typ in reflector.attrtypes( klas, plains=True, references=True ).iteritems():
         if is_joined_table:
             #joined_table: subclass' tables consist of extra attributes -> joins
-            if attr in reflector.attrtypes( base_klas):
+            if base_attrtypes.get( attr ) is typ:
                 if dbg: print '  inherited:', attr
                 continue
         if dbg: print '  own:', attr
@@ -438,7 +439,7 @@ def fix_one2many_relations( klas, builder):
     if dbg: print 'make_one2many_table_columns', klas
     mapcontext = builder.mapcontext
     for attr_name, collection, nonmappable_origin in mapcontext.iter_attr( klas,
-                                                    collections=True, plains=False, references=False,
+                                                    collections=True,
                                                     attr_base_klas= relation.Collection,
                                                     local= True,
                                                     denote_nonmappable_origin= True,
@@ -537,9 +538,9 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
         fkeys = FKeyExtractor( klas, table, mapcontext, tables)
 
         base_klas, inheritype = mapcontext.base4table_inheritance( klas)
-        for k,typ in reflector.attrtypes( klas, plains=False).iteritems():
-            rel_info = reflector.is_relation_type( typ)
-            if base_klas and k in reflector.attrtypes( base_klas, plains=False):
+        base_attrtypes = base_klas and reflector.attrtypes( base_klas, references=True) or {}
+        for k,typ in reflector.attrtypes( klas, references=True).iteritems():
+            if base_attrtypes.get( k) is typ:
                 if inheritype != table_inheritance_types.CONCRETE:
                     if dbg: print '  inherited:', k
                     continue
@@ -548,6 +549,7 @@ def make_mapper_props( klas, mapcontext, mapper, tables ):
             else:
                 if dbg: print '  own:', k
 
+            rel_info = reflector.is_relation_type( typ)
             attrklas = rel_info.klas
             if rel_info.as_value:
                 raise NotImplementedError
@@ -758,7 +760,7 @@ class Builder:
                 fkey.tstr.kargs.update( dict( use_alter=True, name=fkey.name))
 
         def getprops( klas):
-            return [ column4ID.name ] + list( me.reflector.attrtypes( klas)) #if not k.startswith('link')]
+            return [ column4ID.name ] + list( me.reflector.attrtypes( klas, plains=True, references=True)) #if not k.startswith('link')]
 
         try:
             if not only_table_defs:

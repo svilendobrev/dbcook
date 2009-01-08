@@ -139,18 +139,19 @@ theres a ddl() construct used for this. http://www.sqlalchemy.org/docs/04/sqlalc
             #only works after mapping - i.e. not at table level
             from sqlalchemy.orm import class_mapper
             from sqlalchemy.orm.properties import PropertyLoader
+            refs = klas.reflector.attrtypes( klas, references=True)
             for prop in class_mapper( klas).iterate_properties:
                 if not isinstance( prop, PropertyLoader): continue
                 key = prop.key
                 r = key, prop.mapper.class_
                 if with_typ:
-                    typ = klas.reflector.attrtypes( klas).get( key, None)   #not getattr, it gives SA-stuff
+                    typ = refs.get( key, None)   #not getattr, it gives SA-stuff
                     r = r + (typ,)
                 yield r
         else:
             #sees parent_klasi after forward-decl-resolving
             #does not see implied links, e.g. by A.asoc = Assoc.Relation( backref='a_ptr')
-            for attr,typ in klas.reflector.attrtypes( klas, plains=False).iteritems():
+            for attr,typ in klas.reflector.attrtypes( klas, references=True ).iteritems():
                 rel_info = klas.reflector.is_relation_type( typ)
                 assert rel_info.is_reference
                 assoc_details = getattr( typ, 'assoc', None)
@@ -202,7 +203,7 @@ def resolve_assoc_hidden( builder, klasi):
     news = {}
     for k,klas in klasi.iteritems():
         for attr, rel_typ, nonmappable_origin in sorted( mapcontext.iter_attr( klas,
-                                                    collections=True, plains=False, references=False,
+                                                    collections=True,
                                                     attr_base_klas= _AssocAutomatic,
                                                     local= True,
                                                     denote_nonmappable_origin= True,
@@ -547,11 +548,13 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
         if assoc_links:
             #match assoc-links with real rels
             assoc_links_names = dict( (rel_attr, assoc_klas) for assoc_klas, rel_attr in assoc_links )
-            for name,typ in iter_attr( klas, local= False):
+            for name,typ in iter_attr( klas,
+                                        plains=True, references=True,
+                                        local= False):
                 assert name not in assoc_links_names, '''%(klas)s.%(name)s specified both
                         as attribute and as link in association ''' % locals() + str( assoc_links_names[ name] )
             for name,typ in iter_attr( klas,
-                                        collections=True, plains=False, references=False,
+                                        collections=True,
                                         local= False):
                 typ.resolve( builder)
                 if dbg: print '  try', name, typ
@@ -584,7 +587,7 @@ def make_relations( builder, sa_relation_factory, sa_backref_factory, FKeyExtrac
         if dbg and assoc_links: print '  association-implied valid implicit relations:', assoc_implicit_rels
 
         iter_rels = sorted( builder.mapcontext.iter_attr( klas,
-                                collections=True, plains=False, references=False,
+                                collections=True,
                                 local= True, dbg=dbg ),
                             key= lambda (nm,typ): (typ.variant_of,nm) )
 

@@ -21,22 +21,23 @@ from dbcook import builder
 table_inheritance_types = builder.table_inheritance_types
 
 class Reflector4StaticType( builder.Reflector):
-    def _attrtypes_rels( me, klas, references, collections):
-        if references is not None:
+    def _attrtypes( me, klas, plains =None, references =None, collections =None):
+        if plains is not None or references is not None:
             for k,v in klas.StaticType.iteritems():
-                if isinstance( v, _static_type.SubStruct): references[k]=v
+                if isinstance( v, _static_type.SubStruct): d = references
+                #elif isinstance( v, _static_type.Sequence): d = ???
+                else: d = plains
+                if d is not None: d[k]=v
         if collections is not None:
             for k in dir( klas):
                 if k.startswith('__') or k in klas.StaticType: continue
                 v = getattr( klas,k)
                 if isinstance( v, builder.relation._Relation): collections[k]=v
-    def _attrtypes_plains( me, klas, plains):
-        for k,v in klas.StaticType.iteritems():
-            if not isinstance( v, _static_type.SubStruct): plains[k]=v
 
-    def cleanup( me, klas):     #XXX nothing so far... maybe _order_Statics_cache
-        pass
+    #def cleanup( me, klas):     #XXX nothing so far... maybe _order_Statics_cache
+    #    pass
     def before_mapping( me, klas):
+        builder.Reflector.before_mapping( me, klas)
         'kill static_type descriptors @klas'
         for k in klas.StaticType:
             if isinstance( getattr( klas,k), _static_type.StaticType ):
