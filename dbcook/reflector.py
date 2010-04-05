@@ -1,6 +1,10 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
+#TODO: put all them _DBCOOK_attrtypes _DBCOOK_relations _DBCOOK_references
+#   under single._DBCOOK.attrtypes
+
+
 class Reflector:
     '''трябва да извлича нужните за O3RM атрибути и типовете им, както
     и други свързани запитвания и операции - оправяне на предварително обявени
