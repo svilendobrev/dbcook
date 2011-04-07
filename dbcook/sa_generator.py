@@ -163,6 +163,8 @@ class TstrSelf( Tstr):
     def __str__( me):
         return me.thestr( me.tself, me.name, me.args, me.kargs)
 
+class _duple( tuple): pass
+
 class duper( Tstr):
     def dup( me, self, *args,**kargs):
         base = me.base
@@ -176,6 +178,7 @@ class duper( Tstr):
         if me.otherstr:
             r.tstr2 = t
             t = me.otherstr(r)
+        if isinstance( r, tuple): r = _duple(r)
         r.tstr = t
         return r
 

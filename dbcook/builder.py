@@ -306,7 +306,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
     is_joined_table = (inheritype == table_inheritance_types.JOINED)
     indexes = mapcontext.indexes( klas)
     defaults = mapcontext.defaults( klas)
-    nonnullables = mapcontext.nonnullables( klas)
+    nonoptionals = mapcontext.nonoptionals( klas)
 
     refs = get_DBCOOK_references( klas)
     assert base_klas or not is_joined_table
@@ -351,10 +351,10 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
             mt = mt.copy()      #just for the sake of it
             constraints = mt.pop( 'constraints', ())
             type = mt.pop( 'type' )
+            if mt.get( 'nullable') is None: mt['nullable'] = k not in nonoptionals
+            if mt.get( 'default')  is None: mt['default'] = defaults.get( k, None)
             c = sa.Column( k, type,
                     index= k in indexes,
-                    default= defaults.get( k, None),
-                    nullable = k not in nonnullables,
                     *constraints, **mt )
             if dbg: print '    = ', repr(c)
             columns.append( c)
@@ -420,7 +420,7 @@ def make_table_uniques( klas, mapcontext, table =None ):
         if dbg: print '  uniq:', table or '', ':', key
         uc = sa.UniqueConstraint( *key)
         uniques.append( uc)
-    if table:
+    if table is not None:
         for uc in uniques:
             table.append_constraint( uc)
     return uniques
@@ -665,8 +665,8 @@ class Builder:
             # { Type: one-of
             #       instance/subclass of sa.AbstractType to be used as type= for sa.Column
             #       dict( kargs-for-sa.Column )
-            #       func returning above dict/kargs
-            #       None -> obtain any of the above from Type.column_def
+            #       func( instanceOfType) returning above dict/kargs
+            #       None -> obtain any of the above from instanceOfType.column_def
             from sqlalchemy.types import AbstractType
             def fm( typ):
                 r = fieldtype_mapper[ typ.__class__ ]

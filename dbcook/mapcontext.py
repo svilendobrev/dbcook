@@ -183,9 +183,11 @@ class MappingContext:
         'dict of column-name:func'
         return me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_defaults_on_update', default= {} )
 
-    def nonnullables( me, klas):
+    def nonoptionals( me, klas): #old name: nonnullables
         'list of column-names'
-        return me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_nonnullables' )
+        #this may be expressed as defaults k:None ?
+        return (me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_nonoptionals' )
+                or me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_nonnullables' ))
 
     def base( me, klas):
         '''дава (първия) базов валиден клас, None ако няма такъв. т.е. на или отвъд валидния корен
