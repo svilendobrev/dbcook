@@ -133,6 +133,7 @@ or see me at sqlalchemy's newsgroup - sqlalchemy at googlegroups . com
 ---------------
 
 > Isn't it what does already Elixir?
+
 not really. IMO elixir is sort of syntax sugar over SA, with very little 
 decision-making inside. It leaves all the decisions - the routine 
 ones too - to the programmer. At least thats how i got it.
