@@ -13,9 +13,12 @@ timed2/: (SA) - READY
         disabled    = Bool( default_value= False)
     All is there together with very thorough test, and a related timed/ library 
     containing things like support of time-versioned src-modules, TimeContext etc.
+    separate project: https://github.com/svilendobrev/timed
+
 
 aggregator/ (SA)    ~READY
-    also see http://www.mr-pc.kiev.ua/en/projects/SQLAlchemyAggregator
+    separate project: https://github.com/svilendobrev/aggregator_sql
+    used to have a page at http://www.mr-pc.kiev.ua/en/projects/SQLAlchemyAggregator (dead)
 
 cache_results/: (dbcook over aggregator/ - not ready)
     addon for automaticaly-updated database denormalisation caches of intermediate results,
