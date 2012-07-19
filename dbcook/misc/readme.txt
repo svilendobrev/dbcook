@@ -4,7 +4,8 @@ various stuff which is or isn't directly using dbcook,
 but is related in a way or another.
 ############################
 
-timed2/: (SA) - READY
+[github/]
+timed/: (SA) - READY
     addon (mixin-class) for objects that have 2-time-history and state( enabled/disabled)
     needs following properties per object: 
         obj_id  = ObjId()       #incremented by special ObjectCounter
@@ -16,7 +17,8 @@ timed2/: (SA) - READY
     separate project: https://github.com/svilendobrev/timed
 
 
-aggregator/ (SA)    ~READY
+[github/]
+aggregator_sql/ (SA)    ~READY
     separate project: https://github.com/svilendobrev/aggregator_sql
     used to have a page at http://www.mr-pc.kiev.ua/en/projects/SQLAlchemyAggregator (dead)
 
