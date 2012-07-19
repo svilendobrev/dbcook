@@ -1,107 +1,107 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 
 class table_inheritance_types:      #db-layout
     JOINED    = 'joined_table'      #it's own (extra-base) fields only + join(base)
     CONCRETE  = 'concrete_table'    #each is complete and separate, stand-alone
     SINGLE    = 'single_table'      #all-in-one: all fields go in base's table - no own representation
     DEFAULT = CONCRETE
-    #TODO:  особен случай за оптимизация: при JOINED наследяване без нови полета (=смяна на типа)
-    #       може да мине без собствена (празна) таблица - като single_table
+    #TODO:  РѕСЃРѕР±РµРЅ СЃР»СѓС‡Р°Р№ Р·Р° РѕРїС‚РёРјРёР·Р°С†РёСЏ: РїСЂРё JOINED РЅР°СЃР»РµРґСЏРІР°РЅРµ Р±РµР· РЅРѕРІРё РїРѕР»РµС‚Р° (=СЃРјСЏРЅР° РЅР° С‚РёРїР°)
+    #       РјРѕР¶Рµ РґР° РјРёРЅРµ Р±РµР· СЃРѕР±СЃС‚РІРµРЅР° (РїСЂР°Р·РЅР°) С‚Р°Р±Р»РёС†Р° - РєР°С‚Рѕ single_table
     #       special case for optimisation: JOINED inheritance without new fields (=change of type)
     #       can do without own (empty)             table - like single_table
     _all = dict( (v,v) for k,v in locals().iteritems() if not k.startswith('__') )
     _all.update( (v.split('_table',1)[0],v) for v in _all.keys() )
 
 class _Base( object):   #use as example/template
-    '''постоянстващ обект, т.е. persistent;
-    има си (собствена или споделена/сглобена) колекция/таблица;
-    атрибут (на някого) от такъв тип винаги става връзка към тази "таблица".
-    Йерархията (дървото) от постоянстващите обекти/класове е подмножество
-    на пълната йерархия от класове, т.е. има възли които не са постоянстващи.
+    '''РїРѕСЃС‚РѕСЏРЅСЃС‚РІР°С‰ РѕР±РµРєС‚, С‚.Рµ. persistent;
+    РёРјР° СЃРё (СЃРѕР±СЃС‚РІРµРЅР° РёР»Рё СЃРїРѕРґРµР»РµРЅР°/СЃРіР»РѕР±РµРЅР°) РєРѕР»РµРєС†РёСЏ/С‚Р°Р±Р»РёС†Р°;
+    Р°С‚СЂРёР±СѓС‚ (РЅР° РЅСЏРєРѕРіРѕ) РѕС‚ С‚Р°РєСЉРІ С‚РёРї РІРёРЅР°РіРё СЃС‚Р°РІР° РІСЂСЉР·РєР° РєСЉРј С‚Р°Р·Рё "С‚Р°Р±Р»РёС†Р°".
+    Р™РµСЂР°СЂС…РёСЏС‚Р° (РґСЉСЂРІРѕС‚Рѕ) РѕС‚ РїРѕСЃС‚РѕСЏРЅСЃС‚РІР°С‰РёС‚Рµ РѕР±РµРєС‚Рё/РєР»Р°СЃРѕРІРµ Рµ РїРѕРґРјРЅРѕР¶РµСЃС‚РІРѕ
+    РЅР° РїСЉР»РЅР°С‚Р° Р№РµСЂР°СЂС…РёСЏ РѕС‚ РєР»Р°СЃРѕРІРµ, С‚.Рµ. РёРјР° РІСЉР·Р»Рё РєРѕРёС‚Рѕ РЅРµ СЃР° РїРѕСЃС‚РѕСЏРЅСЃС‚РІР°С‰Рё.
   $ persistent object;
     it has (own or shared/assembled) collection/table;
     an attribute (of someone) of this type always becomes a link to this "table".
     Hierarchy (tree) of persistent objects/classes is a subset of the full hierarchy of classes,
     i.e. there can be nodes which are not persisting.
 
-  настройки:
+  РЅР°СЃС‚СЂРѕР№РєРё:
 $ settings:
     DBCOOK_inheritance = <table_inheritance_type> (default =table_inheritance_types.DEFAULT)
-        table_inheritance_type: едно от 'joined_table' , 'concrete_table' , 'single_table';
-        тази настройка се наследява / разпространява / вижда от подкласовете.
+        table_inheritance_type: РµРґРЅРѕ РѕС‚ 'joined_table' , 'concrete_table' , 'single_table';
+        С‚Р°Р·Рё РЅР°СЃС‚СЂРѕР№РєР° СЃРµ РЅР°СЃР»РµРґСЏРІР° / СЂР°Р·РїСЂРѕСЃС‚СЂР°РЅСЏРІР° / РІРёР¶РґР° РѕС‚ РїРѕРґРєР»Р°СЃРѕРІРµС‚Рµ.
       $ this setting is inherited / distributed / seen in the subclasses.
 
     DBCOOK_inheritance_local = <table_inheritance_type>
-        за улесняване на специфични случаи.
-        важи само локално за класа (не се разпространява в подкласовете),
-        И има приоритет над горната обща DBCOOK_inheritance:
-            пример: А: inh=1
+        Р·Р° СѓР»РµСЃРЅСЏРІР°РЅРµ РЅР° СЃРїРµС†РёС„РёС‡РЅРё СЃР»СѓС‡Р°Рё.
+        РІР°Р¶Рё СЃР°РјРѕ Р»РѕРєР°Р»РЅРѕ Р·Р° РєР»Р°СЃР° (РЅРµ СЃРµ СЂР°Р·РїСЂРѕСЃС‚СЂР°РЅСЏРІР° РІ РїРѕРґРєР»Р°СЃРѕРІРµС‚Рµ),
+        Р РёРјР° РїСЂРёРѕСЂРёС‚РµС‚ РЅР°Рґ РіРѕСЂРЅР°С‚Р° РѕР±С‰Р° DBCOOK_inheritance:
+            РїСЂРёРјРµСЂ: Рђ: inh=1
                     B(A): inh_local=2
                     C(B): pass
-                -> inhtype(A) == 1; inhtype(B) == 2; inhtype(C) == 1 (остава от А)
+                -> inhtype(A) == 1; inhtype(B) == 2; inhtype(C) == 1 (РѕСЃС‚Р°РІР° РѕС‚ Рђ)
       $ to ease some special cases.
         Applies only locally for the class (is not inherited / seen in sublasses),
         AND has priority over the above general DBCOOK_inheritance.
 
     DBCOOK_no_mapping = boolean (default =False)
-        този клас няма БД-съответствие (междинен, "пълнител", невалиден).
-        Всичкото му съдържание се "изсипва" / разпространява във всичките му (реални) наследници.
-        Важи само локално за класа в който е обявено.
-        Използвай внимателно - атрибутите на такъв клас се "появяват" във всички наследници (!)
+        С‚РѕР·Рё РєР»Р°СЃ РЅСЏРјР° Р‘Р”-СЃСЉРѕС‚РІРµС‚СЃС‚РІРёРµ (РјРµР¶РґРёРЅРµРЅ, "РїСЉР»РЅРёС‚РµР»", РЅРµРІР°Р»РёРґРµРЅ).
+        Р’СЃРёС‡РєРѕС‚Рѕ РјСѓ СЃСЉРґСЉСЂР¶Р°РЅРёРµ СЃРµ "РёР·СЃРёРїРІР°" / СЂР°Р·РїСЂРѕСЃС‚СЂР°РЅСЏРІР° РІСЉРІ РІСЃРёС‡РєРёС‚Рµ РјСѓ (СЂРµР°Р»РЅРё) РЅР°СЃР»РµРґРЅРёС†Рё.
+        Р’Р°Р¶Рё СЃР°РјРѕ Р»РѕРєР°Р»РЅРѕ Р·Р° РєР»Р°СЃР° РІ РєРѕР№С‚Рѕ Рµ РѕР±СЏРІРµРЅРѕ.
+        РР·РїРѕР»Р·РІР°Р№ РІРЅРёРјР°С‚РµР»РЅРѕ - Р°С‚СЂРёР±СѓС‚РёС‚Рµ РЅР° С‚Р°РєСЉРІ РєР»Р°СЃ СЃРµ "РїРѕСЏРІСЏРІР°С‚" РІСЉРІ РІСЃРёС‡РєРё РЅР°СЃР»РµРґРЅРёС†Рё (!)
       $ this class has no DB-mapping (intermediate, "filling").
         All of its contents goes into all of its (real) subclasses.
         Applies only locally for the class.
         Use carefully - attributes of such class appear in all of its heirs/subclasses (!)
 
     DBCOOK_has_instances = boolean  (default =is_leaf)
-        този клас има екземпляри, т.е. не е само междинно ниво,
-        и всички полиморфни заявки през него трябва да го включват.
-        Листата в йерархията винаги имат екземпляри.
-        Важи само локално за класа.
+        С‚РѕР·Рё РєР»Р°СЃ РёРјР° РµРєР·РµРјРїР»СЏСЂРё, С‚.Рµ. РЅРµ Рµ СЃР°РјРѕ РјРµР¶РґРёРЅРЅРѕ РЅРёРІРѕ,
+        Рё РІСЃРёС‡РєРё РїРѕР»РёРјРѕСЂС„РЅРё Р·Р°СЏРІРєРё РїСЂРµР· РЅРµРіРѕ С‚СЂСЏР±РІР° РґР° РіРѕ РІРєР»СЋС‡РІР°С‚.
+        Р›РёСЃС‚Р°С‚Р° РІ Р№РµСЂР°СЂС…РёСЏС‚Р° РІРёРЅР°РіРё РёРјР°С‚ РµРєР·РµРјРїР»СЏСЂРё.
+        Р’Р°Р¶Рё СЃР°РјРѕ Р»РѕРєР°Р»РЅРѕ Р·Р° РєР»Р°СЃР°.
       $ this class has instances, i.e. is not just an intermediate level,
         and all polymorphic requests through it must include it.
         Leafs in a hierarchy always have instances.
         Applies only locally.
 
     DBCOOK_needs_id = boolean   (default =False, i.e. has_no_primary_key or is_joined_table-inheritance)
-        този клас трябва да има db_id независимо от наличието на друг уникален ключ
-        (виж DBCOOK_unique_keys), например защото други класове го сочат направо.
-        се добавя db_id, не да се премхва.
-        Важи само локално за класа.
+        С‚РѕР·Рё РєР»Р°СЃ С‚СЂСЏР±РІР° РґР° РёРјР° db_id РЅРµР·Р°РІРёСЃРёРјРѕ РѕС‚ РЅР°Р»РёС‡РёРµС‚Рѕ РЅР° РґСЂСѓРі СѓРЅРёРєР°Р»РµРЅ РєР»СЋС‡
+        (РІРёР¶ DBCOOK_unique_keys), РЅР°РїСЂРёРјРµСЂ Р·Р°С‰РѕС‚Рѕ РґСЂСѓРіРё РєР»Р°СЃРѕРІРµ РіРѕ СЃРѕС‡Р°С‚ РЅР°РїСЂР°РІРѕ.
+        СЃРµ РґРѕР±Р°РІСЏ db_id, РЅРµ РґР° СЃРµ РїСЂРµРјС…РІР°.
+        Р’Р°Р¶Рё СЃР°РјРѕ Р»РѕРєР°Р»РЅРѕ Р·Р° РєР»Р°СЃР°.
       $ this class must have db_id regardless of availability of other unique keys
         (see DBCOOK_unique_keys), for example because other classes are pointing it directly.
         Applies only locally.
 
-    DBCOOK_dbname = име-на-БД-таблицата или classmethod който го прави
-        Важи само локално за класа
+    DBCOOK_dbname = РёРјРµ-РЅР°-Р‘Р”-С‚Р°Р±Р»РёС†Р°С‚Р° РёР»Рё classmethod РєРѕР№С‚Рѕ РіРѕ РїСЂР°РІРё
+        Р’Р°Р¶Рё СЃР°РјРѕ Р»РѕРєР°Р»РЅРѕ Р·Р° РєР»Р°СЃР°
       $ name-of-DB-table or classmethod to make it
         Applies only locally
 
-    DBCOOK_unique_keys = списък от списъци от (имена на полета или полета (търси се .name) )
-                          или classmethod който връща такъв
+    DBCOOK_unique_keys = СЃРїРёСЃСЉРє РѕС‚ СЃРїРёСЃСЉС†Рё РѕС‚ (РёРјРµРЅР° РЅР° РїРѕР»РµС‚Р° РёР»Рё РїРѕР»РµС‚Р° (С‚СЉСЂСЃРё СЃРµ .name) )
+                          РёР»Рё classmethod РєРѕР№С‚Рѕ РІСЂСЉС‰Р° С‚Р°РєСЉРІ
                           default = ()
-        Важи само локално за класа, или в наследените ако класът няма БД-съответствие
+        Р’Р°Р¶Рё СЃР°РјРѕ Р»РѕРєР°Р»РЅРѕ Р·Р° РєР»Р°СЃР°, РёР»Рё РІ РЅР°СЃР»РµРґРµРЅРёС‚Рµ Р°РєРѕ РєР»Р°СЃСЉС‚ РЅСЏРјР° Р‘Р”-СЃСЉРѕС‚РІРµС‚СЃС‚РІРёРµ
       $ list of lists of (field-names or fields (.name wanted) )
                           or classmethod which returns such
         Applies only locally, or in subclases if class is non-mappable (a-la mixin).
 
-    DBCOOK_indexes = списък от имена на полета, или classmethod който връща такъв
+    DBCOOK_indexes = СЃРїРёСЃСЉРє РѕС‚ РёРјРµРЅР° РЅР° РїРѕР»РµС‚Р°, РёР»Рё classmethod РєРѕР№С‚Рѕ РІСЂСЉС‰Р° С‚Р°РєСЉРІ
                         $ list of field-names, or classmethod returning such
                           default = () #nothing
-        Важи само локално за класа, или в наследените ако класът няма БД-съответствие
+        Р’Р°Р¶Рё СЃР°РјРѕ Р»РѕРєР°Р»РЅРѕ Р·Р° РєР»Р°СЃР°, РёР»Рё РІ РЅР°СЃР»РµРґРµРЅРёС‚Рµ Р°РєРѕ РєР»Р°СЃСЉС‚ РЅСЏРјР° Р‘Р”-СЃСЉРѕС‚РІРµС‚СЃС‚РІРёРµ
       $ Applies only locally, or in subclases if class is non-mappable (a-la mixin).
 
-    DBCOOK_defaults = речник от (име на поле: стойност-или-функция ), или classmethod който връща такъв
+    DBCOOK_defaults = СЂРµС‡РЅРёРє РѕС‚ (РёРјРµ РЅР° РїРѕР»Рµ: СЃС‚РѕР№РЅРѕСЃС‚-РёР»Рё-С„СѓРЅРєС†РёСЏ ), РёР»Рё classmethod РєРѕР№С‚Рѕ РІСЂСЉС‰Р° С‚Р°РєСЉРІ
                         $ dict of (field-names: value-or-func), or classmethod returning such
                           default = {} #nothing
-        стойности / функции даващи стойност по подразбиране за сътветното поле при запис на нов обект
-        Важи само локално за класа, или в наследените ако класът няма БД-съответствие
+        СЃС‚РѕР№РЅРѕСЃС‚Рё / С„СѓРЅРєС†РёРё РґР°РІР°С‰Рё СЃС‚РѕР№РЅРѕСЃС‚ РїРѕ РїРѕРґСЂР°Р·Р±РёСЂР°РЅРµ Р·Р° СЃСЉС‚РІРµС‚РЅРѕС‚Рѕ РїРѕР»Рµ РїСЂРё Р·Р°РїРёСЃ РЅР° РЅРѕРІ РѕР±РµРєС‚
+        Р’Р°Р¶Рё СЃР°РјРѕ Р»РѕРєР°Р»РЅРѕ Р·Р° РєР»Р°СЃР°, РёР»Рё РІ РЅР°СЃР»РµРґРµРЅРёС‚Рµ Р°РєРѕ РєР»Р°СЃСЉС‚ РЅСЏРјР° Р‘Р”-СЃСЉРѕС‚РІРµС‚СЃС‚РІРёРµ
       $ values / functions returning values to use as default of the field on insert
         Applies only locally, or in subclases if class is non-mappable (a-la mixin).
 
     DBCOOK_defaults_on_update =
-        същото като DBCOOK_defaults но за on_update - при запис на промяна на обекта
+        СЃСЉС‰РѕС‚Рѕ РєР°С‚Рѕ DBCOOK_defaults РЅРѕ Р·Р° on_update - РїСЂРё Р·Р°РїРёСЃ РЅР° РїСЂРѕРјСЏРЅР° РЅР° РѕР±РµРєС‚Р°
       $ same as DBCOOK_defaults but for on_update
 
     '''
@@ -190,7 +190,7 @@ class MappingContext:
                 or me._getattr_local_or_nonmappable_base_list( klas, 'DBCOOK_nonnullables' ))
 
     def base( me, klas):
-        '''дава (първия) базов валиден клас, None ако няма такъв. т.е. на или отвъд валидния корен
+        '''РґР°РІР° (РїСЉСЂРІРёСЏ) Р±Р°Р·РѕРІ РІР°Р»РёРґРµРЅ РєР»Р°СЃ, None Р°РєРѕ РЅСЏРјР° С‚Р°РєСЉРІ. С‚.Рµ. РЅР° РёР»Рё РѕС‚РІСЉРґ РІР°Р»РёРґРЅРёСЏ РєРѕСЂРµРЅ
          $ get (first) base that is mappable, None if no such, i.e. at or under root-mappable'''
         #TODO optimize via __mro__
         assert klas
@@ -245,7 +245,7 @@ class MappingContext:
         return False
 
     def root( me, klas):
-        '''намира базовия валиден клас най-близко до корена на йерархията; връща входа ако е корен
+        '''РЅР°РјРёСЂР° Р±Р°Р·РѕРІРёСЏ РІР°Р»РёРґРµРЅ РєР»Р°СЃ РЅР°Р№-Р±Р»РёР·РєРѕ РґРѕ РєРѕСЂРµРЅР° РЅР° Р№РµСЂР°СЂС…РёСЏС‚Р°; РІСЂСЉС‰Р° РІС…РѕРґР° Р°РєРѕ Рµ РєРѕСЂРµРЅ
          $ get the mappable base class nearest to real root; input klas if at root'''
         assert klas
         while klas:
@@ -254,8 +254,8 @@ class MappingContext:
         return root
 
     def need_typcolumn( me, klas):
-        '''ако klas e _пряко_ наследен от някого с не-concrete_table,
-            И наследява с (т.е. е) concrete_table
+        '''Р°РєРѕ klas e _РїСЂСЏРєРѕ_ РЅР°СЃР»РµРґРµРЅ РѕС‚ РЅСЏРєРѕРіРѕ СЃ РЅРµ-concrete_table,
+            Р РЅР°СЃР»РµРґСЏРІР° СЃ (С‚.Рµ. Рµ) concrete_table
          $ if klas is directly inherited by someone with non-concrete_table,
             AND inherits with (is) concrete_table
         '''

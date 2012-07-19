@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 from svd_util.hacksrc import hacksrc
 import sqlalchemy
 

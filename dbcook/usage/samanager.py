@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 
 from dbcook import builder
 import sqlalchemy
@@ -294,19 +294,19 @@ if 0*'inline_inside_table/embedded_struct':
     columns += inside_columns
 
 
-    #... псевдоними: a.b.c = a.b_c
-    #... интересно как ще изглежда a.b.c.d? -> a.b_c_d -> a.b.c_d -> a.b.c.d ??
+    #... РїСЃРµРІРґРѕРЅРёРјРё: a.b.c = a.b_c
+    #... РёРЅС‚РµСЂРµСЃРЅРѕ РєР°Рє С‰Рµ РёР·РіР»РµР¶РґР° a.b.c.d? -> a.b_c_d -> a.b.c_d -> a.b.c.d ??
     if 0:
         for c in inside_columns:
             assert c.name.startswith( pfx)
             subattr = c.name[ len(pfx): ]
             if dbg: print '    aliasing', pfx, subattr, getattr( klas, pfx+subattr)
 
-        ''' това не върши работа. SA ще подмени тези атрибути със
-        InstrumentedAttribute/слушател, очакващ setattr - което няма да се случи.
-        Tрябва setattr( a.b.c) да се прихване/закара до setattr( a_b_c)...
-        Също интересен случай е a.b = B() - това трябва да обходи всичките под-атрибути... смрад.
-        set( a.b.c.d) -> a.set( b_c_d) =SA> a.dict[ b_c_d] - а не трябва да ходи до dict!
+        ''' С‚РѕРІР° РЅРµ РІСЉСЂС€Рё СЂР°Р±РѕС‚Р°. SA С‰Рµ РїРѕРґРјРµРЅРё С‚РµР·Рё Р°С‚СЂРёР±СѓС‚Рё СЃСЉСЃ
+        InstrumentedAttribute/СЃР»СѓС€Р°С‚РµР», РѕС‡Р°РєРІР°С‰ setattr - РєРѕРµС‚Рѕ РЅСЏРјР° РґР° СЃРµ СЃР»СѓС‡Рё.
+        TСЂСЏР±РІР° setattr( a.b.c) РґР° СЃРµ РїСЂРёС…РІР°РЅРµ/Р·Р°РєР°СЂР° РґРѕ setattr( a_b_c)...
+        РЎСЉС‰Рѕ РёРЅС‚РµСЂРµСЃРµРЅ СЃР»СѓС‡Р°Р№ Рµ a.b = B() - С‚РѕРІР° С‚СЂСЏР±РІР° РґР° РѕР±С…РѕРґРё РІСЃРёС‡РєРёС‚Рµ РїРѕРґ-Р°С‚СЂРёР±СѓС‚Рё... СЃРјСЂР°Рґ.
+        set( a.b.c.d) -> a.set( b_c_d) =SA> a.dict[ b_c_d] - Р° РЅРµ С‚СЂСЏР±РІР° РґР° С…РѕРґРё РґРѕ dict!
         set( a.b_c_d) =SA> a.dict[ b_c_d] -> a.set( b.c.d)
         get( a.b_c_d) =SA> a.dict[ b_c_d] -> a.get( b.c.d)
         get( a.b.c.d) -> SA? lazy-get?
@@ -318,16 +318,16 @@ if 0*'inline_inside_table/embedded_struct':
         class SubStruct4ASValue( SubStruct4):
             def __init__( me, typ, **kargs): ...
 
-        или би могла да се направи на ниво StaticType_ValueContainer - там има parent???
-        или требе ASValue.SubStruct да е _съвсем_ различно нещо от SubStruct ... - не обект,
-        а обектно- изглеждащо proxy...
-        ВЪОБЩЕ - голяма боза...
+        РёР»Рё Р±Рё РјРѕРіР»Р° РґР° СЃРµ РЅР°РїСЂР°РІРё РЅР° РЅРёРІРѕ StaticType_ValueContainer - С‚Р°Рј РёРјР° parent???
+        РёР»Рё С‚СЂРµР±Рµ ASValue.SubStruct РґР° Рµ _СЃСЉРІСЃРµРј_ СЂР°Р·Р»РёС‡РЅРѕ РЅРµС‰Рѕ РѕС‚ SubStruct ... - РЅРµ РѕР±РµРєС‚,
+        Р° РѕР±РµРєС‚РЅРѕ- РёР·РіР»РµР¶РґР°С‰Рѕ proxy...
+        Р’РЄРћР‘Р©Р• - РіРѕР»СЏРјР° Р±РѕР·Р°...
 
-        решения:
-         1/ зарежи/забрани ASValue
-         2/ зарежи ORM в нашите обекти и правене на явно преобразуване с deepcopy Obj<->SAObj
-            - това решава и проблема с транзакционнната семантика / dirtyness
-         засега 1/... докога ли?
+        СЂРµС€РµРЅРёСЏ:
+         1/ Р·Р°СЂРµР¶Рё/Р·Р°Р±СЂР°РЅРё ASValue
+         2/ Р·Р°СЂРµР¶Рё ORM РІ РЅР°С€РёС‚Рµ РѕР±РµРєС‚Рё Рё РїСЂР°РІРµРЅРµ РЅР° СЏРІРЅРѕ РїСЂРµРѕР±СЂР°Р·СѓРІР°РЅРµ СЃ deepcopy Obj<->SAObj
+            - С‚РѕРІР° СЂРµС€Р°РІР° Рё РїСЂРѕР±Р»РµРјР° СЃ С‚СЂР°РЅР·Р°РєС†РёРѕРЅРЅРЅР°С‚Р° СЃРµРјР°РЅС‚РёРєР° / dirtyness
+         Р·Р°СЃРµРіР° 1/... РґРѕРєРѕРіР° Р»Рё?
         '''
 
 # vim:ts=4:sw=4:expandtab

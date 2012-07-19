@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 
 'example: all just plain - not using samanager'
 

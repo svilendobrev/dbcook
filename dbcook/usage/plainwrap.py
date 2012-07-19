@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 
 ''' simple O3RM builder:
  - attribute types are only used for DB columns

@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 
 from sqlalchemy.orm.session import SessionExtension
 _debug = 1
@@ -45,8 +45,8 @@ if __name__ == '__main__':
     Association = o2r.Association
     Collection  = o2r.Collection
     Reference = o2r.Reference
-    Collection2 = Association.Hidden    #many2many дето изглежда като one2many
-    Reference2 = Association.Hidden     #many2many дето изглежда като one2many
+    Collection2 = Association.Hidden    #many2many РґРµС‚Рѕ РёР·РіР»РµР¶РґР° РєР°С‚Рѕ one2many
+    Reference2 = Association.Hidden     #many2many РґРµС‚Рѕ РёР·РіР»РµР¶РґР° РєР°С‚Рѕ one2many
     Type = o2r.Type
 
     class Text( Type): pass

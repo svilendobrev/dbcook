@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 
 import sqlalchemy
 def or2union( qbase, filters4subqueries, extra_filter_per_query =None):

@@ -1,61 +1,61 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 
 '''
 TODO:
 
-връзки:
+РІСЂСЉР·РєРё:
     * 1:1
        enforcement:
-        Дата: 9 Dec 2008
-        Тема: [sqlalchemy] cardinality 1:1
+        Р”Р°С‚Р°: 9 Dec 2008
+        РўРµРјР°: [sqlalchemy] cardinality 1:1
         in SA, 1:1 is represented as relation( ...uselist=False, backref( ... uselist=False)).
         The question is, can that cardinality be enforced somehow - AFAIK that backref is not
         a real back-link in the DB.
-             От: Michael Bayer <mike...@zzzcomputing.com>
+             РћС‚: Michael Bayer <mike...@zzzcomputing.com>
              place a unique index on the foreign key column.   though the ORM might
              not know how to update this correctly - you might need a mapper
              extension that nulls out the column when an old member is detached and
              a new member attached.
 
-      * към 1:
+      * РєСЉРј 1:
         x = Reference( struct) = has_one(struct) = SubStruct(struct) = struct.Instance()
-+       * самостоятелна (1-посочна)
--?      * 2-посочна 1към1: Reference( struct, backref =име_отсреща, singular=True)
--       * 2-посочна с 1-към-много: Reference( struct, backref =име_отсреща, singular=False)
-            име_отсреща става колекция ??
++       * СЃР°РјРѕСЃС‚РѕСЏС‚РµР»РЅР° (1-РїРѕСЃРѕС‡РЅР°)
+-?      * 2-РїРѕСЃРѕС‡РЅР° 1РєСЉРј1: Reference( struct, backref =РёРјРµ_РѕС‚СЃСЂРµС‰Р°, singular=True)
+-       * 2-РїРѕСЃРѕС‡РЅР° СЃ 1-РєСЉРј-РјРЅРѕРіРѕ: Reference( struct, backref =РёРјРµ_РѕС‚СЃСЂРµС‰Р°, singular=False)
+            РёРјРµ_РѕС‚СЃСЂРµС‰Р° СЃС‚Р°РІР° РєРѕР»РµРєС†РёСЏ ??
 
-+     1 към много:
-        x = Collection( struct, backref =име_отсреща) = has_many
-        * име_отсреща може да липсва, т.е. неявно/служебно; става указател( Reference)
-        * Collection в 2временно Entity трябва да става автоматично Association
-+       * 2-посочна с много-към-1: backref е указано
++     1 РєСЉРј РјРЅРѕРіРѕ:
+        x = Collection( struct, backref =РёРјРµ_РѕС‚СЃСЂРµС‰Р°) = has_many
+        * РёРјРµ_РѕС‚СЃСЂРµС‰Р° РјРѕР¶Рµ РґР° Р»РёРїСЃРІР°, С‚.Рµ. РЅРµСЏРІРЅРѕ/СЃР»СѓР¶РµР±РЅРѕ; СЃС‚Р°РІР° СѓРєР°Р·Р°С‚РµР»( Reference)
+        * Collection РІ 2РІСЂРµРјРµРЅРЅРѕ Entity С‚СЂСЏР±РІР° РґР° СЃС‚Р°РІР° Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ Association
++       * 2-РїРѕСЃРѕС‡РЅР° СЃ РјРЅРѕРіРѕ-РєСЉРј-1: backref Рµ СѓРєР°Р·Р°РЅРѕ
 
-      много към много:
-        = явна
+      РјРЅРѕРіРѕ РєСЉРј РјРЅРѕРіРѕ:
+        = СЏРІРЅР°
 +           class myAssocAB( Association):
                 DBCOOK_hidden=False
-+               a = Link( неименован) - трябва да има съотв. Relation в обекта
-+               b = Link( именован) - може да нямат съотв. Relation в обекта, ще се създаде
++               a = Link( РЅРµРёРјРµРЅРѕРІР°РЅ) - С‚СЂСЏР±РІР° РґР° РёРјР° СЃСЉРѕС‚РІ. Relation РІ РѕР±РµРєС‚Р°
++               b = Link( РёРјРµРЅРѕРІР°РЅ) - РјРѕР¶Рµ РґР° РЅСЏРјР°С‚ СЃСЉРѕС‚РІ. Relation РІ РѕР±РµРєС‚Р°, С‰Рµ СЃРµ СЃСЉР·РґР°РґРµ
             class A:
-+               x = Association.Relation( myAssocAB) - трябва да има съответна Link в асоциацията
--           * възможно служебно име_в_асоциацията
--       = неявна, обявена
-+           обявява се както явната, но като скрита (без междинен обект: DBCOOK_hidden=True)
-            не може да има повече от 2 връзки
++               x = Association.Relation( myAssocAB) - С‚СЂСЏР±РІР° РґР° РёРјР° СЃСЉРѕС‚РІРµС‚РЅР° Link РІ Р°СЃРѕС†РёР°С†РёСЏС‚Р°
+-           * РІСЉР·РјРѕР¶РЅРѕ СЃР»СѓР¶РµР±РЅРѕ РёРјРµ_РІ_Р°СЃРѕС†РёР°С†РёСЏС‚Р°
+-       = РЅРµСЏРІРЅР°, РѕР±СЏРІРµРЅР°
++           РѕР±СЏРІСЏРІР° СЃРµ РєР°РєС‚Рѕ СЏРІРЅР°С‚Р°, РЅРѕ РєР°С‚Рѕ СЃРєСЂРёС‚Р° (Р±РµР· РјРµР¶РґРёРЅРµРЅ РѕР±РµРєС‚: DBCOOK_hidden=True)
+            РЅРµ РјРѕР¶Рµ РґР° РёРјР° РїРѕРІРµС‡Рµ РѕС‚ 2 РІСЂСЉР·РєРё
                 class myAssocAB( Association):
                     DBCOOK_hidden=True
-+       = неявна, необявена
-            обявява се само в единия край; останалото става служебно
-            става скрита (DBCOOK_hidden) - не може да има повече от 2 връзки
++       = РЅРµСЏРІРЅР°, РЅРµРѕР±СЏРІРµРЅР°
+            РѕР±СЏРІСЏРІР° СЃРµ СЃР°РјРѕ РІ РµРґРёРЅРёСЏ РєСЂР°Р№; РѕСЃС‚Р°РЅР°Р»РѕС‚Рѕ СЃС‚Р°РІР° СЃР»СѓР¶РµР±РЅРѕ
+            СЃС‚Р°РІР° СЃРєСЂРёС‚Р° (DBCOOK_hidden) - РЅРµ РјРѕР¶Рµ РґР° РёРјР° РїРѕРІРµС‡Рµ РѕС‚ 2 РІСЂСЉР·РєРё
             class A:
-                x = Association.Hidden( B, име_отсреща )
-                    име_отсреща е на асоциацията от другата страна (B)
--           * възможно служебно име_отсреща
+                x = Association.Hidden( B, РёРјРµ_РѕС‚СЃСЂРµС‰Р° )
+                    РёРјРµ_РѕС‚СЃСЂРµС‰Р° Рµ РЅР° Р°СЃРѕС†РёР°С†РёСЏС‚Р° РѕС‚ РґСЂСѓРіР°С‚Р° СЃС‚СЂР°РЅР° (B)
+-           * РІСЉР·РјРѕР¶РЅРѕ СЃР»СѓР¶РµР±РЅРѕ РёРјРµ_РѕС‚СЃСЂРµС‰Р°
 
 
-+       * 2-посочна
--       * еднопосочна
++       * 2-РїРѕСЃРѕС‡РЅР°
+-       * РµРґРЅРѕРїРѕСЃРѕС‡РЅР°
 
 '''
 

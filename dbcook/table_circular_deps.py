@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 
 from sqlalchemy import schema
 from svd_util.attr import find_valid_fullname_import

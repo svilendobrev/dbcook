@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 '''descriptions of various db-drivers/engines:
     - db recreation,
     - default driver-kargs/ connect_args,

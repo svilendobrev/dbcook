@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 
 #see also  sqlachemy/examples/derived_attributes/attributes.py
 # for methods that can be used at both class and instance

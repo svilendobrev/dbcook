@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 
 def obj2str( obj, base_klas, attrname_iterator, idname, refname ='name', vstr=str):
     '''nice str(obj), cuts recursion in references.

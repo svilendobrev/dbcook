@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+
 
 dbg = 0
 from util_all.dbg import Level

@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 
 ''' O3RM builder for mapping of statictype-d objects:
  - attribute types are enforced in python, not only for DB columns
@@ -77,7 +77,7 @@ class Reflector4StaticType( builder.Reflector):
 
 
 class _Base( _static_type.StaticStruct):
-    __slots__ = [ builder.column4ID.name ]  #db_id автоматично, не-StaticType
+    __slots__ = [ builder.column4ID.name ]  #db_id Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ, РЅРµ-StaticType
     #DBCOOK_inheritance = 'concrete_table'    #default
     #DBCOOK_no_mapping = True       #default; klas-local only
     #DBCOOK_has_instances = True    #default: only for leafs; klas-local only
@@ -98,7 +98,7 @@ class _Base( _static_type.StaticStruct):
 
 
 ###########################
-'адаптиране на StaticStruct за (под) sqlAlchemy'
+'Р°РґР°РїС‚РёСЂР°РЅРµ РЅР° StaticStruct Р·Р° (РїРѕРґ) sqlAlchemy'
 'adapt StaticStruct for use with (under) sqlAlchemy'
 
 #from dbcook.config import _v04
@@ -333,7 +333,7 @@ class Builder( builder.Builder):
 
 def value_of_AKeyFromDict( obj, attrname):
     key = getattr( obj, attrname)
-    value = obj.StaticType[ attrname ].dict[ key ]   #XXX ауу каква боза се получава...
+    value = obj.StaticType[ attrname ].dict[ key ]   #XXX Р°СѓСѓ РєР°РєРІР° Р±РѕР·Р° СЃРµ РїРѕР»СѓС‡Р°РІР°...
     return value
 
 #############################################

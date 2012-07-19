@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 
 def mapper_of_query( query):
     #m = getattr( query, 'mapper', None)     #0.4
@@ -123,7 +123,7 @@ def prepare_expr( klas, clause):
     'prepare appropriate expression for the clause and bind it with the klas'
     from dbcook import expression
     e = expression.func2expr( clause)
-    sae,_klas = expression.expr2clause2( e, klas=klas)       #TODO ПАРАМЕТРИ !!??
+    sae,_klas = expression.expr2clause2( e, klas=klas)       #TODO РџРђР РђРњР•РўР Р !!??
     return sae
 def expr2filter( query, *args, **kargs):
     filter_method_name = kargs.get('filter_method_name', 'filter')
@@ -141,8 +141,8 @@ def expr2filter( query, *args, **kargs):
 ####rel2many: is->contains; has->any
 from dbcook.aboutrel import about_relation
 def rel_is_or_contains( klas_attr_or_klas, value, attr_name =None,):
-    '''може ли да се прави OR !??x
-    може ли да отиде в expression.py вместо join-ite там?
+    '''РјРѕР¶Рµ Р»Рё РґР° СЃРµ РїСЂР°РІРё OR !??x
+    РјРѕР¶Рµ Р»Рё РґР° РѕС‚РёРґРµ РІ expression.py РІРјРµСЃС‚Рѕ join-ite С‚Р°Рј?
     '''
     if attr_name is None: klas_attr = klas_attr_or_klas
     else: klas_attr = getattr( klas_attr_or_klas, attr_name)

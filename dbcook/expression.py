@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 import sqlalchemy
 from sqlalchemy import orm
 from sqlalchemy.orm import attributes
@@ -196,16 +196,16 @@ def join_via( keys, mapper, must_alias =None):
 C.boza= Alabala.Reference()
 C.koza= Alabala.Reference()
 
-a where a.b.c.boza_id=id1 AND a.b.c.koza_id=id2         #алиас=a.b.c; a.b.c.koza.алиас()==id1
-    трябва от c надясно
-a where a.b.c.boza_id=id1 AND a2.b.c.koza_id=id2        #алиас=автоматично
+a where a.b.c.boza_id=id1 AND a.b.c.koza_id=id2         #Р°Р»РёР°СЃ=a.b.c; a.b.c.koza.Р°Р»РёР°СЃ()==id1
+    С‚СЂСЏР±РІР° РѕС‚ c РЅР°РґСЏСЃРЅРѕ
+a where a.b.c.boza_id=id1 AND a2.b.c.koza_id=id2        #Р°Р»РёР°СЃ=Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ
     A->B->C->Alabala          A2->B->C->Alabala
-    трябва от b надясно (т.е. от a което е явно поискано)
-a where a.boza_id=id1 OR  a.koza_id=id2     не трябва но не пречи
+    С‚СЂСЏР±РІР° РѕС‚ b РЅР°РґСЏСЃРЅРѕ (С‚.Рµ. РѕС‚ a РєРѕРµС‚Рѕ Рµ СЏРІРЅРѕ РїРѕРёСЃРєР°РЅРѕ)
+a where a.boza_id=id1 OR  a.koza_id=id2     РЅРµ С‚СЂСЏР±РІР° РЅРѕ РЅРµ РїСЂРµС‡Рё
 a where a.b.c.boza_id=id1 AND a.b.c.boza_id=id2
-    йок??! трябва да не прави нищо (и съответно да връща нищо)
-    ако направи нещо, ще се получи кво???? не се знае, я 2 реда я нищо
-    а може би трябва да е WARNING?! уффф абе нека да настъпват...
+    Р№РѕРє??! С‚СЂСЏР±РІР° РґР° РЅРµ РїСЂР°РІРё РЅРёС‰Рѕ (Рё СЃСЉРѕС‚РІРµС‚РЅРѕ РґР° РІСЂСЉС‰Р° РЅРёС‰Рѕ)
+    Р°РєРѕ РЅР°РїСЂР°РІРё РЅРµС‰Рѕ, С‰Рµ СЃРµ РїРѕР»СѓС‡Рё РєРІРѕ???? РЅРµ СЃРµ Р·РЅР°Рµ, СЏ 2 СЂРµРґР° СЏ РЅРёС‰Рѕ
+    Р° РјРѕР¶Рµ Р±Рё С‚СЂСЏР±РІР° РґР° Рµ WARNING?! СѓС„С„С„ Р°Р±Рµ РЅРµРєР° РґР° РЅР°СЃС‚СЉРїРІР°С‚...
 '''
 
 def get_column_and_joins( name, context4root, must_alias4root ={} ):
@@ -529,9 +529,9 @@ if 0:
         def __call__( me, session, *args, **kargs4context):
             return query( me.expr, session, args, kargs4context)
 
-    #class meta - _new_(meta,myname,dict,...) обикаля dict и за всяко query
-    # замества classdecl() и classdecl(myname) в query.default_args със myclass,
-    # т.е. получава се свързан метод
+    #class meta - _new_(meta,myname,dict,...) РѕР±РёРєР°Р»СЏ dict Рё Р·Р° РІСЃСЏРєРѕ query
+    # Р·Р°РјРµСЃС‚РІР° classdecl() Рё classdecl(myname) РІ query.default_args СЃСЉСЃ myclass,
+    # С‚.Рµ. РїРѕР»СѓС‡Р°РІР° СЃРµ СЃРІСЉСЂР·Р°РЅ РјРµС‚РѕРґ
 
     #plain unboundable - no classes can be assumed
     def less_than( a, b): return b.num < a

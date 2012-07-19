@@ -1,35 +1,35 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 
 '''
-текущо състояние и разни забележки:
-    * StaticType и пр:
+С‚РµРєСѓС‰Рѕ СЃСЉСЃС‚РѕСЏРЅРёРµ Рё СЂР°Р·РЅРё Р·Р°Р±РµР»РµР¶РєРё:
+    * StaticType Рё РїСЂ:
         - None <-> _NONE/notSetYet
-            - get/set може да се оправи, виж  _typeprocess
-            - обаче маперите ползват 'is None' !!! напр. db_id не работеше заради това
+            - get/set РјРѕР¶Рµ РґР° СЃРµ РѕРїСЂР°РІРё, РІРёР¶  _typeprocess
+            - РѕР±Р°С‡Рµ РјР°РїРµСЂРёС‚Рµ РїРѕР»Р·РІР°С‚ 'is None' !!! РЅР°РїСЂ. db_id РЅРµ СЂР°Р±РѕС‚РµС€Рµ Р·Р°СЂР°РґРё С‚РѕРІР°
         - enum_value = r.StaticType['enum'].dict[ r.enum ]
-            !! БОЗАА a мойе ли да се забършат InstrumentedAttributes отгоре
+            !! Р‘РћР—РђРђ a РјРѕР№Рµ Р»Рё РґР° СЃРµ Р·Р°Р±СЉСЂС€Р°С‚ InstrumentedAttributes РѕС‚РіРѕСЂРµ
 
-    * структура:
-        - вградени-структури - НЕ МОГАТ да се направят!
+    * СЃС‚СЂСѓРєС‚СѓСЂР°:
+        - РІРіСЂР°РґРµРЅРё-СЃС‚СЂСѓРєС‚СѓСЂРё - РќР• РњРћР“РђРў РґР° СЃРµ РЅР°РїСЂР°РІСЏС‚!
     * mappers:
-        - наследявания: ОК
+        - РЅР°СЃР»РµРґСЏРІР°РЅРёСЏ: РћРљ
             + joined_table & concrete_table; all-same, all-same-at-node; mixed
             + query_BASE_instances, query_ALL_instances, query_SUB_instances
             - single_table
         + references - ?? =relation /uselist=False
-            + обикновени A.b->B
-            + циклични: A.b->B.a->A  A.b->B.c->C.a->А; cut-cyclic-deps, use_alter, post_update, foreign keys
-            + само-сочещи се: A.a->A: същото като горното
+            + РѕР±РёРєРЅРѕРІРµРЅРё A.b->B
+            + С†РёРєР»РёС‡РЅРё: A.b->B.a->A  A.b->B.c->C.a->Рђ; cut-cyclic-deps, use_alter, post_update, foreign keys
+            + СЃР°РјРѕ-СЃРѕС‡РµС‰Рё СЃРµ: A.a->A: СЃСЉС‰РѕС‚Рѕ РєР°С‚Рѕ РіРѕСЂРЅРѕС‚Рѕ
                 auto_set = FALSE!!
-        ~ колекции - няма-още  =relation /uselist=True (1-to-many, many-to-many)
+        ~ РєРѕР»РµРєС†РёРё - РЅСЏРјР°-РѕС‰Рµ  =relation /uselist=True (1-to-many, many-to-many)
 
-    * персистентен обект:
-        + 1. сплав от StaticType-obj и SA-obj в едно, със съответните огъвки и персистентни гадости.
-            + работи, малко бавно
-        - 2. може да се направи StaticType-obj != SA-obj:
-            ++решават се всички грижи по съвместимостта - вградени структури, None<>notSetYet, персистентна семантика
-            --допълнителен .save/.load/(semi-deep-copy)+dirty слой за прехвърляне от/към; синхронизация??
+    * РїРµСЂСЃРёСЃС‚РµРЅС‚РµРЅ РѕР±РµРєС‚:
+        + 1. СЃРїР»Р°РІ РѕС‚ StaticType-obj Рё SA-obj РІ РµРґРЅРѕ, СЃСЉСЃ СЃСЉРѕС‚РІРµС‚РЅРёС‚Рµ РѕРіСЉРІРєРё Рё РїРµСЂСЃРёСЃС‚РµРЅС‚РЅРё РіР°РґРѕСЃС‚Рё.
+            + СЂР°Р±РѕС‚Рё, РјР°Р»РєРѕ Р±Р°РІРЅРѕ
+        - 2. РјРѕР¶Рµ РґР° СЃРµ РЅР°РїСЂР°РІРё StaticType-obj != SA-obj:
+            ++СЂРµС€Р°РІР°С‚ СЃРµ РІСЃРёС‡РєРё РіСЂРёР¶Рё РїРѕ СЃСЉРІРјРµСЃС‚РёРјРѕСЃС‚С‚Р° - РІРіСЂР°РґРµРЅРё СЃС‚СЂСѓРєС‚СѓСЂРё, None<>notSetYet, РїРµСЂСЃРёСЃС‚РµРЅС‚РЅР° СЃРµРјР°РЅС‚РёРєР°
+            --РґРѕРїСЉР»РЅРёС‚РµР»РµРЅ .save/.load/(semi-deep-copy)+dirty СЃР»РѕР№ Р·Р° РїСЂРµС…РІСЉСЂР»СЏРЅРµ РѕС‚/РєСЉРј; СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ??
 '''
 
 #print 'builder...', __name__
@@ -123,7 +123,7 @@ def make_klas_selectable( mapcontext, klas, tables, test =False):
 
     jfiltered = exprfilter = None
     is_non_concrete_inherited = mapcontext.is_direct_inherited_non_concrete( klas)
-    if is_non_concrete_inherited:   # -> нуждае се от филтър по тип; correlate=False и в двата случая
+    if is_non_concrete_inherited:   # -> РЅСѓР¶РґР°Рµ СЃРµ РѕС‚ С„РёР»С‚СЉСЂ РїРѕ С‚РёРї; correlate=False Рё РІ РґРІР°С‚Р° СЃР»СѓС‡Р°СЏ
         #X.select(X.atype==X)
         exprfilter = column4type( tbase) == klas.__name__
         if isinstance( j, sqlalchemy.sql.Join): #if len(joined_tables)>1
@@ -144,47 +144,47 @@ def make_klas_selectable( mapcontext, klas, tables, test =False):
                 )
 
 _subklas_selectable_doc = '''
-    наследявания: B наследява А:
-    във всички случаи има една (междинна) таблица, с колони =обединението
-    на колоните на всички таблици + колона тип/дискриминатор,
-    и по един ред за всеки обект, с всички не-негови колони =NULL
-    в случая single_table ТОВА е таблицата; иначе се прави (виртуална) таблица чрез union.
+    РЅР°СЃР»РµРґСЏРІР°РЅРёСЏ: B РЅР°СЃР»РµРґСЏРІР° Рђ:
+    РІСЉРІ РІСЃРёС‡РєРё СЃР»СѓС‡Р°Рё РёРјР° РµРґРЅР° (РјРµР¶РґРёРЅРЅР°) С‚Р°Р±Р»РёС†Р°, СЃ РєРѕР»РѕРЅРё =РѕР±РµРґРёРЅРµРЅРёРµС‚Рѕ
+    РЅР° РєРѕР»РѕРЅРёС‚Рµ РЅР° РІСЃРёС‡РєРё С‚Р°Р±Р»РёС†Рё + РєРѕР»РѕРЅР° С‚РёРї/РґРёСЃРєСЂРёРјРёРЅР°С‚РѕСЂ,
+    Рё РїРѕ РµРґРёРЅ СЂРµРґ Р·Р° РІСЃРµРєРё РѕР±РµРєС‚, СЃ РІСЃРёС‡РєРё РЅРµ-РЅРµРіРѕРІРё РєРѕР»РѕРЅРё =NULL
+    РІ СЃР»СѓС‡Р°СЏ single_table РўРћР’Рђ Рµ С‚Р°Р±Р»РёС†Р°С‚Р°; РёРЅР°С‡Рµ СЃРµ РїСЂР°РІРё (РІРёСЂС‚СѓР°Р»РЅР°) С‚Р°Р±Р»РёС†Р° С‡СЂРµР· union.
 
-    /:  concrete_table - B съдържа всички колони на A (А и B са съвсем независими);
-            id-тата на А и B са съвсем независими;
-            дискриминаторът/atype се разписва като константа за таблицата от union-а ;
+    /:  concrete_table - B СЃСЉРґСЉСЂР¶Р° РІСЃРёС‡РєРё РєРѕР»РѕРЅРё РЅР° A (Рђ Рё B СЃР° СЃСЉРІСЃРµРј РЅРµР·Р°РІРёСЃРёРјРё);
+            id-С‚Р°С‚Р° РЅР° Рђ Рё B СЃР° СЃСЉРІСЃРµРј РЅРµР·Р°РІРёСЃРёРјРё;
+            РґРёСЃРєСЂРёРјРёРЅР°С‚РѕСЂСЉС‚/atype СЃРµ СЂР°Р·РїРёСЃРІР° РєР°С‚Рѕ РєРѕРЅСЃС‚Р°РЅС‚Р° Р·Р° С‚Р°Р±Р»РёС†Р°С‚Р° РѕС‚ union-Р° ;
 
-    //: joined_table - B има само допълнителните си колони; +join към А
-            A трябва да има поле atype, по което се познава типа (дискриминатор);
-            А съдържа всички id-та на А и B; дискриминаторът/atype е А.atype
+    //: joined_table - B РёРјР° СЃР°РјРѕ РґРѕРїСЉР»РЅРёС‚РµР»РЅРёС‚Рµ СЃРё РєРѕР»РѕРЅРё; +join РєСЉРј Рђ
+            A С‚СЂСЏР±РІР° РґР° РёРјР° РїРѕР»Рµ atype, РїРѕ РєРѕРµС‚Рѕ СЃРµ РїРѕР·РЅР°РІР° С‚РёРїР° (РґРёСЃРєСЂРёРјРёРЅР°С‚РѕСЂ);
+            Рђ СЃСЉРґСЉСЂР¶Р° РІСЃРёС‡РєРё id-С‚Р° РЅР° Рђ Рё B; РґРёСЃРєСЂРёРјРёРЅР°С‚РѕСЂСЉС‚/atype Рµ Рђ.atype
 
-    *:  single_table - B не съществува като таблица - всичките и колони са в А;
-            (ако А също не съществува като таблица, тогава това е първата база която съществува)
-            A трябва да има поле atype, по което се познава типа (дискриминатор);
-            А съдържа всички id-та на А и B; дискриминаторът/atype е А.atype;
-            освен добавянето на колони в А, B не се вижда по никакъв друг начин - наследяването и
-            е същото като пряко наследяване на А
+    *:  single_table - B РЅРµ СЃСЉС‰РµСЃС‚РІСѓРІР° РєР°С‚Рѕ С‚Р°Р±Р»РёС†Р° - РІСЃРёС‡РєРёС‚Рµ Рё РєРѕР»РѕРЅРё СЃР° РІ Рђ;
+            (Р°РєРѕ Рђ СЃСЉС‰Рѕ РЅРµ СЃСЉС‰РµСЃС‚РІСѓРІР° РєР°С‚Рѕ С‚Р°Р±Р»РёС†Р°, С‚РѕРіР°РІР° С‚РѕРІР° Рµ РїСЉСЂРІР°С‚Р° Р±Р°Р·Р° РєРѕСЏС‚Рѕ СЃСЉС‰РµСЃС‚РІСѓРІР°)
+            A С‚СЂСЏР±РІР° РґР° РёРјР° РїРѕР»Рµ atype, РїРѕ РєРѕРµС‚Рѕ СЃРµ РїРѕР·РЅР°РІР° С‚РёРїР° (РґРёСЃРєСЂРёРјРёРЅР°С‚РѕСЂ);
+            Рђ СЃСЉРґСЉСЂР¶Р° РІСЃРёС‡РєРё id-С‚Р° РЅР° Рђ Рё B; РґРёСЃРєСЂРёРјРёРЅР°С‚РѕСЂСЉС‚/atype Рµ Рђ.atype;
+            РѕСЃРІРµРЅ РґРѕР±Р°РІСЏРЅРµС‚Рѕ РЅР° РєРѕР»РѕРЅРё РІ Рђ, B РЅРµ СЃРµ РІРёР¶РґР° РїРѕ РЅРёРєР°РєСЉРІ РґСЂСѓРі РЅР°С‡РёРЅ - РЅР°СЃР»РµРґСЏРІР°РЅРµС‚Рѕ Рё
+            Рµ СЃСЉС‰РѕС‚Рѕ РєР°С‚Рѕ РїСЂСЏРєРѕ РЅР°СЃР»РµРґСЏРІР°РЅРµ РЅР° Рђ
 
-    повечето проверки са всъщност дали се разглобява на парчета
-    (not concrete_table) или не (concrete_table)
+    РїРѕРІРµС‡РµС‚Рѕ РїСЂРѕРІРµСЂРєРё СЃР° РІСЃСЉС‰РЅРѕСЃС‚ РґР°Р»Рё СЃРµ СЂР°Р·РіР»РѕР±СЏРІР° РЅР° РїР°СЂС‡РµС‚Р°
+    (not concrete_table) РёР»Рё РЅРµ (concrete_table)
 
 
 
-вариант 0. еднакво наследяване, на всички нива (няма смесване) - ОК
+РІР°СЂРёР°РЅС‚ 0. РµРґРЅР°РєРІРѕ РЅР°СЃР»РµРґСЏРІР°РЅРµ, РЅР° РІСЃРёС‡РєРё РЅРёРІР° (РЅСЏРјР° СЃРјРµСЃРІР°РЅРµ) - РћРљ
 variant 0. same inheritance, on all levels (no mixing)
            A                      A                                          A
           / \                   // \\                                       * *
          B   D                 B     D                                     B   D
         /                     //                                          *
        C                     C                                           C
-                            А.atype= (A,B,C,D)                          А.atype= (A,B,C,D)
+                            Рђ.atype= (A,B,C,D)                          Рђ.atype= (A,B,C,D)
 
-    A.only = А              A.only = А.select( A.atype==A)              A.only = А.select( A.atype==A)
+    A.only = Рђ              A.only = Рђ.select( A.atype==A)              A.only = Рђ.select( A.atype==A)
     B.only = B              B.only = A.join(B).select( A.atype==B)      B.only = A.select( A.atype==B)
     C.only = C              C.only = A.join(B).join(C)                  C.only = A.select( A.atype==C)
     D.only = A              D.only = A.join(D)                          D.only = A.select( A.atype==D)
 
-вариант 1. смесено наследяване, нееднакво във възела и между нивата
+РІР°СЂРёР°РЅС‚ 1. СЃРјРµСЃРµРЅРѕ РЅР°СЃР»РµРґСЏРІР°РЅРµ, РЅРµРµРґРЅР°РєРІРѕ РІСЉРІ РІСЉР·РµР»Р° Рё РјРµР¶РґСѓ РЅРёРІР°С‚Р°
 variant 1. mixed inheritance, different within a node and between the levels
           A                                       A
          / \\                                    / \\
@@ -195,10 +195,10 @@ variant 1. mixed inheritance, different within a node and between the levels
                                                  P   Q  R
                                                 *
                                                S
-    А.atype = (А,D)                     А.atype = (А,D,F,Q)
+    Рђ.atype = (Рђ,D)                     Рђ.atype = (Рђ,D,F,Q)
     B.atype = (B,E)                     B.atype = (B,E,P,S)
 
-    A.only = А.select( A.atype==A)      A.only = А.select( A.atype==A)
+    A.only = Рђ.select( A.atype==A)      A.only = Рђ.select( A.atype==A)
     B.only = B.select( B.atype==B)      B.only = B.select( B.atype==B)
     C.only = C                          C.only = C
     D.only = A.join(D)                  D.only = A.join(D).select( A.atype==D)
@@ -209,7 +209,7 @@ variant 1. mixed inheritance, different within a node and between the levels
                                         P.only = B.select( B.atype==P).join(P)
                                         S.only = B.select( B.atype==S).join(P)
 
-вариант 2. смесено наследяване, но еднакво в един възел (различно в различните възли)
+РІР°СЂРёР°РЅС‚ 2. СЃРјРµСЃРµРЅРѕ РЅР°СЃР»РµРґСЏРІР°РЅРµ, РЅРѕ РµРґРЅР°РєРІРѕ РІ РµРґРёРЅ РІСЉР·РµР» (СЂР°Р·Р»РёС‡РЅРѕ РІ СЂР°Р·Р»РёС‡РЅРёС‚Рµ РІСЉР·Р»Рё)
 variant 2. mixed inheritance, but same within a node (and different between nodes)
            A                                  A                                   A
           / \                               // \\                               // \\
@@ -220,7 +220,7 @@ variant 2. mixed inheritance, but same within a node (and different between node
     P   Q                              P  Q                               P   Q
   B.atype = (B,C)                   A.atype= (A,B,D); C.atype= (C,P,Q)   A.atype= (A,B,C,D,E)
 
-  A.only= А                         A.only= А.select( A.atype==A)        A.only= А.select( A.atype==A)
+  A.only= Рђ                         A.only= Рђ.select( A.atype==A)        A.only= Рђ.select( A.atype==A)
   B.only= B.select( B.atype==B)     B.only= A.join(B)                    B.only= A.join(B).select( A.atype=B)
   C.only= B.join(C)                 C.only= C.select( C.atype==C)        C.only= A.join(B).join(C)
   D.only= D                         D.only= A.join(D)                    D.only= A.join(D)
@@ -229,7 +229,7 @@ variant 2. mixed inheritance, but same within a node (and different between node
   Q.only= Q                         Q.only= C.join(Q)                    Q.only= Q
 
 
-в някои частни случаи при joined_table може да се избегне union-a:
+РІ РЅСЏРєРѕРё С‡Р°СЃС‚РЅРё СЃР»СѓС‡Р°Рё РїСЂРё joined_table РјРѕР¶Рµ РґР° СЃРµ РёР·Р±РµРіРЅРµ union-a:
 in some special cases with joined_table, the union can be avoided:
  class A: pass
  class B(A): pass
@@ -242,7 +242,7 @@ in some special cases with joined_table, the union can be avoided:
     select_table= B_join, inherits= A_mapper, polymorphic_identity= 'm')
  C_mapper = mapper( C, C_table,
     inherits= B_mapper, polymorphic_identity= 'c')
-това засега не се ползва тъй-като не е ясно как се комбинира при разклонени дървета.
+С‚РѕРІР° Р·Р°СЃРµРіР° РЅРµ СЃРµ РїРѕР»Р·РІР° С‚СЉР№-РєР°С‚Рѕ РЅРµ Рµ СЏСЃРЅРѕ РєР°Рє СЃРµ РєРѕРјР±РёРЅРёСЂР° РїСЂРё СЂР°Р·РєР»РѕРЅРµРЅРё РґСЉСЂРІРµС‚Р°.
 this is not used for now, as it is not clear how it combines in branched trees.
 '''
 
@@ -340,7 +340,7 @@ def make_table_columns( klas, builder, fieldtype_mapper, name_prefix ='', ):
                 id_columns.add( k)
                 refs[k] = attrklas
             else:   #inline_inside_table/embedded
-                #... разписване на колоните на подструктурата като колони тука
+                #... СЂР°Р·РїРёСЃРІР°РЅРµ РЅР° РєРѕР»РѕРЅРёС‚Рµ РЅР° РїРѕРґСЃС‚СЂСѓРєС‚СѓСЂР°С‚Р° РєР°С‚Рѕ РєРѕР»РѕРЅРё С‚СѓРєР°
                 if dbg: print '  as_value', k,typ
                 raise NotImplementedError
 
@@ -829,17 +829,17 @@ class Builder:
     def _make_mapper_polymorphic( me, klas, **kargs):
         if klas in me.mappers: return
         #polymorphic mapper - things of type klas AND all subtypes
-        ''' варианти:
-            а) 3 различни съответствия (mapper) за query_BASE_instances, query_ALL_instances, query_SUB_instances
-                тук не е ясно как ще се оправят наследяванията между mapper-ите
-            б) 1 общ (полиморфен,правилно-наследен,въобще всички екстри) за query_ALL_instances,
-                + вх.филтър (pjoin().select) за query_SUB_instances.
-                + вх.филтър (table.select) за query_BASE_instances
-              това не работи за query_BASE_instances - иска pjoin.atype което го няма в таблицата;
-            в) 1 общ (полиморфен,правилно-наследен,въобще всички екстри) за query_ALL_instances,
-                вх.филтър за query_SUB_instances,
-                и прост (не-полиморфен - но наследен!) за query_BASE_instances.
-            ако полиморфният не е първичен, иска _polymorphic_map - не може да се оправи сам при базов клас СЪС таблица
+        ''' РІР°СЂРёР°РЅС‚Рё:
+            Р°) 3 СЂР°Р·Р»РёС‡РЅРё СЃСЉРѕС‚РІРµС‚СЃС‚РІРёСЏ (mapper) Р·Р° query_BASE_instances, query_ALL_instances, query_SUB_instances
+                С‚СѓРє РЅРµ Рµ СЏСЃРЅРѕ РєР°Рє С‰Рµ СЃРµ РѕРїСЂР°РІСЏС‚ РЅР°СЃР»РµРґСЏРІР°РЅРёСЏС‚Р° РјРµР¶РґСѓ mapper-РёС‚Рµ
+            Р±) 1 РѕР±С‰ (РїРѕР»РёРјРѕСЂС„РµРЅ,РїСЂР°РІРёР»РЅРѕ-РЅР°СЃР»РµРґРµРЅ,РІСЉРѕР±С‰Рµ РІСЃРёС‡РєРё РµРєСЃС‚СЂРё) Р·Р° query_ALL_instances,
+                + РІС….С„РёР»С‚СЉСЂ (pjoin().select) Р·Р° query_SUB_instances.
+                + РІС….С„РёР»С‚СЉСЂ (table.select) Р·Р° query_BASE_instances
+              С‚РѕРІР° РЅРµ СЂР°Р±РѕС‚Рё Р·Р° query_BASE_instances - РёСЃРєР° pjoin.atype РєРѕРµС‚Рѕ РіРѕ РЅСЏРјР° РІ С‚Р°Р±Р»РёС†Р°С‚Р°;
+            РІ) 1 РѕР±С‰ (РїРѕР»РёРјРѕСЂС„РµРЅ,РїСЂР°РІРёР»РЅРѕ-РЅР°СЃР»РµРґРµРЅ,РІСЉРѕР±С‰Рµ РІСЃРёС‡РєРё РµРєСЃС‚СЂРё) Р·Р° query_ALL_instances,
+                РІС….С„РёР»С‚СЉСЂ Р·Р° query_SUB_instances,
+                Рё РїСЂРѕСЃС‚ (РЅРµ-РїРѕР»РёРјРѕСЂС„РµРЅ - РЅРѕ РЅР°СЃР»РµРґРµРЅ!) Р·Р° query_BASE_instances.
+            Р°РєРѕ РїРѕР»РёРјРѕСЂС„РЅРёСЏС‚ РЅРµ Рµ РїСЉСЂРІРёС‡РµРЅ, РёСЃРєР° _polymorphic_map - РЅРµ РјРѕР¶Рµ РґР° СЃРµ РѕРїСЂР°РІРё СЃР°Рј РїСЂРё Р±Р°Р·РѕРІ РєР»Р°СЃ РЎРЄРЎ С‚Р°Р±Р»РёС†Р°
             #submappers = dict( (sklas.__name__, me.mappers[ sklas].plain) for sklas in subklasi.itervalues() if sklas is not excluded )
         '''
         dbg = 'mapper' in config.debug
@@ -854,20 +854,20 @@ class Builder:
 
         if 0:
             if 'some inherits this by table_inheritance_types.SINGLE':
-                # трябва да се изключат от subtables, но да се добавят в А.atype=='А',
-                # t.e. pjoin може да стане == table ->None в частен случай
+                # С‚СЂСЏР±РІР° РґР° СЃРµ РёР·РєР»СЋС‡Р°С‚ РѕС‚ subtables, РЅРѕ РґР° СЃРµ РґРѕР±Р°РІСЏС‚ РІ Рђ.atype=='Рђ',
+                # t.e. pjoin РјРѕР¶Рµ РґР° СЃС‚Р°РЅРµ == table ->None РІ С‡Р°СЃС‚РµРЅ СЃР»СѓС‡Р°Р№
                 pjoin_key = column4type( pjoin or table)
 
         subtables = None
         outer_join_ok = False
-        if len( subklasi)>1:   #има наследници
+        if len( subklasi)>1:   #РёРјР° РЅР°СЃР»РµРґРЅРёС†Рё
             if config_components.outerjoin_for_joined_tables_instead_of_polymunion:
                 outer_join_ok = me._outerjoin_polymorphism( klas, subklasi, dbg)
             if outer_join_ok:
                 pjoin_key = outer_join_ok
                 pjoin = None
             else:
-                # тези трябва да работят във всички случаи - еднакво/ смесено наследяване
+                # С‚РµР·Рё С‚СЂСЏР±РІР° РґР° СЂР°Р±РѕС‚СЏС‚ РІСЉРІ РІСЃРёС‡РєРё СЃР»СѓС‡Р°Рё - РµРґРЅР°РєРІРѕ/ СЃРјРµСЃРµРЅРѕ РЅР°СЃР»РµРґСЏРІР°РЅРµ
                 subtables = me.DICT(
                                     (sklas.__name__, me.klas_only_selectables[ sklas]['filtered'])
                                     for sklas in subklasi

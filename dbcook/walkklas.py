@@ -1,11 +1,11 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 
 from svd_util.attr import issubclass
 import sys
 
 '''wave-like non recursive dependency extract/resolve; same job as topology sort
-вълново нерекурсивно извличане/разрешаване на зависимости - върши работата на топологична сортировка
+РІСЉР»РЅРѕРІРѕ РЅРµСЂРµРєСѓСЂСЃРёРІРЅРѕ РёР·РІР»РёС‡Р°РЅРµ/СЂР°Р·СЂРµС€Р°РІР°РЅРµ РЅР° Р·Р°РІРёСЃРёРјРѕСЃС‚Рё - РІСЉСЂС€Рё СЂР°Р±РѕС‚Р°С‚Р° РЅР° С‚РѕРїРѕР»РѕРіРёС‡РЅР° СЃРѕСЂС‚РёСЂРѕРІРєР°
 '''
 _debug = 0
 
@@ -105,7 +105,7 @@ def walk1( klas, isnamespace, kname, kmod, klasi, reflector, namespace ):
                     if _debug: print ind, '  ->resolve', name, 'from namespace'
                     dict = namespace
                 else:
-                    #трябва да гледа в дълбочина на наследяванията, т.е. ако ref('B') е дошло от базовия клас, да се гледа там...
+                    #С‚СЂСЏР±РІР° РґР° РіР»РµРґР° РІ РґСЉР»Р±РѕС‡РёРЅР° РЅР° РЅР°СЃР»РµРґСЏРІР°РЅРёСЏС‚Р°, С‚.Рµ. Р°РєРѕ ref('B') Рµ РґРѕС€Р»Рѕ РѕС‚ Р±Р°Р·РѕРІРёСЏ РєР»Р°СЃ, РґР° СЃРµ РіР»РµРґР° С‚Р°Рј...
                     base = find_owner_baseklas( klas, attr, reflector)
                     if '.' in oklas:
                         mod0 = base.__module__
