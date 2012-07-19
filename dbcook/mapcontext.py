@@ -112,7 +112,7 @@ $ settings:
 
 # XXX assert not( DBCOOK_no_mapping and DBCOOK_has_instances) ???
 
-from dbcook.util.attr import getattr_local_instance_only, issubclass
+from svd_util.attr import getattr_local_instance_only, issubclass
 class _NOTFOUND: pass
 
 class MappingContext:
@@ -307,7 +307,7 @@ class MappingContext:
 
 
 #not really here but...
-from dbcook.util.attr import subclasses_in
+from svd_util.attr import subclasses_in
 def subclasses4db_in( klasi, *args,**kargs):   #klasi= locals() or list
     exclude_ = kargs.pop('exclude_',True)
     return [ c for c in subclasses_in( klasi, *args, **kargs)

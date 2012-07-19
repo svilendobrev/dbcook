@@ -17,7 +17,7 @@ class Reflector:
             me.klas = item_klas
             #assert cardinality in me._cardinality
             #me.cardinality = cardinality
-            from dbcook.util.attr import setattr_from_kargs
+            from svd_util.attr import setattr_from_kargs
             setattr_from_kargs( me, kargs,
                 as_value= False,    #bool,
                 lazy    = 'default' or bool or None,

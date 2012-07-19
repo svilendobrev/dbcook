@@ -1,9 +1,9 @@
 #$Id$
 # -*- coding: cp1251 -*-
-from dbcook.util.hacksrc import hacksrc
+from svd_util.hacksrc import hacksrc
 import sqlalchemy
 
-from dbcook.util.attr import find_valid_fullname_import
+from svd_util.attr import find_valid_fullname_import
 compiler = find_valid_fullname_import( '''
     sqlalchemy.sql.compiler.DefaultCompiler
 ''')

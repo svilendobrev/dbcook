@@ -17,8 +17,8 @@ Probably there are more places, for untried cases.
 XXX DONT forget to make "requests"/calls also repeatable/ordered!!!
 e.g. SAdb( ..force_ordered=True)
 '''
-from dbcook.util.hacksrc import hacksrc
-from dbcook.util.attr import find_valid_fullname_import
+from svd_util.hacksrc import hacksrc
+from svd_util.attr import find_valid_fullname_import
 
 def hack4repeat():
     import sqlalchemy

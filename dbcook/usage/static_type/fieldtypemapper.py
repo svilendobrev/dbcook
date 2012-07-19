@@ -2,7 +2,7 @@
 # -*- coding: cp1251 -*-
 
 from static_type.types.base import StaticType
-from dbcook.util.attr import issubclass
+from svd_util.attr import issubclass
 
 class FieldTypeMapper:
     def __init__(me, typemap_upper ={}, typemap_lower ={}):

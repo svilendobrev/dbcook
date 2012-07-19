@@ -254,7 +254,7 @@ def setup_logging( log_sa, log2stream =None):
     if log_sa == 'all':
         logging.getLogger( 'sqlalchemy').setLevel( logging.DEBUG) #debug EVERYTHING!
     else:
-        from dbcook.util.attr import find_valid_fullname_import
+        from svd_util.attr import find_valid_fullname_import
         salog = find_valid_fullname_import( '''
             sqlalchemy.log
             sqlalchemy.logging

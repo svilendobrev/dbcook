@@ -470,7 +470,7 @@ Check for double-declaration with different names''' % locals()
         if dbg: print ' ', me, 'made:', assoc_klas, assoc_klas_actual, rel_kargs
         return assoc_klas, assoc_klas_actual, rel_kargs
 
-from dbcook.util.attr import setattr_kargs, setattr_from_kargs
+from svd_util.attr import setattr_kargs, setattr_from_kargs
 
 class _AssocDetails:
     __init__ = setattr_kargs

@@ -25,7 +25,7 @@ def foreign_keys( prop):
     assert r is not _NOTFOUND
     return r
 
-from dbcook.util.attr import find_valid_fullname_import, import_fullname
+from svd_util.attr import find_valid_fullname_import, import_fullname
 
 ClauseAdapter = find_valid_fullname_import( '''
     sqlalchemy.sql.util.ClauseAdapter
@@ -276,7 +276,7 @@ def get_column_and_joins( name, context4root, must_alias4root ={} ):
     return lastcol, clause, False
 
 
-from dbcook.util import expr
+from svd_util import expr
 from sqlalchemy import sql
 
 
@@ -485,7 +485,7 @@ def query2( e, context_in ={}, klas =None, namespace4klasi =None, **kargs ):
 def query3( sae, klas, session =None):
     return session.query( klas).filter( sae)
 
-#from dbcook.util.expr import GluerAnd
+#from svd_util.expr import GluerAnd
 #Gluer GlueAnd GlueOR
 
 __all__ = '''

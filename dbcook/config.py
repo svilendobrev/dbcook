@@ -14,7 +14,7 @@ class config_components:
 
 #######################
 
-from dbcook.util import config
+from svd_util import config
 class Config( config.Config):
     force_lazy = False      #ignore all specifying/defaults
     default_lazy = False    #unspecified relations try to achieve this
@@ -120,7 +120,7 @@ class column4type( _column4):
 
 #### table naming
 
-from dbcook.util.attr import getattr_local_instance_only
+from svd_util.attr import getattr_local_instance_only
 def table_namer( klas, short =False):
     'table auto-naming'
     r = getattr_local_instance_only( klas, 'DBCOOK_dbname', None) or klas.__name__

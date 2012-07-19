@@ -4,7 +4,7 @@
 import sqlalchemy
 import sqlalchemy.orm
 import operator
-from dbcook.util.attr import issubclass, find_valid_fullname_import
+from svd_util.attr import issubclass, find_valid_fullname_import
 #from util_all.dbg import dbg_funcname
 
 def traverse( visitor, obj): return visitor.traverse( obj)

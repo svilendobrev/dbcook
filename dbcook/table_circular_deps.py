@@ -2,7 +2,7 @@
 # -*- coding: cp1251 -*-
 
 from sqlalchemy import schema
-from dbcook.util.attr import find_valid_fullname_import
+from svd_util.attr import find_valid_fullname_import
 sql_util = find_valid_fullname_import( '''
     sqlalchemy.sql.util
 ''')

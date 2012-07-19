@@ -1,7 +1,7 @@
 #$Id$
 # -*- coding: cp1251 -*-
 
-from dbcook.util.attr import issubclass
+from svd_util.attr import issubclass
 import sys
 
 '''wave-like non recursive dependency extract/resolve; same job as topology sort

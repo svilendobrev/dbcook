@@ -90,7 +90,7 @@ class Reflector4sa( builder.Reflector):
 Reference = Type4Reference
 reflector = Reflector4sa()
 
-from dbcook.util.forward_resolver import Resolver
+from svd_util.forward_resolver import Resolver
 class Resolver( Resolver):
     def finisher( me, typ, resolved_klas):
         typ.itemklas = resolved_klas

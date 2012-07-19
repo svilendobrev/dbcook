@@ -40,7 +40,7 @@ class SesExt( SessionExtension):
 
 if __name__ == '__main__':
     from dbcook.usage import plainwrap as o2r
-    from dbcook.util.attr import setattr_kargs
+    from svd_util.attr import setattr_kargs
     from dbcook.baseobj import Base
     Association = o2r.Association
     Collection  = o2r.Collection

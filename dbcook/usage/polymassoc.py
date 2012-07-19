@@ -100,7 +100,7 @@ class PolymorphicAssociation( object):  #cfg.Base):
     @classmethod
     def find_which_owner( me, someowner):
         #the backward mapping _possible_owners2 won't do direct, must use isinstance/issubclass
-        from dbcook.util.attr import isclass
+        from svd_util.attr import isclass
         aclass = isclass( someowner)
         r2 = me.possible_owners2()
         direct = r2.get( aclass and someowner or someowner.__class__, None)
