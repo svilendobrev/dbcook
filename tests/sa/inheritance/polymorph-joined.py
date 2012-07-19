@@ -1,5 +1,4 @@
-#$Id$
-# -*- coding: cp1251 -*-
+
 from sqlalchemy import *
 from sqlalchemy.orm import *
 import sets, sys

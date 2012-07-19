@@ -1,6 +1,6 @@
 #$Id$
 
-from dbcook.util.config import Config
+from svd_util.config import Config
 
 #####################
 

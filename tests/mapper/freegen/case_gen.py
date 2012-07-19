@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 from param_gen import clasname_from_link, known_inh_types
 

@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 import traceback, sys
 

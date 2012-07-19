@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf8 -*-
 from tests.util.context import *
 from test4mapper import gen_inh_types, inh_symb, MapperCase
 
@@ -22,7 +22,7 @@ class InhCaseParams( object):
         me.descr = descr
 
 def param_gen():
-    '''вариант 3. наследявания в случаен ред'''
+    '''РІР°СЂРёР°РЅС‚ 3. РЅР°СЃР»РµРґСЏРІР°РЅРёСЏ РІ СЃР»СѓС‡Р°РµРЅ СЂРµРґ'''
     for inh in gen_inh_types( [ CONCRETE, JOINED], 4):
         class A( Base):    #root
             DBCOOK_inheritance = CONCRETE

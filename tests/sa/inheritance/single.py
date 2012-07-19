@@ -1,5 +1,4 @@
-#$Id$
-# -*- coding: cp1251 -*-
+
 from klasi import *
 from klasi import _printcallfunc
 

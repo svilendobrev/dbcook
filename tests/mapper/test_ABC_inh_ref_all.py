@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 from tests.util.context import * #Reference, Builder, SAdb, Base, Text, fieldtypemap
 

@@ -48,7 +48,7 @@ class T( unittest.TestCase):
     )
     def test_namespace_partial( me, namespace =namespace, expect =None):
         expect = expect or me.expect
-        from dbcook.util.attr import issubclass
+        from svd_util.attr import issubclass
         print 'in:', ' '.join( k+':'+v.__name__ for k,v in namespace.items() if issubclass( v,Base) )
         r = walkklas.walker( namespace, Builder.reflector, Base )
         if walkklas._debug:

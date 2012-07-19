@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf8 -*-
 
 import dbcook.config
 dbcook.config.table_namer = lambda klas: klas.__name__ + '_tbl'
@@ -172,12 +172,12 @@ def test_self_ref_2list( context):
     return locals()
 
 def test_self_ref_tree( context):
-    'виж /usr/share/doc/python-sqlalchemy-doc/examples/backref/backref_tree.py'
+    'РІРёР¶ /usr/share/doc/python-sqlalchemy-doc/examples/backref/backref_tree.py'
     class A( context.Base):
         auto_set = False
         ime = context.Text()
         parent = context.Reference('A')
-        #children = context.Sequence( context.Reference('A') )     #ТОВА е дървото; иначе е просто ref-self
+        #children = context.Sequence( context.Reference('A') )     #РўРћР’Рђ Рµ РґСЉСЂРІРѕС‚Рѕ; РёРЅР°С‡Рµ Рµ РїСЂРѕСЃС‚Рѕ ref-self
 
     def populate():
         a0 = A()
@@ -254,7 +254,7 @@ def test_inh_nonempty( context, inh):
 
 
 def test_inh_diff_at_node( context):
-    '''вариант 1. нееднакво наследяване'''
+    '''РІР°СЂРёР°РЅС‚ 1. РЅРµРµРґРЅР°РєРІРѕ РЅР°СЃР»РµРґСЏРІР°РЅРµ'''
 
     #root
     class A( context.Base):
@@ -297,7 +297,7 @@ def test_inh_diff_at_node( context):
 
 
 def test_inh_same_at_node( context, nodes =None):
-    '''вариант 2. еднакво наследяване на всяко ниво - но различно на различните нива'''
+    '''РІР°СЂРёР°РЅС‚ 2. РµРґРЅР°РєРІРѕ РЅР°СЃР»РµРґСЏРІР°РЅРµ РЅР° РІСЃСЏРєРѕ РЅРёРІРѕ - РЅРѕ СЂР°Р·Р»РёС‡РЅРѕ РЅР° СЂР°Р·Р»РёС‡РЅРёС‚Рµ РЅРёРІР°'''
 
     if nodes is None:
         nodes = dict( A_nodes= JOINED,
@@ -356,13 +356,13 @@ def test_inh_same_at_node( context, nodes =None):
     return locals()
 
 def test_inh_all_nodes_same( context, inh):
-    '''вариант 0. еднакво наследяване, на всички нива (няма смесване)'''
+    '''РІР°СЂРёР°РЅС‚ 0. РµРґРЅР°РєРІРѕ РЅР°СЃР»РµРґСЏРІР°РЅРµ, РЅР° РІСЃРёС‡РєРё РЅРёРІР° (РЅСЏРјР° СЃРјРµСЃРІР°РЅРµ)'''
     nodes = dict.fromkeys( ['A_nodes', 'B_nodes', 'C_nodes'], inh)
     return test_inh_same_at_node( context, nodes)
 
 
 def test_B_inh_A_ref( context, inh, refs):
-    '''всичките случаи inh+ref: А->А Б(А);  А->Б б(А);  Б(А) Б->А;  Б(А) Б->Б'''
+    '''РІСЃРёС‡РєРёС‚Рµ СЃР»СѓС‡Р°Рё inh+ref: Рђ->Рђ Р‘(Рђ);  Рђ->Р‘ Р±(Рђ);  Р‘(Рђ) Р‘->Рђ;  Р‘(Рђ) Р‘->Р‘'''
     class A( context.Base):
         DBCOOK_has_instances = True
         auto_set = False
@@ -454,8 +454,8 @@ SHOW_DEFAULT_QUERY_RESULTS = False
 
 import sys
 if 'repeat_hack' in sys.argv:
-    ## XXX HACK за повтаряемост на теста, подменя Set/dict на OrderedSet/Dict
-    ## XXX НЕ забравяй SAdb също да е подреден!!! force_ordered=True
+    ## XXX HACK Р·Р° РїРѕРІС‚Р°СЂСЏРµРјРѕСЃС‚ РЅР° С‚РµСЃС‚Р°, РїРѕРґРјРµРЅСЏ Set/dict РЅР° OrderedSet/Dict
+    ## XXX РќР• Р·Р°Р±СЂР°РІСЏР№ SAdb СЃСЉС‰Рѕ РґР° Рµ РїРѕРґСЂРµРґРµРЅ!!! force_ordered=True
     from dbcook.usage.sa_hack4repeatability import hack4repeat
     hack4repeat()
 
@@ -466,7 +466,7 @@ TEST_OUT_ROOT = 'simple/output'
 #else:
 #    print 'usage: ', sys.argv[0], ' path_to_output_dirs'
 
-from tests.util.dictOrder import dictOrder
+from test.util import dictOrder
 
 class Config( SAdb.config.Config):
     session_clear = True

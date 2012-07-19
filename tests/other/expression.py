@@ -1,5 +1,5 @@
 #$Id$
-# -*- coding: cp1251 -*-
+# -*- coding: utf8 -*-
 
 import dbcook.config
 dbcook.config.table_namer = lambda klas: klas.__name__.lower()
@@ -18,7 +18,7 @@ ONLY1 = False
 #############
 
 ##############  model-definition
-from dbcook.util.attr import get_attrib
+from svd_util.attr import get_attrib
 
 def model(  address_inh ='', #'','c','j'
             person_inh  ='',
@@ -345,7 +345,7 @@ def strres( q, title):
     sres1 = ('\n'+2*' ').join( [title+':']+sres)
     return sres,sres1
 
-from tests.util.struct import Struct
+from svd_util.struct import Struct
 from dbcook import expression
 expression._debug = 'dbg' in sys.argv
 dbg = 'what' in sys.argv or expression._debug
@@ -534,7 +534,7 @@ errors: 27.07.2007
 1. address_inh = joined
         -> Addr0.items not visible in Adres, e.g.
     expr: ( var:person.adr.street == 'str.22' ) -> ERR
-        Úˇ·‚‡ ‰‡ Â mapper(adr).prop('street').table, ‡ ÌÂ mapper(adr).table
+        —Ç—Ä—è–±–≤–∞ –¥–∞ –µ mapper(adr).prop('street').table, –∞ –Ω–µ mapper(adr).table
     expr: ( var:person.adr.kvartal== 'kv.22' ) -> OK
 
 2
@@ -546,17 +546,17 @@ expr: ( var:person.friend.name == 'pesho' )
 expr: ( var:person.friend.friend.friend.name == 'pesho' )
 expr: ( var:person.friend.db_id == 2 )
 -> no result:
-    ????? ÌÂ‚‡ÎË‰ÂÌ ÚÂÒÚ - friend -> Human, ‡ ÏÛ ÒÂ ‰‡‚‡ Person - ÌÂ ‡·ÓÚË Á‡ concrete_table/PM
+    ????? –Ω–µ–≤–∞–ª–∏–¥–µ–Ω —Ç–µ—Å—Ç - friend -> Human, –∞ –º—É —Å–µ –¥–∞–≤–∞ Person - –Ω–µ —Ä–∞–±–æ—Ç–∏ –∑–∞ concrete_table/PM
 expr: ( var:person.friend.adr.owner.friend.name == 'pesho' )
 -> err: <type 'exceptions.KeyError'> 'adr'
-    „Â¯Ì‡ Ú‡·ÎËˆ‡? friend -> Human ‡ Ú‡Ï ÌˇÏ‡ adr
+    –≥—Ä–µ—à–Ω–∞ —Ç–∞–±–ª–∏—Ü–∞? friend -> Human –∞ —Ç–∞–º –Ω—è–º–∞ adr
 
 3
 === {'person_inh': 'joined_table', 'address_inh': '', 'person_ref_person': False}
 === {'person_inh': 'joined_table', 'address_inh': 'concrete_table', 'person_ref_person': False}
 expr: ( var:person.friend.adr.owner.friend.name == 'pesho' )
 err: <type 'exceptions.KeyError'> 'adr'
-    „Â¯Ì‡ Ú‡·ÎËˆ‡? friend -> Human ‡ Ú‡Ï ÌˇÏ‡ adr
+    –≥—Ä–µ—à–Ω–∞ —Ç–∞–±–ª–∏—Ü–∞? friend -> Human –∞ —Ç–∞–º –Ω—è–º–∞ adr
 
 4
 === {'person_inh': 'concrete_table', 'address_inh': 'joined_table', 'person_ref_person': False}

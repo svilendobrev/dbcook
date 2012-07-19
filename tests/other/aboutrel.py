@@ -1,5 +1,4 @@
-#$Id$
-# -*- coding: cp1251 -*-
+
 from dbcook.aboutrel import about_relation
 
 def eq( me,o):

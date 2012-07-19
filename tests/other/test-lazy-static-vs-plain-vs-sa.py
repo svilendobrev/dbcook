@@ -1,5 +1,4 @@
-#$Id$
-# -*- coding: cp1251 -*-
+
 import sqlalchemy
 
 import sys

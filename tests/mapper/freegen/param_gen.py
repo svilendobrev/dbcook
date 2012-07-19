@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 def str2list( s):
     l = s.strip().split(' ')
@@ -28,7 +26,7 @@ def get_combs( all):
     for i in range( len( rows[ 0])):
         yield [ rows[ j][ i] for j in range( len( rows))]
 
-from tests.util.dictOrder import dictOrder
+from test.util import dictOrder
 def order_dict( d):
     res = dictOrder()
     for k,v in d.iteritems():

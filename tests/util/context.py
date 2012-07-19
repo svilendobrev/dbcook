@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 USE_STATIC_TYPE= 0
 import sys

@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 from tests.util import sa_gentestbase
 import sqlalchemy.orm

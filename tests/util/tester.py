@@ -1,7 +1,5 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
-from dbcook.util.attr import issubclass
+from svd_util.attr import issubclass
 
 def klasify( sadb, namespace, converter =lambda x:x, only_has_instances =True):
     '''for building test's expected results -

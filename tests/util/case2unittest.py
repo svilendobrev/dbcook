@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 def test_case_factory( case_params, TestCaseClass):
     class Case2Test( TestCaseClass):

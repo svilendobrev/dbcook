@@ -1,10 +1,9 @@
-#$Id$
-# -*- coding: cp1251 -*-
+
 from tests.util.context import *
 if USE_STATIC_TYPE:
     Base.auto_set = False
 else:
-    from dbcook.util.attr import setattr_kargs
+    from svd_util.attr import setattr_karg
     class Base( Base):
         __init__ = setattr_kargs
 

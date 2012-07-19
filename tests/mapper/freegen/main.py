@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 from tests.util import context
 from case_gen import NamespaceGen

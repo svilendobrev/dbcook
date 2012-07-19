@@ -1,5 +1,4 @@
-#$Id$
-# -*- coding: cp1251 -*-
+
 from dbcook.config import config_components
 config_components.no_generator = True
 import dbcook.usage.plainwrap as o2r

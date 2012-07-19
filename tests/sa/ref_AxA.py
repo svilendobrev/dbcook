@@ -1,5 +1,3 @@
-#$Id$
-# -*- coding: cp1251 -*-
 
 import sa_case
 from sa_case import A,B,C
